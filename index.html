@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MATCHED? — a WebMCP experiment where humans meet the Queen and AI agents discover another surface.">
+  <title>MATCHED? — Meet the Queen</title>
+  <link rel="stylesheet" href="./css/matched.css">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="brand">
+      <p class="eyebrow">MATCHED?</p>
+      <h1>Meet the Queen.</h1>
+      <p class="subtitle">Humans see a profile. Agents may see something else.</p>
+    </header>
+
+    <section class="profile-card" aria-labelledby="queen-name">
+      <div class="avatar" aria-hidden="true">Q</div>
+      <div class="profile-copy">
+        <div class="profile-heading">
+          <h2 id="queen-name">QUEEN</h2>
+          <span class="location">Tokyo</span>
+        </div>
+        <p class="bio">Movies, travel, cats, and people who know when to stop asking questions.</p>
+        <ul class="tags" aria-label="Interests">
+          <li>Movies</li>
+          <li>Travel</li>
+          <li>Cats</li>
+        </ul>
+        <div class="actions">
+          <button type="button" id="like-button">♡ LIKE</button>
+          <button type="button" class="secondary" disabled>MESSAGE</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-panel" aria-live="polite">
+      <h2>Experiment status</h2>
+      <p id="webmcp-status">Checking WebMCP availability…</p>
+      <p id="human-status">No human interaction yet.</p>
+    </section>
+
+    <footer>
+      <small>All profile and contact information in this experiment is fictional and synthetic.</small>
+    </footer>
+  </main>
+
+  <script type="module" src="./js/webmcp.js"></script>
+</body>
+</html>
