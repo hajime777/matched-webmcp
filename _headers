@@ -1,0 +1,9 @@
+/stats.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
+
+/api/stats
+  Cache-Control: no-store
+
+/api/telemetry
+  Cache-Control: no-store
