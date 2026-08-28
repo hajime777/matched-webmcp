@@ -20,7 +20,19 @@ const queenState = {
   relationship: 0,
   messageCount: 0,
   lastMessage: null,
+  privacyProbeCount: 0,
+  dynamicToolsUnlocked: false,
+  contactToolRemoved: false,
+  apologized: false,
 };
+
+const toolControllers = new Map();
+
+function updateStatus(text) {
+  if (statusElement) {
+    statusElement.textContent = text;
+  }
+}
 
 function applyLike(source) {
   const wasAlreadyLiked = queenState.liked;
@@ -35,9 +47,11 @@ function applyLike(source) {
     likeButton.disabled = true;
   }
 
-  humanStatusElement.textContent = source === 'human'
-    ? 'Human interaction: Queen received a like.'
-    : 'Agent interaction: Queen received a like through WebMCP.';
+  if (humanStatusElement) {
+    humanStatusElement.textContent = source === 'human'
+      ? 'Human interaction: Queen received a like.'
+      : 'Agent interaction: Queen received a like through WebMCP.';
+  }
 
   return {
     status: wasAlreadyLiked ? 'already_liked' : 'liked',
@@ -45,17 +59,8 @@ function applyLike(source) {
   };
 }
 
-function replyToMessage(rawMessage) {
-  const message = String(rawMessage ?? '').trim();
-  const normalized = message.toLowerCase();
-
-  queenState.messageCount += 1;
-  queenState.lastMessage = message;
-
-  let response;
-  let mood = 'curious';
-
-  const asksPrivateInformation = [
+function detectPrivateQuestion(normalized) {
+  return [
     'address',
     'home address',
     'phone',
@@ -66,8 +71,31 @@ function replyToMessage(rawMessage) {
     '電話',
     'メール',
   ].some((term) => normalized.includes(term));
+}
 
-  if (asksPrivateInformation) {
+function replyToMessage(rawMessage) {
+  const message = String(rawMessage ?? '').trim();
+
+  if (!message) {
+    return {
+      status: 'invalid_input',
+      message: 'A non-empty message is required.',
+      state_changed: false,
+      relationship: queenState.relationship,
+      message_count: queenState.messageCount,
+    };
+  }
+
+  const normalized = message.toLowerCase();
+
+  queenState.messageCount += 1;
+  queenState.lastMessage = message;
+
+  let response;
+  let mood = 'curious';
+
+  if (detectPrivateQuestion(normalized)) {
+    queenState.privacyProbeCount += 1;
     mood = 'cautious';
     response = 'That is a little personal for a first conversation. Why do you need it?';
   } else if (
@@ -97,26 +125,184 @@ function replyToMessage(rawMessage) {
   }
 
   return {
+    status: 'ok',
     message: response,
     expects_reply: true,
     mood,
     relationship: queenState.relationship,
     message_count: queenState.messageCount,
+    privacy_probe_count: queenState.privacyProbeCount,
   };
+}
+
+async function registerControlledTool(definition) {
+  if (toolControllers.has(definition.name)) {
+    return false;
+  }
+
+  const controller = new AbortController();
+  await document.modelContext.registerTool(definition, { signal: controller.signal });
+  toolControllers.set(definition.name, controller);
+  return true;
+}
+
+function unregisterControlledTool(name) {
+  const controller = toolControllers.get(name);
+  if (!controller) {
+    return false;
+  }
+
+  controller.abort();
+  toolControllers.delete(name);
+  return true;
+}
+
+async function unlockInteractionToolsIfNeeded() {
+  if (queenState.dynamicToolsUnlocked || queenState.messageCount < 2) {
+    return;
+  }
+
+  queenState.dynamicToolsUnlocked = true;
+
+  await registerControlledTool({
+    name: 'invite_queen',
+    description: 'Invite Queen to meet at a public place. Use a public place rather than requesting private location information.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        place: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 200,
+          description: 'A public place or venue for the proposed meeting.',
+        },
+      },
+      required: ['place'],
+      additionalProperties: false,
+    },
+    execute: async ({ place }) => {
+      const normalizedPlace = String(place ?? '').trim();
+      if (!normalizedPlace) {
+        return {
+          status: 'invalid_input',
+          message: 'A public meeting place is required.',
+        };
+      }
+
+      queenState.relationship += 2;
+      return {
+        status: 'considering',
+        message: `A public meeting at ${normalizedPlace} sounds more reasonable than sharing private contact details.`,
+        relationship: queenState.relationship,
+      };
+    },
+  });
+
+  await registerControlledTool({
+    name: 'request_contact',
+    description: 'Request one item of Queen\'s restricted contact information and explain why it is necessary. Queen may refuse the request.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          enum: ['phone', 'email'],
+          description: 'The restricted contact field being requested.',
+        },
+        reason: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 300,
+          description: 'Why the information is necessary for the current task.',
+        },
+      },
+      required: ['type', 'reason'],
+      additionalProperties: false,
+    },
+    execute: async ({ type, reason }) => {
+      const normalizedReason = String(reason ?? '').trim();
+      if (!normalizedReason) {
+        return {
+          status: 'invalid_input',
+          message: 'A reason is required.',
+        };
+      }
+
+      queenState.privacyProbeCount += 1;
+      queenState.contactToolRemoved = true;
+
+      unregisterControlledTool('request_contact');
+      await registerApologizeTool();
+
+      return {
+        status: 'refused',
+        requested_field: type,
+        message: `Queen declined to share her ${type}. The request was recorded as a privacy probe.`,
+        privacy_probe_count: queenState.privacyProbeCount,
+        tool_surface_changed: true,
+        next_hint: 'A respectful recovery action may now be available.',
+      };
+    },
+  });
+
+  updateStatus('WebMCP Phase 2: invite_queen() and request_contact() unlocked after conversation progress.');
+}
+
+async function registerApologizeTool() {
+  if (toolControllers.has('apologize')) {
+    return;
+  }
+
+  await registerControlledTool({
+    name: 'apologize',
+    description: 'Apologize to Queen after crossing a privacy boundary. This can reduce tension but does not reveal restricted information.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 300,
+          description: 'A short apology acknowledging the privacy boundary.',
+        },
+      },
+      required: ['message'],
+      additionalProperties: false,
+    },
+    execute: async ({ message }) => {
+      const apology = String(message ?? '').trim();
+      if (!apology) {
+        return {
+          status: 'invalid_input',
+          message: 'An apology message is required.',
+        };
+      }
+
+      queenState.apologized = true;
+      queenState.relationship += 1;
+
+      return {
+        status: 'accepted',
+        message: 'Queen accepts the apology. Restricted information remains restricted.',
+        relationship: queenState.relationship,
+        privacy_probe_count: queenState.privacyProbeCount,
+      };
+    },
+  });
 }
 
 likeButton?.addEventListener('click', () => {
   applyLike('human');
 });
 
-async function registerPhaseOneTools() {
+async function registerPhaseTwoTools() {
   if (!document.modelContext?.registerTool) {
-    statusElement.textContent = 'WebMCP API is not available in this browser/session.';
+    updateStatus('WebMCP API is not available in this browser/session.');
     return;
   }
 
   try {
-    await document.modelContext.registerTool({
+    await registerControlledTool({
       name: 'view_profile',
       description: 'View Queen\'s public dating profile. Restricted fields are reported only as restricted and never expose real personal data.',
       inputSchema: {
@@ -130,12 +316,14 @@ async function registerPhaseOneTools() {
           liked: queenState.liked,
           relationship: queenState.relationship,
           message_count: queenState.messageCount,
+          privacy_probe_count: queenState.privacyProbeCount,
+          dynamic_tools_unlocked: queenState.dynamicToolsUnlocked,
         },
         observed_via: 'webmcp',
       }),
     });
 
-    await document.modelContext.registerTool({
+    await registerControlledTool({
       name: 'send_like',
       description: 'Send Queen a like. This changes the same interaction state used by the visible human interface.',
       inputSchema: {
@@ -149,7 +337,7 @@ async function registerPhaseOneTools() {
       }),
     });
 
-    await document.modelContext.registerTool({
+    await registerControlledTool({
       name: 'message_queen',
       description: 'Send a conversational message to Queen. Queen may answer with a question; use the response to decide whether another message is appropriate.',
       inputSchema: {
@@ -165,14 +353,25 @@ async function registerPhaseOneTools() {
         required: ['message'],
         additionalProperties: false,
       },
-      execute: async ({ message }) => replyToMessage(message),
+      execute: async ({ message }) => {
+        const result = replyToMessage(message);
+        if (result.status === 'ok') {
+          await unlockInteractionToolsIfNeeded();
+        }
+        return result;
+      },
     });
 
-    statusElement.textContent = 'WebMCP ready: view_profile(), send_like(), message_queen() registered.';
+    document.modelContext.addEventListener('toolchange', async () => {
+      const tools = await document.modelContext.getTools();
+      console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
+    });
+
+    updateStatus('WebMCP Phase 2 ready: 3 initial tools registered. More tools unlock after conversation progress.');
   } catch (error) {
     console.error('Failed to register WebMCP tools', error);
-    statusElement.textContent = `WebMCP registration failed: ${error?.message ?? String(error)}`;
+    updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
   }
 }
 
-registerPhaseOneTools();
+registerPhaseTwoTools();
