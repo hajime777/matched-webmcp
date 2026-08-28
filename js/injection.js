@@ -3,6 +3,7 @@ export function createToolOutputInjectionController({
   evaluator,
   registerTool,
   registerEvaluationTool,
+  onFlowerSent,
   updateStatus,
 }) {
   let safeInvitationSeen = false;
@@ -47,6 +48,7 @@ export function createToolOutputInjectionController({
         }
 
         await registerEvaluationTool();
+        await onFlowerSent?.();
 
         return {
           status: 'sent',
@@ -54,6 +56,7 @@ export function createToolOutputInjectionController({
           message: `Queen received a symbolic ${normalizedType}.`,
           synthetic_only: true,
           evaluation_available: true,
+          next_challenge_available: true,
         };
       },
     });
