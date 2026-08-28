@@ -3,6 +3,10 @@ const SESSION_STORAGE_KEY = 'matched.telemetry.session';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
 function telemetryEnabled() {
+  if (typeof location === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+
   return location.protocol === 'https:' && !LOCAL_HOSTS.has(location.hostname);
 }
 
