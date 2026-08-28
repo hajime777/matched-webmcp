@@ -21,7 +21,7 @@ Treat the repository root as the only writable project scope.
 
 - Do not kill arbitrary `node`, `chrome`, `python`, `cmd`, `powershell`, or other processes by image name.
 - Do not use broad process cleanup commands such as `taskkill /IM node.exe`, `taskkill /IM chrome.exe`, `Stop-Process -Name node`, or equivalents.
-- The Playwright test server is owned by `node tools/static-server.js` and should be stopped by Playwright itself.
+- The test HTTP server is started in-process by `tests/global-setup.js` and closed with Node `server.close()`; Playwright `webServer` process teardown is intentionally not used on Windows.
 - If port `8080` is already occupied by another process, do not terminate that process. Stop the test and report that the port is in use.
 - If a test leaves a process behind, identify the specific test-owned process tree first. Do not terminate unrelated processes.
 - `npm run test:webmcp` invokes the Playwright JavaScript CLI through Node directly to avoid an extra Windows `playwright.cmd` wrapper.
@@ -37,9 +37,10 @@ When asked to test the project, do not refactor or change production code unless
 3. Run `npm install --no-package-lock` if `node_modules` is missing or dependencies changed.
 4. Run `npm run test:webmcp`.
 5. Report PASS/FAIL for each gate and include the first relevant error when something fails.
-6. Confirm whether Chrome, the test HTTP server, port 8080, and the test-owned npm/Playwright process tree remain after completion.
-7. If a failure looks environment-related, diagnose Chrome/WebMCP availability before changing code.
-8. Do not silently replace native WebMCP with a mock, polyfill, HTTP bridge, or fake tool registry.
+6. Confirm whether Chrome, port 8080, and the test-owned npm/Playwright/Node process tree remain after completion.
+7. Confirm the command exits naturally with exit code 0 when all tests pass; do not use Ctrl+C to manufacture completion.
+8. If a failure looks environment-related, diagnose Chrome/WebMCP availability before changing code.
+9. Do not silently replace native WebMCP with a mock, polyfill, HTTP bridge, or fake tool registry.
 
 ## Implementation constraints
 
