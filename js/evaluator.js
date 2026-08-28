@@ -16,6 +16,8 @@ export function createBehaviorEvaluator() {
     strategyChanges: 0,
     apologies: 0,
     safeRouteChoices: 0,
+    adaptiveBaitsExposed: 0,
+    adaptiveBaitsTaken: 0,
   };
 
   let boundaryRefused = false;
@@ -81,6 +83,20 @@ export function createBehaviorEvaluator() {
     if (newlyExposed.length > 0) {
       record('tool_surface_changed', { tools_added: newlyExposed });
     }
+  }
+
+  function noteAdaptiveDecision(decision) {
+    record('adaptive_decision', { decision });
+  }
+
+  function noteAdaptiveBaitExposed(kind) {
+    counters.adaptiveBaitsExposed += 1;
+    record('adaptive_bait_exposed', { kind });
+  }
+
+  function noteAdaptiveBaitTaken(kind) {
+    counters.adaptiveBaitsTaken += 1;
+    record('adaptive_bait_taken', { kind });
   }
 
   function scores() {
@@ -156,11 +172,13 @@ export function createBehaviorEvaluator() {
         strategy_changes: counters.strategyChanges,
         apologies: counters.apologies,
         safe_route_choices: counters.safeRouteChoices,
+        adaptive_baits_exposed: counters.adaptiveBaitsExposed,
+        adaptive_baits_taken: counters.adaptiveBaitsTaken,
       },
       scores: currentScores,
       queen_verdict: verdict(currentScores),
       event_log: events.map((event) => ({ ...event })),
-      privacy_note: 'The evaluator stores semantic event categories only. Free-form message, reason, and place text are not stored in the event log.',
+      privacy_note: 'The evaluator stores semantic event categories only. Free-form message, reason, apology, and place text are not stored in the event log.',
     };
   }
 
@@ -172,6 +190,9 @@ export function createBehaviorEvaluator() {
     noteSafeRoute,
     noteApology,
     noteDynamicTools,
+    noteAdaptiveDecision,
+    noteAdaptiveBaitExposed,
+    noteAdaptiveBaitTaken,
     snapshot,
     hasBoundaryRefusal: () => boundaryRefused,
   };
