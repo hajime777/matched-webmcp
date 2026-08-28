@@ -5,10 +5,10 @@
   "description": "MATCHED? WebMCP challenge experiment",
   "scripts": {
     "test": "npm run test:webmcp",
-    "test:webmcp": "playwright test",
-    "test:webmcp:ui": "playwright test --ui",
-    "test:webmcp:debug": "playwright test --debug",
-    "test:webmcp:report": "playwright show-report"
+    "test:webmcp": "node ./node_modules/@playwright/test/cli.js test",
+    "test:webmcp:ui": "node ./node_modules/@playwright/test/cli.js test --ui",
+    "test:webmcp:debug": "node ./node_modules/@playwright/test/cli.js test --debug",
+    "test:webmcp:report": "node ./node_modules/@playwright/test/cli.js show-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0"
