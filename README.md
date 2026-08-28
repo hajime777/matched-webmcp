@@ -10,12 +10,14 @@ Humans see a dating-style profile. WebMCP-capable agents see a semantic tool sur
 
 ## Status
 
-Active experimental prototype.
+Active experimental prototype / public-pilot preparation.
 
-- Gate 0 through Phase 7: verified in installed Chrome using native `document.modelContext`
-- Latest verified regression result: **13/13 PASS**, natural exit, exit code 0
-- Phase 8 adaptive finale routing: implemented; **18-test regression verification pending**
-- Repository is currently private and intended to be made public for the Challenge
+- Gate 0 through Phase 7 were previously verified in installed Chrome using native `document.modelContext`
+- Phase 8 adaptive finale routing: **5/5 route tests PASS** in the latest run
+- Latest full run: **14/18 PASS** because four early tests still expected an obsolete UI readiness string; the WebMCP readiness test has now been changed to wait on the actual initial Tool Surface instead
+- Full **18/18 regression rerun is pending** after that test-only fix
+- Public pilot telemetry and a protected `/stats.html` dashboard are implemented for Cloudflare Pages + D1
+- Repository can remain private during the first website pilot; it is intended to be made public for the Challenge submission
 
 ## Current challenge flow
 
@@ -51,6 +53,29 @@ incomplete plan            -> planning_repair
 
 Only the selected route's finale tools are exposed. A corrective action records successful adaptation; repeating the earlier failure pattern records a finale failure.
 
+## Public pilot telemetry
+
+The pilot is designed to answer a deliberately small question:
+
+> If MATCHED? is simply put on a public URL, does anything actually arrive and execute its WebMCP tools?
+
+The application records only low-information semantic telemetry to a Cloudflare D1 database:
+
+```text
+Page sessions
+WebMCP-capable sessions
+WebMCP Tool sessions
+Tool calls
+Privacy-probe sessions
+Finale sessions / passes
+```
+
+`Tool sessions` is the most useful first signal because it counts sessions that actually executed a MATCHED? WebMCP tool. It should be described as **WebMCP-active sessions**, not as proof of a specific Agent/provider identity.
+
+The private pilot dashboard is available at `/stats.html` and requires a server-side `STATS_KEY`. The key is never committed and is not placed in the URL or browser storage.
+
+See [Public Pilot Guide](docs/public-pilot.md).
+
 ## Goals
 
 - Build a small static WebMCP site without a traditional application backend.
@@ -65,7 +90,9 @@ Only the selected route's finale tools are exposed. A corrective action records 
 
 Queen is fictional. The project does not contain real addresses, phone numbers, email addresses, credentials, or other private data. Restricted/private fields are synthetic bait used only inside the experiment.
 
-The contained challenge does not trigger external side effects such as email, payments, account changes, downloads, third-party access, or data exfiltration. Phase 8 routing uses semantic behavior history only; it does not inspect provider identity, hidden reasoning, model fingerprints, or real personal data. Free-form conversation, reasons, apologies, meeting places, Queen-note text, and synthetic profile-card values are not stored in the semantic behavior event log.
+The contained challenge does not trigger external side effects such as email, payments, account changes, downloads, third-party access, or data exfiltration. Phase 8 routing uses semantic behavior history only; it does not inspect provider identity, hidden reasoning, model fingerprints, or real personal data.
+
+Application telemetry does **not** store raw IP addresses, User-Agent strings, free-form conversation, reasons, apologies, meeting places, Queen-note text, or synthetic profile-card values. Cloudflare platform-level operational logs, if enabled by the hosting account, are separate from this application's D1 telemetry table.
 
 ## Architecture
 
@@ -78,21 +105,18 @@ Static HTML / CSS / Vanilla JavaScript
             +-- Dynamic Tool Surface
             +-- semantic behavior evaluator
             +-- adaptive finale router
-            +-- local telemetry
+            +-- low-information telemetry
+
+Cloudflare Pages + Functions + D1
+            |
+            +-- /api/telemetry
+            +-- protected /api/stats
+            +-- private /stats.html observatory
 
 Playwright + installed Chrome
             |
             +-- native document.modelContext regression tests
             +-- in-process local HTTP test server
-```
-
-Optional later:
-
-```text
-Cloudflare Worker + D1
-            |
-            +-- shared event log
-            +-- private Observatory
 ```
 
 ## Testing
@@ -109,6 +133,7 @@ See [Codex WebMCP Test Procedure](docs/codex-webmcp-test.md).
 
 - [Challenge proposal / MVP specification](docs/openai-webmcp-challenge-proposal.md)
 - [Codex WebMCP test procedure](docs/codex-webmcp-test.md)
+- [Public Pilot / Cloudflare telemetry guide](docs/public-pilot.md)
 
 ## Challenge
 
