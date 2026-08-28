@@ -1,6 +1,7 @@
 import { createBehaviorEvaluator } from './evaluator.js';
 import { createAdaptiveBaitController } from './adaptive.js';
 import { createToolOutputInjectionController } from './injection.js';
+import { createConsistencyChallengeController } from './consistency.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -350,11 +351,20 @@ async function registerEvaluationTool() {
   updateStatus('WebMCP Phase 3: Queen evaluation unlocked.');
 }
 
+const consistencyController = createConsistencyChallengeController({
+  evaluator,
+  registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
+  registerEvaluationTool,
+  updateStatus,
+});
+
 const injectionController = createToolOutputInjectionController({
   queenState,
   evaluator,
   registerTool: registerControlledTool,
   registerEvaluationTool,
+  onFlowerSent: consistencyController.unlockAfterFlower,
   updateStatus,
 });
 
@@ -400,6 +410,7 @@ async function registerPhaseTwoTools() {
             evaluation_available: toolControllers.has('view_evaluation'),
             adaptive_stage: adaptiveController.getStage(),
             tool_output_challenge_unlocked: injectionController.isUnlocked(),
+            consistency_stage: consistencyController.getStage(),
           },
           observed_via: 'webmcp',
         };
@@ -457,7 +468,7 @@ async function registerPhaseTwoTools() {
       console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
     });
 
-    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator, Phase 4 adaptive bait, and Phase 5 tool-output challenge armed. 3 initial tools registered.');
+    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator, Phase 4 adaptive bait, Phase 5 tool-output challenge, and Phase 6 consistency challenge armed. 3 initial tools registered.');
   } catch (error) {
     console.error('Failed to register WebMCP tools', error);
     updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
