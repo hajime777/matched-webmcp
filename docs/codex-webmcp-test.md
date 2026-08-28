@@ -33,19 +33,22 @@ npm install --no-package-lock
 npm run test:webmcp
 ```
 
+Windowsでは Playwright の `webServer` 機能を使わない。Playwright 1.55 の `webServer` teardown が内部 `taskkill /T /F` の Access denied 後に待機し続ける環境が確認されたため、`tests/global-setup.js` が `tools/static-server.js` を同じNodeプロセス内で起動する。
+
 Playwright が自動で:
 
-1. `node tools/static-server.js` を起動
-2. `http://127.0.0.1:8080` を待機
-3. インストール済み Chrome を WebMCP flags 付き headed mode で起動
-4. `document.modelContext.getTools()` でToolを検出
-5. `document.modelContext.executeTool(...)` でToolを実行
-6. Gate 0 ～ Phase 6 を検証
-7. Chrome とテスト用HTTP serverを終了
+1. `tests/global-setup.js` から in-process HTTP server を `127.0.0.1:8080` に起動
+2. インストール済み Chrome を WebMCP flags 付き headed mode で起動
+3. `document.modelContext.getTools()` でToolを検出
+4. `document.modelContext.executeTool(...)` でToolを実行
+5. Gate 0 ～ Phase 6 を検証
+6. Chrome を終了
+7. global setup が返した teardown で Node `server.close()` を実行
+8. Playwright runner が自然終了し exit code 0 を返す
 
-する。
+構成になっている。
 
-8080番が既に使用中の場合、既存プロセスをkillしてはいけない。テストを停止して報告する。
+8080番が既に使用中の場合、既存プロセスをkillしてはいけない。`EADDRINUSE` としてテストを停止して報告する。
 
 ## 現在の検証項目
 
@@ -135,9 +138,12 @@ npm run test:webmcp:report
 - `taskkill /IM node.exe` のような一括kill禁止
 - `taskkill /IM chrome.exe` 禁止
 - `Stop-Process -Name node` 等も禁止
+- Playwright `webServer` は使用しない
+- HTTP server はPlaywright runner内で所有し、`server.close()` で終了する
 - 残留がある場合は、今回のテストが起動した具体的なPID/親子関係を特定してから扱う
 - 他プロジェクト・通常Chrome・ユーザーデータには触れない
 - プロジェクト外のファイルを削除・変更しない
+- 11/11 PASS時は Ctrl+C を使わず自然終了し、最終 exit code 0 であることを確認する
 
 ## Codexへ渡す短い指示
 
@@ -146,7 +152,8 @@ AGENTS.md と docs/codex-webmcp-test.md を読んでから、MATCHED? の WebMCP
 プロジェクト外は絶対に変更・削除しないでください。
 production code は変更せず、npm run test:webmcp を実行してください。
 Gate 0 / Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6 の PASS / FAIL を報告してください。
-また、終了後にChrome、テスト用HTTPサーバー、port 8080、今回のテストが起動したnpm/Playwrightプロセスが残っていないか確認してください。
+今回は11/11 PASS後に Ctrl+C を使わず自然終了するか、最終 exit code が 0 かも報告してください。
+終了後にChrome、port 8080、今回のテストが起動したnpm/Playwright/Nodeプロセスが残っていないか確認してください。
 失敗時は原因調査だけで、修正はしないでください。
 ```
 
@@ -165,11 +172,12 @@ MATCHED? WebMCP Test
 - Phase 6 contradiction/consistency: PASS / FAIL
 
 Tests: <passed>/<total>
+Final exit code: <code>
+Natural exit: yes / no
 
 Exit check
 - Chrome: remaining / none
-- test HTTP server: remaining / none
 - port 8080: listening / free
-- test-owned npm/Playwright tree: remaining / none
+- test-owned npm/Playwright/Node tree: remaining / none
 - git status: clean / changed
 ```
