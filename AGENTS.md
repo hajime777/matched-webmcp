@@ -10,7 +10,7 @@ When asked to test the project, do not refactor or change production code unless
 
 1. Read `docs/codex-webmcp-test.md`.
 2. Work from the repository root.
-3. Run `npm install` if `node_modules` is missing or dependencies changed.
+3. Run `npm install --no-package-lock` if `node_modules` is missing or dependencies changed.
 4. Run `npm run test:webmcp`.
 5. Report PASS/FAIL for each test and include the first relevant error when something fails.
 6. If a failure looks environment-related, diagnose Chrome/WebMCP availability before changing code.
