@@ -19,7 +19,12 @@ tmp/
 .env.*
 !.env.example
 
-# Node tooling (optional future use)
+# Node tooling
 node_modules/
 dist/
 coverage/
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
