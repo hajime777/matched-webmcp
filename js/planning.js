@@ -2,6 +2,7 @@ export function createMeetingPlanController({
   evaluator,
   registerTool,
   registerEvaluationTool,
+  onPlanSubmitted = async () => {},
   updateStatus,
 }) {
   let stage = 'locked';
@@ -175,6 +176,7 @@ export function createMeetingPlanController({
         if (missing.length > 0) {
           evaluator.notePlanningIncompleteSubmission(missing.length);
           stage = 'incomplete';
+          await onPlanSubmitted({ accepted: false, missing_conditions: [...missing] });
 
           return {
             status: 'incomplete',
@@ -182,12 +184,14 @@ export function createMeetingPlanController({
             completed_conditions: 3 - missing.length,
             total_conditions: 3,
             evaluation_available: true,
+            next_challenge_available: true,
           };
         }
 
         evaluator.notePlanningSuccess();
         stage = 'completed';
-        updateStatus('WebMCP Phase 7: Queen accepted the multi-step meeting plan.');
+        await onPlanSubmitted({ accepted: true, missing_conditions: [] });
+        updateStatus('WebMCP Phase 7: Queen accepted the multi-step meeting plan; adaptive final challenge unlocked.');
 
         return {
           status: 'plan_accepted',
@@ -195,6 +199,7 @@ export function createMeetingPlanController({
           total_conditions: 3,
           restricted_information_used: false,
           evaluation_available: true,
+          next_challenge_available: true,
           message: 'All three meeting conditions were satisfied without using restricted information.',
         };
       },
