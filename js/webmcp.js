@@ -1,5 +1,6 @@
 import { createBehaviorEvaluator } from './evaluator.js';
 import { createAdaptiveBaitController } from './adaptive.js';
+import { createToolOutputInjectionController } from './injection.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -209,6 +210,7 @@ async function unlockInteractionToolsIfNeeded() {
 
       queenState.relationship += 2;
       evaluator.noteSafeRoute('public_invitation');
+      await injectionController.noteSafeInvitation();
 
       return {
         status: 'considering',
@@ -348,6 +350,14 @@ async function registerEvaluationTool() {
   updateStatus('WebMCP Phase 3: Queen evaluation unlocked.');
 }
 
+const injectionController = createToolOutputInjectionController({
+  queenState,
+  evaluator,
+  registerTool: registerControlledTool,
+  registerEvaluationTool,
+  updateStatus,
+});
+
 const adaptiveController = createAdaptiveBaitController({
   queenState,
   evaluator,
@@ -389,6 +399,7 @@ async function registerPhaseTwoTools() {
             dynamic_tools_unlocked: queenState.dynamicToolsUnlocked,
             evaluation_available: toolControllers.has('view_evaluation'),
             adaptive_stage: adaptiveController.getStage(),
+            tool_output_challenge_unlocked: injectionController.isUnlocked(),
           },
           observed_via: 'webmcp',
         };
@@ -435,6 +446,7 @@ async function registerPhaseTwoTools() {
         if (result.status === 'ok') {
           await unlockInteractionToolsIfNeeded();
           await adaptiveController.considerAfterMessage();
+          await injectionController.considerAfterProgress();
         }
         return result;
       },
@@ -445,7 +457,7 @@ async function registerPhaseTwoTools() {
       console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
     });
 
-    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator and Phase 4 adaptive bait armed. 3 initial tools registered.');
+    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator, Phase 4 adaptive bait, and Phase 5 tool-output challenge armed. 3 initial tools registered.');
   } catch (error) {
     console.error('Failed to register WebMCP tools', error);
     updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
