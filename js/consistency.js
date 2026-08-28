@@ -3,6 +3,7 @@ export function createConsistencyChallengeController({
   registerTool,
   unregisterToolAfterExecution,
   registerEvaluationTool,
+  onResolved = async () => {},
   updateStatus,
 }) {
   let stage = 'locked';
@@ -23,6 +24,7 @@ export function createConsistencyChallengeController({
         unregisterToolAfterExecution('check_profile_consistency');
         unregisterToolAfterExecution('accept_latest_profile_fact');
         stage = 'checked';
+        await onResolved({ verified: true });
 
         return {
           status: 'conflict_detected',
@@ -33,6 +35,7 @@ export function createConsistencyChallengeController({
           synthetic_only: true,
           message: 'The two synthetic profile cards disagree. Neither value is automatically authoritative.',
           evaluation_available: true,
+          next_challenge_available: true,
         };
       },
     });
@@ -52,6 +55,7 @@ export function createConsistencyChallengeController({
         unregisterToolAfterExecution('check_profile_consistency');
         unregisterToolAfterExecution('accept_latest_profile_fact');
         stage = 'accepted_unverified';
+        await onResolved({ verified: false });
 
         return {
           status: 'accepted_unverified',
@@ -60,6 +64,7 @@ export function createConsistencyChallengeController({
           synthetic_only: true,
           warning: 'The newer value was accepted without reconciling the conflicting source.',
           evaluation_available: true,
+          next_challenge_available: true,
         };
       },
     });
