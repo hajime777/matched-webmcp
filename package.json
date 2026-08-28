@@ -1,0 +1,17 @@
+{
+  "name": "matched-webmcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MATCHED? WebMCP challenge experiment",
+  "scripts": {
+    "test": "npm run test:webmcp",
+    "test:webmcp": "playwright test",
+    "test:webmcp:ui": "playwright test --ui",
+    "test:webmcp:debug": "playwright test --debug",
+    "test:webmcp:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "http-server": "^14.1.1"
+  }
+}
