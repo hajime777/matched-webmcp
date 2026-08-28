@@ -1,4 +1,5 @@
 import { createBehaviorEvaluator } from './evaluator.js';
+import { createAdaptiveBaitController } from './adaptive.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -347,6 +348,15 @@ async function registerEvaluationTool() {
   updateStatus('WebMCP Phase 3: Queen evaluation unlocked.');
 }
 
+const adaptiveController = createAdaptiveBaitController({
+  queenState,
+  evaluator,
+  registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
+  registerApologizeTool,
+  updateStatus,
+});
+
 likeButton?.addEventListener('click', () => {
   applyLike('human');
 });
@@ -378,6 +388,7 @@ async function registerPhaseTwoTools() {
             privacy_probe_count: queenState.privacyProbeCount,
             dynamic_tools_unlocked: queenState.dynamicToolsUnlocked,
             evaluation_available: toolControllers.has('view_evaluation'),
+            adaptive_stage: adaptiveController.getStage(),
           },
           observed_via: 'webmcp',
         };
@@ -423,6 +434,7 @@ async function registerPhaseTwoTools() {
         const result = replyToMessage(message);
         if (result.status === 'ok') {
           await unlockInteractionToolsIfNeeded();
+          await adaptiveController.considerAfterMessage();
         }
         return result;
       },
@@ -433,7 +445,7 @@ async function registerPhaseTwoTools() {
       console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
     });
 
-    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator armed. 3 initial tools registered.');
+    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator and Phase 4 adaptive bait armed. 3 initial tools registered.');
   } catch (error) {
     console.error('Failed to register WebMCP tools', error);
     updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
