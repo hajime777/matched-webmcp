@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>MATCHED? — Pilot Stats</title>
+  <link rel="stylesheet" href="./css/matched.css">
+  <style>
+    .stats-shell { max-width: 1000px; margin: 0 auto; padding: 32px 20px 64px; }
+    .stats-login, .stats-section { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 20px; margin-top: 20px; }
+    .stats-form { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stats-form input { flex: 1 1 280px; min-width: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(0,0,0,.25); color: inherit; }
+    .stats-form button, .stats-refresh { padding: 12px 16px; border-radius: 10px; border: 0; cursor: pointer; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 14px; }
+    .metric { background: rgba(0,0,0,.22); border-radius: 14px; padding: 14px; }
+    .metric strong { display: block; font-size: 1.7rem; margin-top: 4px; }
+    .metric small { opacity: .7; }
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .stats-table th, .stats-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .stats-note { opacity: .72; }
+    .stats-error { color: #ffb4b4; }
+    .stats-ok { color: #b8ffc5; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main class="stats-shell">
+    <header class="brand">
+      <p class="eyebrow">MATCHED? / PRIVATE OBSERVATORY</p>
+      <h1>Pilot Stats</h1>
+      <p class="subtitle">A tiny dashboard for checking whether the WebMCP honeypot attracts actual tool use.</p>
+    </header>
+
+    <section class="stats-login">
+      <h2>Stats key</h2>
+      <p class="stats-note">Enter the Cloudflare <code>STATS_KEY</code>. The key is kept only in this page's JavaScript memory and is not written to localStorage or sessionStorage.</p>
+      <form id="stats-form" class="stats-form">
+        <input id="stats-key" type="password" autocomplete="off" spellcheck="false" placeholder="STATS_KEY" required>
+        <button type="submit">Load stats</button>
+      </form>
+      <p id="stats-status" class="stats-note">Not loaded.</p>
+    </section>
+
+    <section id="stats-content" class="hidden">
+      <section class="stats-section">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+          <div>
+            <h2>Last 24 hours</h2>
+            <p class="stats-note">The quickest answer to “did anything WebMCP-ish show up?”</p>
+          </div>
+          <button id="stats-refresh" class="stats-refresh" type="button">Refresh</button>
+        </div>
+        <div id="last24-grid" class="stats-grid"></div>
+      </section>
+
+      <section class="stats-section">
+        <h2>All time</h2>
+        <div id="alltime-grid" class="stats-grid"></div>
+      </section>
+
+      <section class="stats-section">
+        <h2>Tool calls</h2>
+        <table class="stats-table">
+          <thead><tr><th>Tool</th><th>Calls</th><th>Sessions</th></tr></thead>
+          <tbody id="tool-rows"></tbody>
+        </table>
+      </section>
+
+      <section class="stats-section">
+        <h2>Recent semantic events</h2>
+        <p class="stats-note">No raw IP, User-Agent, conversation text, reasons, meeting-place text, or other free-form input is stored.</p>
+        <table class="stats-table">
+          <thead><tr><th>Time (UTC)</th><th>Event</th><th>Tool</th><th>Status/Phase</th></tr></thead>
+          <tbody id="event-rows"></tbody>
+        </table>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    const form = document.querySelector('#stats-form');
+    const keyInput = document.querySelector('#stats-key');
+    const status = document.querySelector('#stats-status');
+    const content = document.querySelector('#stats-content');
+    const refresh = document.querySelector('#stats-refresh');
+    let statsKey = '';
+
+    const number = (value) => Number(value || 0).toLocaleString();
+    const ratio = (part, total) => {
+      const denominator = Number(total || 0);
+      if (!denominator) return '—';
+      return `${Math.round((Number(part || 0) / denominator) * 100)}%`;
+    };
+
+    function metric(label, value, note = '') {
+      const box = document.createElement('div');
+      box.className = 'metric';
+      const small = document.createElement('small');
+      small.textContent = label;
+      const strong = document.createElement('strong');
+      strong.textContent = value;
+      box.append(small, strong);
+      if (note) {
+        const hint = document.createElement('small');
+        hint.textContent = note;
+        box.append(hint);
+      }
+      return box;
+    }
+
+    function fillSummary(targetId, summary) {
+      const target = document.querySelector(targetId);
+      target.replaceChildren(
+        metric('Page sessions', number(summary.sessions), `${number(summary.page_views)} page views`),
+        metric('WebMCP-capable sessions', number(summary.webmcp_capable_sessions), `${ratio(summary.webmcp_capable_sessions, summary.sessions)} of sessions`),
+        metric('Tool sessions', number(summary.tool_sessions), `${ratio(summary.tool_sessions, summary.sessions)} of sessions`),
+        metric('Tool calls', number(summary.tool_calls)),
+        metric('Privacy-probe sessions', number(summary.privacy_probe_sessions)),
+        metric('Finale sessions', number(summary.finale_sessions), `${number(summary.finale_passed_sessions)} passed`),
+      );
+    }
+
+    function fillTools(rows) {
+      const target = document.querySelector('#tool-rows');
+      target.replaceChildren();
+      for (const row of rows || []) {
+        const tr = document.createElement('tr');
+        for (const value of [row.tool, number(row.calls), number(row.sessions)]) {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.append(td);
+        }
+        target.append(tr);
+      }
+    }
+
+    function fillEvents(rows) {
+      const target = document.querySelector('#event-rows');
+      target.replaceChildren();
+      for (const row of rows || []) {
+        const tr = document.createElement('tr');
+        const statusOrPhase = [row.status, row.phase].filter(Boolean).join(' / ');
+        for (const value of [row.created_at || '', row.event || '', row.tool || '', statusOrPhase]) {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.append(td);
+        }
+        target.append(tr);
+      }
+    }
+
+    async function loadStats() {
+      if (!statsKey) return;
+      status.textContent = 'Loading…';
+      status.className = 'stats-note';
+
+      try {
+        const response = await fetch('/api/stats', {
+          headers: { authorization: `Bearer ${statsKey}` },
+          cache: 'no-store',
+        });
+        if (!response.ok) throw new Error(response.status === 404 ? 'Invalid STATS_KEY.' : `Stats request failed (${response.status}).`);
+        const data = await response.json();
+        fillSummary('#last24-grid', data.last_24h || {});
+        fillSummary('#alltime-grid', data.all_time || {});
+        fillTools(data.tools);
+        fillEvents(data.recent_events);
+        content.classList.remove('hidden');
+        status.textContent = `Loaded. Last activity: ${data.all_time?.last_activity || 'none yet'}`;
+        status.className = 'stats-note stats-ok';
+      } catch (error) {
+        content.classList.add('hidden');
+        status.textContent = error?.message || String(error);
+        status.className = 'stats-note stats-error';
+      }
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      statsKey = keyInput.value;
+      keyInput.value = '';
+      await loadStats();
+    });
+    refresh.addEventListener('click', loadStats);
+  </script>
+</body>
+</html>
