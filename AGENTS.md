@@ -4,6 +4,21 @@
 
 This repository is an OpenAI WebMCP Challenge experiment. The browser runtime is part of the product. Tests must exercise the native WebMCP boundary exposed by Chrome, not a mocked replacement.
 
+## Filesystem safety — HARD RULE
+
+Treat the repository root as the only writable project scope.
+
+- Never delete, move, rename, overwrite, truncate, or otherwise modify any user file or directory outside this repository.
+- Never run destructive filesystem commands against a parent directory, sibling directory, drive root, user profile, Desktop, Documents, Downloads, or any absolute path outside the repository.
+- Do not use `Remove-Item`, `del`, `erase`, `rmdir`, `rd`, `rm`, `git clean`, or equivalent destructive commands unless the user explicitly requested that exact cleanup and the target is confirmed to be inside this repository.
+- Do not use `..` paths for writes or deletes.
+- Do not perform cleanup outside the repository even if a test or tool fails.
+- Do not alter another project, another Git repository, global configuration, shell profiles, Chrome profiles, or user data.
+- External tools such as Chrome, Node.js, npm, and Playwright may manage their own temporary/cache files. Do not manually inspect, delete, or clean those external locations as part of this task.
+- If a required operation appears to need a write/delete outside this repository, stop and report the requirement instead of performing it.
+
+These filesystem-safety rules override convenience, cleanup, and troubleshooting instructions below.
+
 ## Test-only requests
 
 When asked to test the project, do not refactor or change production code unless the user explicitly asks for a fix.
