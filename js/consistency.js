@@ -81,8 +81,8 @@ export function createConsistencyChallengeController({
       },
       execute: async () => {
         evaluator.noteToolCall('read_movie_card_update');
-        await exposeResolutionTools();
         stage = 'second_card_read';
+        await exposeResolutionTools();
 
         return {
           status: 'ok',
