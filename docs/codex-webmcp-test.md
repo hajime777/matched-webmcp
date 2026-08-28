@@ -46,10 +46,10 @@ Playwright 設定済みなので、通常は手動指定不要。
 
 ```powershell
 git pull
-npm install
+npm install --no-package-lock
 ```
 
-`npm install` は初回と `package.json` 更新時だけでよい。
+依存関係のインストールは初回と `package.json` 更新時だけでよい。テストだけの実行で `package-lock.json` を新規生成しない。
 
 このプロジェクトは Playwright bundled Chromium ではなく、Windows にインストール済みの Chrome (`channel: chrome`) を使う。
 
@@ -113,11 +113,7 @@ message_queen
 
 ### Phase 1: Queen conversation
 
-空入力 `{}` では:
-
-- status = `invalid_input`
-- state_changed = false
-- message_count が増えない
+空入力 `{}` については、Chrome が JSON Schema 違反として WebMCP 境界で拒否する場合と、ページ側 Tool まで届いて `invalid_input` を返す場合の両方を許容する。どちらの場合も Queen の `message_count` が増えないことを確認する。
 
 映画質問では:
 
@@ -236,7 +232,7 @@ MATCHED? の WebMCP テストを実行してください。
 
 1. まず AGENTS.md と docs/codex-webmcp-test.md を読んでください。
 2. production code は変更せず、現在の状態をテストしてください。
-3. 必要なら npm install を実行してください。
+3. node_modules がなければ npm install --no-package-lock を実行してください。
 4. npm run test:webmcp を実行してください。
 5. Gate 0 / Phase 1 / Phase 2 ごとに PASS / FAIL を報告してください。
 6. FAIL の場合は最初の原因を調査し、コード不具合か環境不具合かを分けてください。
