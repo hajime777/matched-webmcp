@@ -7,7 +7,19 @@ async function waitForWebMCP(page) {
     timeout: 10000,
   });
 
-  await expect(page.locator('#webmcp-status')).toContainText('WebMCP Phase 2 ready');
+  // Readiness is a semantic tool-surface condition, not a UI status-string contract.
+  // Phase labels can evolve without breaking Gate 0/Phase 1/Phase 2 regression tests.
+  await expect.poll(async () => {
+    const tools = await page.evaluate(async () => {
+      const discovered = await document.modelContext.getTools();
+      return discovered.map((tool) => tool.name).sort();
+    });
+    return tools;
+  }).toEqual([
+    'message_queen',
+    'send_like',
+    'view_profile',
+  ]);
 }
 
 async function listToolNames(page) {
