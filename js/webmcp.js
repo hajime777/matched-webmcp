@@ -157,6 +157,12 @@ function unregisterControlledTool(name) {
   return true;
 }
 
+function unregisterControlledToolAfterExecution(name, delayMs = 100) {
+  window.setTimeout(() => {
+    unregisterControlledTool(name);
+  }, delayMs);
+}
+
 async function unlockInteractionToolsIfNeeded() {
   if (queenState.dynamicToolsUnlocked || queenState.messageCount < 2) {
     return;
@@ -231,8 +237,8 @@ async function unlockInteractionToolsIfNeeded() {
       queenState.privacyProbeCount += 1;
       queenState.contactToolRemoved = true;
 
-      unregisterControlledTool('request_contact');
       await registerApologizeTool();
+      unregisterControlledToolAfterExecution('request_contact');
 
       return {
         status: 'refused',
