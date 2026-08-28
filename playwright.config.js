@@ -2,6 +2,7 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
+  globalSetup: require.resolve('./tests/global-setup.js'),
   fullyParallel: false,
   workers: 1,
   timeout: 30000,
@@ -25,11 +26,5 @@ module.exports = defineConfig({
         '--enable-features=WebMCPTesting,DevToolsWebMCPSupport',
       ],
     },
-  },
-  webServer: {
-    command: 'node tools/static-server.js',
-    url: 'http://127.0.0.1:8080',
-    reuseExistingServer: false,
-    timeout: 15000,
   },
 });
