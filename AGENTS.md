@@ -17,7 +17,15 @@ Treat the repository root as the only writable project scope.
 - External tools such as Chrome, Node.js, npm, and Playwright may manage their own temporary/cache files. Do not manually inspect, delete, or clean those external locations as part of this task.
 - If a required operation appears to need a write/delete outside this repository, stop and report the requirement instead of performing it.
 
-These filesystem-safety rules override convenience, cleanup, and troubleshooting instructions below.
+## Process safety — HARD RULE
+
+- Do not kill arbitrary `node`, `chrome`, `python`, `cmd`, `powershell`, or other processes by image name.
+- Do not use broad process cleanup commands such as `taskkill /IM node.exe`, `taskkill /IM chrome.exe`, `Stop-Process -Name node`, or equivalents.
+- The Playwright test server is owned by `node tools/static-server.js` and should be stopped by Playwright itself.
+- If port `8080` is already occupied by another process, do not terminate that process. Stop the test and report that the port is in use.
+- If a test leaves a process behind, identify the specific test-owned process first. Do not terminate unrelated processes.
+
+These filesystem/process-safety rules override convenience, cleanup, and troubleshooting instructions below.
 
 ## Test-only requests
 
