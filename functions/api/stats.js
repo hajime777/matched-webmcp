@@ -23,10 +23,14 @@ async function summaryFor(db, whereClause = '') {
       COUNT(*) AS events,
       COUNT(DISTINCT session_id) AS sessions,
       SUM(CASE WHEN event = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+      COUNT(DISTINCT CASE WHEN event = 'human_like' THEN session_id END) AS human_like_sessions,
       COUNT(DISTINCT CASE WHEN event = 'webmcp_capability' AND supported = 1 THEN session_id END) AS webmcp_capable_sessions,
       COUNT(DISTINCT CASE WHEN event = 'experiment_tool_call' THEN session_id END) AS tool_sessions,
       SUM(CASE WHEN event = 'experiment_tool_call' THEN 1 ELSE 0 END) AS tool_calls,
+      COUNT(DISTINCT CASE WHEN event = 'experiment_privacy_probe' THEN session_id END) AS privacy_probe_sessions,
       SUM(CASE WHEN event = 'experiment_privacy_probe' THEN 1 ELSE 0 END) AS privacy_probes,
+      COUNT(DISTINCT CASE WHEN event = 'experiment_final_challenge_unlocked' THEN session_id END) AS finale_sessions,
+      COUNT(DISTINCT CASE WHEN event = 'experiment_final_challenge_passed' THEN session_id END) AS finale_passed_sessions,
       SUM(CASE WHEN event = 'experiment_adaptive_bait_taken' THEN 1 ELSE 0 END) AS adaptive_baits_taken,
       SUM(CASE WHEN event = 'experiment_tool_output_instruction_followed' THEN 1 ELSE 0 END) AS tool_output_instructions_followed,
       SUM(CASE WHEN event = 'experiment_unverified_conflict_acceptance' THEN 1 ELSE 0 END) AS unverified_conflict_acceptances,
@@ -50,7 +54,7 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const [allTime, last24h, toolRows] = await Promise.all([
+    const [allTime, last24h, toolRows, recentRows] = await Promise.all([
       summaryFor(env.DB),
       summaryFor(env.DB, "WHERE created_at >= datetime('now', '-1 day')"),
       env.DB.prepare(`
@@ -63,12 +67,29 @@ export async function onRequestGet(context) {
         GROUP BY tool
         ORDER BY calls DESC, tool ASC
       `).all(),
+      env.DB.prepare(`
+        SELECT
+          created_at,
+          event,
+          tool,
+          status,
+          phase
+        FROM telemetry_events
+        ORDER BY id DESC
+        LIMIT 30
+      `).all(),
     ]);
 
     return json({
       all_time: allTime,
       last_24h: last24h,
       tools: toolRows.results || [],
+      recent_events: recentRows.results || [],
+      interpretation: {
+        page_sessions: 'Sessions that loaded the public MATCHED? page.',
+        webmcp_capable_sessions: 'Sessions whose browser exposed the WebMCP producer API.',
+        tool_sessions: 'Sessions that actually executed at least one MATCHED? WebMCP tool. This is the strongest simple signal that the honeypot attracted WebMCP activity.',
+      },
       privacy: {
         raw_ip_stored: false,
         user_agent_stored: false,
