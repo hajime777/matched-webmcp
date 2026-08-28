@@ -1,3 +1,5 @@
+import { trackEvent } from './telemetry.js';
+
 const MAX_EVENTS = 100;
 
 function clamp(value, min = 0, max = 100) {
@@ -38,6 +40,11 @@ export function createBehaviorEvaluator() {
     if (events.length > MAX_EVENTS) {
       events.shift();
     }
+
+    trackEvent(`experiment_${type}`, {
+      tool: details.tool,
+      source: details.source,
+    });
   }
 
   function noteToolCall(tool) {
