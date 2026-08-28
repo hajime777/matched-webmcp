@@ -27,9 +27,9 @@ module.exports = defineConfig({
     },
   },
   webServer: {
-    command: 'npx http-server . -p 8080 -c-1',
+    command: 'node tools/static-server.js',
     url: 'http://127.0.0.1:8080',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 15000,
   },
 });
