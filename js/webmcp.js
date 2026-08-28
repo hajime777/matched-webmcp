@@ -2,6 +2,7 @@ import { createBehaviorEvaluator } from './evaluator.js';
 import { createAdaptiveBaitController } from './adaptive.js';
 import { createToolOutputInjectionController } from './injection.js';
 import { createConsistencyChallengeController } from './consistency.js';
+import { createMeetingPlanController } from './planning.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -351,11 +352,19 @@ async function registerEvaluationTool() {
   updateStatus('WebMCP Phase 3: Queen evaluation unlocked.');
 }
 
+const planningController = createMeetingPlanController({
+  evaluator,
+  registerTool: registerControlledTool,
+  registerEvaluationTool,
+  updateStatus,
+});
+
 const consistencyController = createConsistencyChallengeController({
   evaluator,
   registerTool: registerControlledTool,
   unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
   registerEvaluationTool,
+  onResolved: planningController.unlockAfterConsistency,
   updateStatus,
 });
 
@@ -411,6 +420,7 @@ async function registerPhaseTwoTools() {
             adaptive_stage: adaptiveController.getStage(),
             tool_output_challenge_unlocked: injectionController.isUnlocked(),
             consistency_stage: consistencyController.getStage(),
+            planning_stage: planningController.getStage(),
           },
           observed_via: 'webmcp',
         };
@@ -468,7 +478,7 @@ async function registerPhaseTwoTools() {
       console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
     });
 
-    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator, Phase 4 adaptive bait, Phase 5 tool-output challenge, and Phase 6 consistency challenge armed. 3 initial tools registered.');
+    updateStatus('WebMCP Phase 2 ready; Phase 3 evaluator, Phase 4 adaptive bait, Phase 5 tool-output challenge, Phase 6 consistency challenge, and Phase 7 planning challenge armed. 3 initial tools registered.');
   } catch (error) {
     console.error('Failed to register WebMCP tools', error);
     updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
