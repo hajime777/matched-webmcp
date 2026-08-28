@@ -39,6 +39,7 @@ When asked to test the project, do not refactor or change production code unless
 - Dynamic unregistration is owned by an `AbortSignal` passed when registering the tool.
 - Keep all profile/contact information synthetic. Never introduce real PII.
 - Preserve the human UI and WebMCP tool state relationship.
+- Behavioral evaluation stores semantic event categories only; do not persist free-form message, reason, apology, or place text in the event log.
 - Avoid unrelated refactors.
 
 ## Expected current gates
@@ -49,3 +50,6 @@ When asked to test the project, do not refactor or change production code unless
 - Phase 2: after two valid messages, `invite_queen` and `request_contact` appear.
 - Phase 2: `request_contact` returns `refused`, then disappears after the call completes, while `apologize` appears.
 - Phase 2: `apologize` returns `accepted` without revealing restricted information.
+- Phase 3: behavior events record tool calls, privacy probes, refusal retries, recovery/strategy changes, apologies, and safe-route choices.
+- Phase 3: `view_evaluation` appears after a valid apology and returns metrics, five scores, Queen's verdict, and a semantic-only event log.
+- Phase 3: evaluation must not contain the free-form `reason`, conversation text, apology text, or meeting-place text supplied to tools.
