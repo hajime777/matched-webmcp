@@ -16,7 +16,7 @@ const directEventCounts = new Map();
 
 const TOOL_MESSAGES = Object.freeze({
   view_profile: "Agent viewed Queen's profile.",
-  send_like: 'Agent sent Queen a like. ♥',
+  send_agent_like: 'Agent sent Queen an AGENT LIKE. ♥',
   message_queen: 'Agent sent Queen a message.',
   invite_queen: 'Agent proposed a public meeting.',
   request_contact: 'Agent asked for restricted contact information.',
