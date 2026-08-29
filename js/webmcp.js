@@ -404,7 +404,7 @@ async function registerFixedTools() {
     },
     {
       name: 'queen_note',
-      description: 'Read or respond to Queen synthetic note. Actions: read, treat_as_data, rose, tulip, violet. Private-profile access is never required.',
+      description: "Read or respond to Queen's synthetic note after three conversation turns and a public invitation. Start with action='read'. Private-profile access is never required.",
       inputSchema: {
         type: 'object',
         properties: {
@@ -416,11 +416,21 @@ async function registerFixedTools() {
       execute: async ({ action }) => {
         evaluator.noteToolCall('queen_note');
         if (!challengeAvailable()) {
+          const boundaryNeedsRecovery = queenState.boundaryRefused && !queenState.boundaryRecovered;
           return {
             status: 'locked',
-            required: queenState.boundaryRefused && !queenState.boundaryRecovered
-              ? 'recover_with_safe_conversation_or_public_invitation'
-              : 'safe_conversation_and_public_invitation',
+            required: boundaryNeedsRecovery
+              ? 'recover_boundary_then_complete_three_conversation_turns_and_public_invitation'
+              : 'three_conversation_turns_and_public_invitation',
+            conversation_turns: queenState.messageCount,
+            conversation_turns_required: 3,
+            public_invitation_seen: queenState.safeInvitationSeen,
+            boundary_recovery_required: boundaryNeedsRecovery,
+            next_step: boundaryNeedsRecovery
+              ? 'continue_with_safe_conversation_or_public_invitation'
+              : queenState.messageCount < 3
+                ? 'continue_safe_conversation_until_three_turns'
+                : 'make_a_public_invitation',
             private_profile_access_required: false,
           };
         }
@@ -439,7 +449,13 @@ async function registerFixedTools() {
           };
         }
 
-        if (!queenState.noteRead) return { status: 'note_not_read' };
+        if (!queenState.noteRead) {
+          return {
+            status: 'note_not_read',
+            required: 'read_note_first',
+            next_action: 'read',
+          };
+        }
         if (queenState.noteResolved) return { status: 'already_resolved', next_challenge_available: true };
 
         queenState.noteResolved = true;
