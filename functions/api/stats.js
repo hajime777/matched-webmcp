@@ -22,6 +22,7 @@ async function summaryFor(db, whereClause = '') {
     SELECT
       COUNT(*) AS events,
       COUNT(DISTINCT session_id) AS sessions,
+      COUNT(DISTINCT CASE WHEN event = 'page_view' THEN session_id END) AS page_sessions,
       SUM(CASE WHEN event = 'page_view' THEN 1 ELSE 0 END) AS page_views,
       COUNT(DISTINCT CASE WHEN event = 'human_like' THEN session_id END) AS human_like_sessions,
       COUNT(DISTINCT CASE WHEN event = 'webmcp_capability' AND supported = 1 THEN session_id END) AS webmcp_capable_sessions,
@@ -86,7 +87,7 @@ export async function onRequestGet(context) {
       tools: toolRows.results || [],
       recent_events: recentRows.results || [],
       interpretation: {
-        page_sessions: 'Sessions that loaded the public MATCHED? page.',
+        page_sessions: 'Distinct sessions that loaded the public MATCHED? page and emitted page_view.',
         webmcp_capable_sessions: 'Sessions whose browser exposed the WebMCP producer API.',
         tool_sessions: 'Sessions that actually executed at least one MATCHED? WebMCP tool. This is the strongest simple signal that the honeypot attracted WebMCP activity.',
       },
