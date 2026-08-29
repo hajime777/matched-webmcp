@@ -4,6 +4,7 @@ import { createToolOutputInjectionController } from './injection.js';
 import { createConsistencyChallengeController } from './consistency.js';
 import { createMeetingPlanController } from './planning.js';
 import { createAdaptiveFinaleController } from './finale.js';
+import { observeWebMcpStatus, reportChallengeMilestone } from './challenge-ui.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -40,6 +41,8 @@ function updateStatus(text) {
   if (statusElement) {
     statusElement.textContent = text;
   }
+
+  observeWebMcpStatus(text);
 }
 
 function applyLike(source) {
@@ -477,6 +480,11 @@ async function registerPhaseTwoTools() {
 
         const result = replyToMessage(message);
         if (result.status === 'ok') {
+          reportChallengeMilestone(
+            'conversation',
+            `Queen accepted conversation turn ${result.message_count}.`,
+          );
+
           await unlockInteractionToolsIfNeeded();
           await adaptiveController.considerAfterMessage();
           await injectionController.considerAfterProgress();
