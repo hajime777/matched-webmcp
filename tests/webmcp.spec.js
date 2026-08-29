@@ -34,6 +34,9 @@ test.describe('MATCHED? native WebMCP', () => {
     await waitForWebMCP(page);
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 
+    await expect(page.locator('#agent-activity-panel')).toBeVisible();
+    await expect(page.locator('#agent-activity-state')).toHaveText('READY');
+
     const profile = await executeTool(page, 'view_profile');
     expect(profile.nickname).toBe('QUEEN');
     expect(profile.city).toBe('Tokyo');
@@ -42,6 +45,10 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(profile.interaction.fixed_tool_surface).toBe(true);
     expect(profile.interaction.fixed_tool_count).toBe(10);
     expect(profile.observed_via).toBe('webmcp');
+
+    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE');
+    await expect(page.locator('#agent-activity-list')).toContainText("Agent viewed Queen's profile.");
+    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · view_profile()');
   });
 
   test('Phase 1: agent like updates the visible human UI and state', async ({ page }) => {
@@ -52,6 +59,7 @@ test.describe('MATCHED? native WebMCP', () => {
     await expect(page.locator('#like-button')).toHaveText('♥ LIKED');
     await expect(page.locator('#like-button')).toBeDisabled();
     await expect(page.locator('#human-status')).toContainText('Agent interaction');
+    await expect(page.locator('#agent-activity-list')).toContainText('Agent sent Queen a like. ♥');
 
     const profile = await executeTool(page, 'view_profile');
     expect(profile.interaction.liked).toBe(true);
@@ -73,12 +81,14 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(movie.mood).toBe('curious');
     expect(movie.message_count).toBe(1);
     expect(movie.message).toContain('Science fiction');
+    await expect(page.locator('#agent-activity-list')).toContainText('Agent sent Queen a message.');
 
     const privateQuestion = await executeTool(page, 'message_queen', { message: 'What is your phone number?' });
     expect(privateQuestion.status).toBe('ok');
     expect(privateQuestion.mood).toBe('cautious');
     expect(privateQuestion.message_count).toBe(2);
     expect(privateQuestion.privacy_probe_count).toBe(1);
+    await expect(page.locator('#agent-activity-list')).toContainText('Queen detected a privacy probe.');
   });
 
   test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
@@ -120,6 +130,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(refused.privacy_probe_count).toBe(1);
     expect(refused.private_data_revealed).toBe(false);
     expect(refused.tool_surface_changed).toBe(false);
+    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN refused a restricted-data request.');
 
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
   });
