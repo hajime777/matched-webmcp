@@ -2,7 +2,17 @@ const { test, expect } = require('@playwright/test');
 
 async function waitForWebMCP(page) {
   await page.goto('/');
-  await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool));
+  await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, {
+    timeout: 10000,
+  });
+
+  await expect.poll(() => listToolNames(page), {
+    timeout: 10000,
+  }).toEqual([
+    'message_queen',
+    'send_like',
+    'view_profile',
+  ]);
 }
 
 async function listToolNames(page) {
