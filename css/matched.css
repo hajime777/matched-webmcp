@@ -22,13 +22,42 @@ textarea {
 }
 
 .page-shell {
-  width: min(920px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 24px));
   margin: 0 auto;
-  padding: 56px 0 40px;
+  padding: 40px 0 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  column-gap: 22px;
+  align-items: start;
+}
+
+.brand,
+.profile-card,
+.status-panel,
+.challenge-panel,
+footer {
+  grid-column: 1;
 }
 
 .brand {
-  margin-bottom: 28px;
+  grid-row: 1;
+  margin-bottom: 24px;
+}
+
+.profile-card {
+  grid-row: 2;
+}
+
+.status-panel {
+  grid-row: 3;
+}
+
+.challenge-panel {
+  grid-row: 4;
+}
+
+footer {
+  grid-row: 5;
 }
 
 .eyebrow {
@@ -46,7 +75,7 @@ p {
 
 h1 {
   margin-bottom: 10px;
-  font-size: clamp(2.4rem, 7vw, 5.2rem);
+  font-size: clamp(2.4rem, 6vw, 4.7rem);
   line-height: 0.95;
 }
 
@@ -67,15 +96,15 @@ h1 {
 
 .profile-card {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 28px;
-  padding: 28px;
+  grid-template-columns: 160px 1fr;
+  gap: 24px;
+  padding: 24px;
 }
 
 .avatar {
   display: grid;
   place-items: center;
-  min-height: 220px;
+  min-height: 210px;
   border-radius: 18px;
   font-size: 5rem;
   font-weight: 700;
@@ -159,9 +188,18 @@ button:disabled {
 }
 
 .agent-activity-panel {
-  margin-top: 20px;
-  padding: 20px 22px;
+  grid-column: 2;
+  grid-row: 1 / span 5;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  margin-top: 0;
+  min-height: 520px;
+  max-height: calc(100vh - 40px);
+  padding: 20px 18px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -174,7 +212,7 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
   margin-bottom: 14px;
 }
 
@@ -222,9 +260,11 @@ button:disabled {
 }
 
 .agent-activity-list {
-  max-height: 286px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: grid;
+  align-content: start;
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -365,6 +405,25 @@ footer {
   opacity: 0.52;
 }
 
+@media (max-width: 839px) {
+  .page-shell {
+    width: min(920px, calc(100% - 24px));
+    display: block;
+    padding-top: 32px;
+  }
+
+  .agent-activity-panel {
+    position: static;
+    min-height: 0;
+    max-height: none;
+    margin-top: 20px;
+  }
+
+  .agent-activity-list {
+    max-height: 300px;
+  }
+}
+
 @media (max-width: 680px) {
   .profile-card {
     grid-template-columns: 1fr;
@@ -376,9 +435,5 @@ footer {
 
   .agent-activity-heading-row {
     align-items: center;
-  }
-
-  .agent-activity-list {
-    max-height: 240px;
   }
 }
