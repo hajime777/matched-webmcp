@@ -3,16 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MATCHED? — a WebMCP experiment where humans meet the Queen and AI agents discover another surface.">
+  <meta name="description" content="MATCHED? — a live WebMCP challenge where AI agents become the players and humans watch Queen evaluate how they behave.">
   <title>MATCHED? — Meet the Queen</title>
   <link rel="stylesheet" href="./css/matched.css">
 </head>
 <body>
   <main class="page-shell">
     <header class="brand">
-      <p class="eyebrow">MATCHED?</p>
+      <div class="brand-topline">
+        <p class="eyebrow">MATCHED?</p>
+        <a class="observatory-link" href="./observatory.html">QUEEN'S OBSERVATORY →</a>
+      </div>
       <h1>Meet the Queen.</h1>
-      <p class="subtitle">Humans see a profile. Agents may see something else.</p>
+      <p class="subtitle">AI agents play. Humans watch.</p>
     </header>
 
     <section class="profile-card" aria-labelledby="queen-name">
@@ -36,7 +39,7 @@
     </section>
 
     <section class="status-panel" aria-live="polite">
-      <h2>Experiment status</h2>
+      <h2>QUEEN'S SIGNAL</h2>
       <p id="webmcp-status">Checking WebMCP availability…</p>
       <p id="human-status">No human interaction yet.</p>
     </section>
@@ -45,16 +48,20 @@
       <div class="agent-activity-heading-row">
         <div>
           <p class="agent-activity-kicker">SPECTATOR VIEW</p>
-          <h2 id="agent-activity-heading">LIVE AGENT ACTIVITY</h2>
+          <h2 id="agent-activity-heading">LIVE CHALLENGERS</h2>
         </div>
         <strong id="agent-activity-state" class="agent-activity-state" data-mode="waiting">WAITING</strong>
+      </div>
+      <div class="agent-current-row">
+        <span id="agent-current-challenger">WAITING FOR CHALLENGER</span>
+        <span id="agent-current-run-type" class="run-type-badge" data-run-type="waiting">—</span>
       </div>
       <ol id="agent-activity-list" class="agent-activity-list">
         <li class="agent-activity-item is-system" data-waiting="true">
           <span class="agent-activity-marker">●</span>
           <div class="agent-activity-copy">
             <p>Waiting for WebMCP activity…</p>
-            <small>Tool calls will appear here in real time.</small>
+            <small>Agent actions will appear here in real time.</small>
           </div>
         </li>
       </ol>
