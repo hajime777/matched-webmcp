@@ -4,6 +4,7 @@
   "private": true,
   "description": "MATCHED? WebMCP challenge experiment",
   "scripts": {
+    "build:pages": "node tools/build-pages.js",
     "test": "npm run test:webmcp",
     "test:webmcp": "node ./node_modules/@playwright/test/cli.js test",
     "test:webmcp:ui": "node ./node_modules/@playwright/test/cli.js test --ui",
