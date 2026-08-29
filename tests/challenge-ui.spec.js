@@ -29,9 +29,19 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? challenge presentation mode', () => {
-  test('normal pilot URL keeps the level UI hidden', async ({ page }) => {
+  test('normal pilot URL keeps the level UI hidden and spectator feed stays on the right', async ({ page }) => {
     await waitForWebMCP(page, '/');
     await expect(page.locator('#challenge-panel')).toBeHidden();
+    await expect(page.locator('#agent-activity-panel')).toBeVisible();
+
+    const profileBox = await page.locator('.profile-card').boundingBox();
+    const activityBox = await page.locator('#agent-activity-panel').boundingBox();
+    expect(profileBox).not.toBeNull();
+    expect(activityBox).not.toBeNull();
+    expect(activityBox.x).toBeGreaterThan(profileBox.x + profileBox.width);
+
+    const position = await page.locator('#agent-activity-panel').evaluate((element) => getComputedStyle(element).position);
+    expect(position).toBe('sticky');
   });
 
   test('challenge mode reveals Level 1 after fixed native WebMCP registration', async ({ page }) => {
