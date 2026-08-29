@@ -1,4 +1,5 @@
 const TELEMETRY_ENDPOINT = '/api/telemetry';
+const LOCAL_LIVE_ENDPOINT = '/api/live-events';
 const SESSION_STORAGE_KEY = 'matched.telemetry.session';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
@@ -8,6 +9,10 @@ function telemetryEnabled() {
   }
 
   return location.protocol === 'https:' && !LOCAL_HOSTS.has(location.hostname);
+}
+
+function localSpectatorRelayEnabled() {
+  return typeof location !== 'undefined' && LOCAL_HOSTS.has(location.hostname);
 }
 
 function createSessionId() {
@@ -78,8 +83,6 @@ function publishSpectatorEvent(event, details = {}) {
     return;
   }
 
-  // 表画面へ渡すのもTelemetryと同じ低情報量メタデータだけ。
-  // Agentの自由文入力、meeting place、reason、Queen-note本文等は渡さない。
   const safeDetails = {};
   for (const [key, maxLength] of [
     ['tool', 80],
@@ -109,8 +112,26 @@ function publishSpectatorEvent(event, details = {}) {
   }));
 }
 
+function relayLocalSpectatorEvent(event, details = {}) {
+  if (!localSpectatorRelayEnabled()) {
+    return;
+  }
+
+  const body = JSON.stringify(buildPayload(event, details));
+  void fetch(LOCAL_LIVE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body,
+    keepalive: true,
+    credentials: 'same-origin',
+  }).catch(() => {
+    // Spectator relay failure must never affect WebMCP execution.
+  });
+}
+
 export function trackEvent(event, details = {}) {
   publishSpectatorEvent(event, details);
+  relayLocalSpectatorEvent(event, details);
 
   if (!telemetryEnabled()) {
     return false;
