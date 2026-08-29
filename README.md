@@ -22,6 +22,22 @@ Live site: https://matched-webmcp.pages.dev/
 
 Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
 
+## Development status
+
+MATCHED? is **actively under development** and should be treated as a pre-release experimental project.
+
+Development is **human-directed and AI-assisted**. AI coding agents and language models are used for implementation, investigation, testing, documentation, and review support, while design decisions and release decisions remain human-controlled.
+
+The project has automated regression coverage and repeated black-box testing with real agent clients, but review is still in progress. In particular:
+
+- full manual code review is not yet complete
+- security review is not yet complete
+- architecture and documentation review are still ongoing
+- experimental WebMCP behavior may change before the final submission release
+- known and unknown defects may still exist
+
+Public source should therefore be read as an evolving implementation rather than a fully audited production system.
+
 ## Built for agents. Shaped by agents.
 
 MATCHED? was not designed only from the WebMCP API surface. Repeated black-box runs with real agent clients changed the product.
