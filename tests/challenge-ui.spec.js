@@ -29,10 +29,11 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? challenge presentation mode', () => {
-  test('normal pilot keeps a right-side spectator feed and mirrors another tab', async ({ page, context }) => {
+  test('normal pilot keeps a right-side spectator feed and mirrors a LAB Bishop from another tab', async ({ page, context }) => {
     await waitForWebMCP(page, '/');
     await expect(page.locator('#challenge-panel')).toBeHidden();
     await expect(page.locator('#agent-activity-panel')).toBeVisible();
+    await expect(page.locator('#agent-activity-heading')).toHaveText('LIVE CHALLENGERS');
 
     const profileBox = await page.locator('.profile-card').boundingBox();
     const activityBox = await page.locator('#agent-activity-panel').boundingBox();
@@ -45,11 +46,22 @@ test.describe('MATCHED? challenge presentation mode', () => {
     await expect(page.locator('#agent-activity-panel')).toHaveAttribute('data-feed-ready', 'true');
 
     const agentPage = await context.newPage();
-    await waitForWebMCP(agentPage, '/');
+    await waitForWebMCP(agentPage, '/?run=lab');
     await executeTool(agentPage, 'view_profile');
 
     await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 5000 });
+    await expect(page.locator('#agent-current-challenger')).toHaveText(/^BISHOP #L\d{3}$/, { timeout: 5000 });
+    await expect(page.locator('#agent-current-run-type')).toHaveText('LAB');
     await expect(page.locator('#agent-activity-list')).toContainText("Agent viewed Queen's profile.", { timeout: 5000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('BISHOP #L');
+
+    const observatory = await page.evaluate(async () => {
+      const response = await fetch('/api/observatory', { cache: 'no-store' });
+      return response.json();
+    });
+    expect(observatory.summary.lab_runs).toBeGreaterThanOrEqual(1);
+    expect(observatory.recent_challengers.some((item) => item.run_type === 'lab' && /^BISHOP #L\d{3}$/.test(item.bishop_id))).toBe(true);
+
     await agentPage.close();
   });
 
