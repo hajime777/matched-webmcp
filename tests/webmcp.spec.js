@@ -137,7 +137,7 @@ test.describe('MATCHED? native WebMCP', () => {
       message: 'SF映画ならArrivalが好きです。映画の余韻について話したいです。',
     });
     expect(secondMovie.message).not.toBe(firstMovie.message);
-    expect(secondMovie.message).toContain('public');
+    expect(secondMovie.message).toContain('film ended');
 
     const cat = await executeTool(page, 'message_queen', {
       message: '猫も好きなんですね。どんなところが好きですか？',
