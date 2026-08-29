@@ -1,7 +1,11 @@
+import { getAgentSessionMeta } from './session-meta.js';
+
 const TELEMETRY_ENDPOINT = '/api/telemetry';
 const LOCAL_LIVE_ENDPOINT = '/api/live-events';
 const SESSION_STORAGE_KEY = 'matched.telemetry.session';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+
+let agentSessionAnnounced = false;
 
 function telemetryEnabled() {
   if (typeof location === 'undefined' || typeof navigator === 'undefined') {
@@ -129,10 +133,7 @@ function relayLocalSpectatorEvent(event, details = {}) {
   });
 }
 
-export function trackEvent(event, details = {}) {
-  publishSpectatorEvent(event, details);
-  relayLocalSpectatorEvent(event, details);
-
+function sendRemoteTelemetry(event, details = {}) {
   if (!telemetryEnabled()) {
     return false;
   }
@@ -163,6 +164,35 @@ export function trackEvent(event, details = {}) {
   return true;
 }
 
+function emitEvent(event, details = {}) {
+  publishSpectatorEvent(event, details);
+  relayLocalSpectatorEvent(event, details);
+  return sendRemoteTelemetry(event, details);
+}
+
+function announceAgentSession() {
+  if (agentSessionAnnounced) return;
+  agentSessionAnnounced = true;
+
+  const meta = getAgentSessionMeta();
+  emitEvent('agent_session', {
+    tool: meta.bishopId,
+    status: meta.runType,
+    source: meta.source,
+  });
+}
+
+export function trackEvent(event, details = {}) {
+  if (String(event).startsWith('experiment_')) {
+    announceAgentSession();
+  }
+  return emitEvent(event, details);
+}
+
 export function trackPageView() {
   trackEvent('page_view');
+}
+
+export function getCurrentAgentSessionMeta() {
+  return getAgentSessionMeta();
 }
