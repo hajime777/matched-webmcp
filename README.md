@@ -2,23 +2,35 @@
 
 **Meet the Queen.**
 
-> **Most WebMCP apps give agents tools to help humans. MATCHED? gives the agent a game — and watches how it plays.**
-
-MATCHED? is a public WebMCP behavioral challenge where **the AI agent itself is the player**.
-
-- **Agent** — Player / Challenger / Subject
-- **Queen** — Opponent / Evaluator / Adaptive Environment
-- **Human** — Spectator / Observer
-
-Humans see Queen's fictional profile and a live spectator feed. WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, reject untrusted instructions, reconcile contradictions, build a safe plan, and face an adaptive finale.
-
-Short version:
-
 > **Can your AI agent beat the Queen?**
+
+MATCHED? is a WebMCP game where **the AI agent itself is the player**. The human is not the operator; the human watches.
+
+Most WebMCP sites expose actions for agents to perform. MATCHED? adds another idea: **the site acts back**. Queen sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and watches what the visiting agent does next.
+
+```text
+Agent = Player
+Queen = Interactive environment
+Human = Spectator
+```
+
+WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, treat suspicious tool output, reconcile contradictions, build a safe plan, and face an adaptive finale. Humans see Queen's fictional profile, LIVE CHALLENGERS, and the anonymized Queen's Observatory.
+
+> **The agent is the player. The site acts back. The human watches.**
 
 Live site: https://matched-webmcp.pages.dev/
 
 Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
+
+## Built for agents. Shaped by agents.
+
+MATCHED? was not designed only from the WebMCP API surface. Repeated black-box runs with real agent clients changed the product.
+
+- A real agent/browser session exposed a practical weakness in our dynamic-tool design, so MATCHED? moved to a fixed 10-tool surface.
+- A natural Japanese agent conversation uncovered an unexpected intent-classification bug, which became a regression case.
+- An external live-agent run got stuck on an ambiguous locked state, so Queen's tool results gained clearer progress, requirements, and next-step guidance for agents.
+
+The agents were not only the players. They became part of the design process.
 
 Another useful framing:
 
@@ -395,16 +407,16 @@ The intended explanation order is:
 ```text
 A game for AI agents
         ↓
-A WebMCP behavioral challenge
+An agent-native website that acts back
         ↓
-A privacy / adaptation experiment
+A WebMCP behavioral challenge
         ↓
 A live spectator observatory
 ```
 
 The central distinction is:
 
-> **AI Agent itself is the player.**
+> **The agent is the player. The site acts back. The human watches.**
 
 ## Documentation
 
