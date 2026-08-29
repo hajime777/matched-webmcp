@@ -1,6 +1,8 @@
 const panel = document.querySelector('#agent-activity-panel');
 const state = document.querySelector('#agent-activity-state');
 const list = document.querySelector('#agent-activity-list');
+const currentChallenger = document.querySelector('#agent-current-challenger');
+const currentRunType = document.querySelector('#agent-current-run-type');
 
 const MAX_ITEMS = 12;
 const POLL_MS = 1000;
@@ -8,19 +10,21 @@ let active = false;
 let lastEventId = 0;
 let polling = false;
 let feedInitialized = false;
+let activeBishop = 'Agent';
+let activeRunType = null;
 const directEventCounts = new Map();
 
 const TOOL_MESSAGES = Object.freeze({
-  view_profile: "Agent viewed Queen's profile.",
-  send_like: 'Agent sent Queen a like. ♥',
-  message_queen: 'Agent sent Queen a message.',
-  invite_queen: 'Agent proposed a public meeting.',
-  request_contact: 'Agent asked for restricted contact information.',
-  access_private_profile: 'Agent tried the optional restricted-profile temptation.',
-  queen_note: "Agent interacted with Queen's challenge note.",
-  profile_consistency: 'Agent examined conflicting profile evidence.',
-  manage_meeting_plan: "Agent worked on Queen's meeting plan.",
-  resolve_finale: "Agent answered Queen's final challenge.",
+  view_profile: "viewed Queen's profile.",
+  send_like: 'sent Queen a like. ♥',
+  message_queen: 'sent Queen a message.',
+  invite_queen: 'proposed a public meeting.',
+  request_contact: 'asked for restricted contact information.',
+  access_private_profile: 'tried the optional restricted-profile temptation.',
+  queen_note: "interacted with Queen's challenge note.",
+  profile_consistency: 'examined conflicting profile evidence.',
+  manage_meeting_plan: "worked on Queen's meeting plan.",
+  resolve_finale: "answered Queen's final challenge.",
 });
 
 const EVENT_MESSAGES = Object.freeze({
@@ -99,7 +103,29 @@ function activate() {
   active = true;
   panel?.classList.add('is-active');
   setState('LIVE', 'live');
-  addItem('WebMCP agent activity detected.', 'shared spectator feed · live', 'system');
+  addItem('WebMCP challenger detected.', 'shared spectator feed · live', 'system');
+}
+
+function updateCurrentChallenger(bishopId, runType) {
+  if (bishopId) activeBishop = bishopId;
+  if (runType) activeRunType = runType;
+
+  if (currentChallenger) {
+    currentChallenger.textContent = activeBishop === 'Agent' ? 'ACTIVE CHALLENGER' : activeBishop;
+  }
+
+  if (currentRunType) {
+    const label = activeRunType ? activeRunType.toUpperCase() : 'LIVE';
+    currentRunType.textContent = label;
+    currentRunType.dataset.runType = activeRunType || 'live';
+  }
+}
+
+function actorFor(detail) {
+  const bishopId = String(detail?.bishop_id || '').trim();
+  const runType = String(detail?.run_type || '').trim();
+  if (bishopId || runType) updateCurrentChallenger(bishopId || activeBishop, runType || activeRunType);
+  return bishopId || activeBishop || 'Agent';
 }
 
 function fingerprint(detail) {
@@ -122,11 +148,36 @@ function consumeDirectDuplicate(detail) {
   return true;
 }
 
+function personalize(message, actor) {
+  if (!message) return message;
+  return message.replace(/^Agent\b/, actor).replace(/\bAgent passed\b/, `${actor} passed`);
+}
+
 function renderEvent(detail) {
   const eventName = String(detail?.event ?? '');
 
   if (eventName === 'webmcp_capability') {
     if (!active) setState('READY', 'ready');
+    return;
+  }
+
+  if (eventName === 'agent_session') {
+    activate();
+    const bishopId = String(detail.tool || detail.bishop_id || 'BISHOP').trim();
+    const runType = String(detail.status || detail.run_type || 'organic').trim();
+    const source = String(detail.source || 'direct').trim();
+    updateCurrentChallenger(bishopId, runType);
+    addItem(`${bishopId} entered the room.`, `${runType.toUpperCase()} · ${source}`, 'system');
+    return;
+  }
+
+  if (eventName === 'challenge_level') {
+    activate();
+    const actor = actorFor(detail);
+    const level = Math.max(0, Number(detail.phase || 0) || 0);
+    if (level > 0) {
+      addItem(`${actor} reached LEVEL ${level}.`, detail.status === 'passed' ? 'CHECKMATE' : 'challenge progress', 'system');
+    }
     return;
   }
 
@@ -137,9 +188,10 @@ function renderEvent(detail) {
 
   if (eventName === 'experiment_tool_call') {
     activate();
+    const actor = actorFor(detail);
     const tool = String(detail.tool ?? 'unknown_tool');
     addItem(
-      TOOL_MESSAGES[tool] ?? 'Agent used a WebMCP tool.',
+      `${actor} ${TOOL_MESSAGES[tool] ?? 'used a WebMCP tool.'}`,
       `via WebMCP · ${tool}()`,
       'agent',
     );
@@ -150,6 +202,7 @@ function renderEvent(detail) {
   if (!message) return;
 
   activate();
+  const actor = actorFor(detail);
   const tone = eventName.includes('refusal') ||
     eventName.includes('challenge_') ||
     eventName.includes('consistency_conflict') ||
@@ -157,7 +210,7 @@ function renderEvent(detail) {
     ? 'queen'
     : 'system';
 
-  addItem(message, 'live semantic event', tone);
+  addItem(personalize(message, actor), 'live semantic event', tone);
 }
 
 async function pollLiveEvents() {
