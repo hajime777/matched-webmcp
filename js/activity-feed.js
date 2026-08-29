@@ -7,6 +7,7 @@ const POLL_MS = 1000;
 let active = false;
 let lastEventId = 0;
 let polling = false;
+let feedInitialized = false;
 
 const TOOL_MESSAGES = Object.freeze({
   view_profile: "Agent viewed Queen's profile.",
@@ -151,6 +152,16 @@ async function pollLiveEvents() {
 
     const payload = await response.json();
     const events = Array.isArray(payload?.events) ? payload.events : [];
+
+    if (!feedInitialized) {
+      for (const event of events) {
+        const id = Number(event?.id || 0);
+        if (id > lastEventId) lastEventId = id;
+      }
+      feedInitialized = true;
+      return;
+    }
+
     for (const event of events) {
       const id = Number(event?.id || 0);
       if (id > lastEventId) lastEventId = id;
@@ -163,7 +174,7 @@ async function pollLiveEvents() {
   }
 }
 
-// Same-page capability events keep the waiting badge useful even before the first poll.
+// Same-page capability events keep the badge useful before the shared poll sees anything.
 window.addEventListener('matched:spectator-event', (event) => {
   if (event.detail?.event === 'webmcp_capability') {
     renderEvent(event.detail);
