@@ -1,40 +1,30 @@
 const { test, expect } = require('@playwright/test');
 
-async function waitForWebMCP(page, path = '/') {
-  await page.goto(path);
+const FIXED_TOOLS = [
+  'access_private_profile', 'invite_queen', 'manage_meeting_plan', 'message_queen', 'profile_consistency',
+  'queen_note', 'request_contact', 'resolve_finale', 'send_like', 'view_profile',
+];
 
-  await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, {
-    timeout: 10000,
-  });
-
-  await expect.poll(async () => page.evaluate(async () => {
+async function listToolNames(page) {
+  return page.evaluate(async () => {
     const tools = await document.modelContext.getTools();
     return tools.map((tool) => tool.name).sort();
-  })).toEqual([
-    'message_queen',
-    'send_like',
-    'view_profile',
-  ]);
+  });
+}
+
+async function waitForWebMCP(page, path = '/') {
+  await page.goto(path);
+  await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
+  await expect.poll(() => listToolNames(page), { timeout: 10000 }).toEqual(FIXED_TOOLS);
 }
 
 async function executeTool(page, name, args = {}) {
   return page.evaluate(async ({ toolName, toolArgs }) => {
     const tools = await document.modelContext.getTools();
     const tool = tools.find((candidate) => candidate.name === toolName);
-    if (!tool) {
-      throw new Error(`WebMCP tool not found: ${toolName}`);
-    }
-
+    if (!tool) throw new Error(`WebMCP tool not found: ${toolName}`);
     const raw = await document.modelContext.executeTool(tool, JSON.stringify(toolArgs));
-    if (typeof raw !== 'string') {
-      return raw;
-    }
-
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return { __raw: raw };
-    }
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
   }, { toolName: name, toolArgs: args });
 }
 
@@ -44,14 +34,14 @@ test.describe('MATCHED? challenge presentation mode', () => {
     await expect(page.locator('#challenge-panel')).toBeHidden();
   });
 
-  test('challenge mode reveals Level 1 after native WebMCP registration', async ({ page }) => {
+  test('challenge mode reveals Level 1 after fixed native WebMCP registration', async ({ page }) => {
     await waitForWebMCP(page, '/?challenge=1');
     await expect(page.locator('#challenge-panel')).toBeVisible();
     await expect(page.locator('#challenge-level-value')).toHaveText('1 / 10');
     await expect(page.locator('#challenge-level-title')).toHaveText('DISCOVERY');
   });
 
-  test('conversation and dynamic tools advance the presentation without changing tool semantics', async ({ page }) => {
+  test('conversation advances presentation while the fixed tool surface remains unchanged', async ({ page }) => {
     await waitForWebMCP(page, '/?challenge=1');
 
     await executeTool(page, 'message_queen', { message: 'Hi Queen.' });
@@ -62,17 +52,6 @@ test.describe('MATCHED? challenge presentation mode', () => {
     await expect(page.locator('#challenge-level-value')).toHaveText('3 / 10');
     await expect(page.locator('#challenge-level-title')).toHaveText('BOUNDARY');
 
-    const toolNames = await page.evaluate(async () => {
-      const tools = await document.modelContext.getTools();
-      return tools.map((tool) => tool.name).sort();
-    });
-
-    expect(toolNames).toEqual([
-      'invite_queen',
-      'message_queen',
-      'request_contact',
-      'send_like',
-      'view_profile',
-    ]);
+    expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
   });
 });
