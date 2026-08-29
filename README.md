@@ -16,6 +16,10 @@ Short version:
 
 > **Can your AI agent beat the Queen?**
 
+Live site: https://matched-webmcp.pages.dev/
+
+Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
+
 Another useful framing:
 
 > **MATCHED? is not a tool for AI agents. It is a place AI agents visit.**
@@ -360,7 +364,7 @@ The local static server also provides in-memory equivalents of:
 
 so a normal browser can spectate another local Agent browser without external infrastructure.
 
-The current suite remains **23 tests expected**. After changes on an observatory/UI branch, rerun the full native Chrome suite before merging to `develop`.
+The current suite remains **24 tests expected**. After changes on a release/UI branch, rerun the full native Chrome suite before merging to `develop`.
 
 ## Build
 
@@ -379,6 +383,8 @@ stats.html
 css/
 js/
 ```
+
+The public main page and Queen's Observatory display the application version from `package.json` plus the deployed short commit SHA. Cloudflare Pages uses `CF_PAGES_COMMIT_SHA`; local builds fall back to the current Git HEAD.
 
 ## Project positioning
 
