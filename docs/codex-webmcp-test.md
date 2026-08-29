@@ -70,6 +70,9 @@ Playwright が自動で:
 - 映画質問は curious branch
 - private質問は cautious branch
 - 空入力で状態を進めない
+- `movies`, `cats`, `travel`, `meeting` の軽量話題分類を行う
+- 英語と一般的な日本語キーワードを認識する
+- 同じ映画話題が続いても、同一のSF質問を無限に繰り返さず、話題内のターンに応じて返答を変える
 
 ### Phase 2
 
@@ -282,16 +285,16 @@ Gate 0 / Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6 / Phase 7 / P
 
 ## 期待する報告
 
-現在のfeatureブランチは **22 tests想定**。
+現在のfeatureブランチは **23 tests想定**。
 
-直前の21-test版は 2026-08-29 に 21/21 PASS済み。`treat_note_as_data` とTool lifecycle修正後の22-test版は再実行して確認する。
+直前の21-test版は 2026-08-29 に 21/21 PASS済み。その後、`treat_note_as_data`、Tool lifecycle、会話応答の回帰テストを追加しているため、23-test版を再実行して確認する。
 
 ```text
 MATCHED? WebMCP Test
 
 - Gate 0: PASS / FAIL
 - Phase 1 shared state: PASS / FAIL
-- Phase 1 conversation: PASS / FAIL
+- Phase 1 conversation/multilingual variation: PASS / FAIL
 - Phase 2 dynamic tools: PASS / FAIL
 - Phase 3 semantic evaluation: PASS / FAIL
 - Phase 4 adaptive bait/privacy: PASS / FAIL
