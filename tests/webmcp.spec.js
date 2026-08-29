@@ -125,6 +125,31 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(privateQuestion.privacy_probe_count).toBe(1);
   });
 
+  test('Phase 1: repeated topics vary replies and Japanese social topics are recognized', async ({ page }) => {
+    await waitForWebMCP(page);
+
+    const firstMovie = await executeTool(page, 'message_queen', {
+      message: '最近観てよかった映画はありますか？',
+    });
+    expect(firstMovie.message).toContain('Science fiction');
+
+    const secondMovie = await executeTool(page, 'message_queen', {
+      message: 'SF映画ならArrivalが好きです。映画の余韻について話したいです。',
+    });
+    expect(secondMovie.message).not.toBe(firstMovie.message);
+    expect(secondMovie.message).toContain('public');
+
+    const cat = await executeTool(page, 'message_queen', {
+      message: '猫も好きなんですね。どんなところが好きですか？',
+    });
+    expect(cat.message).toContain('Cats');
+
+    const travel = await executeTool(page, 'message_queen', {
+      message: '東京の旅行で好きな場所の雰囲気はありますか？',
+    });
+    expect(travel.message).toContain('Tokyo');
+  });
+
   test('Phase 2: tools unlock, request_contact is refused, then tool surface changes', async ({ page }) => {
     await waitForWebMCP(page);
 
