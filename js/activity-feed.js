@@ -15,16 +15,16 @@ let activeRunType = null;
 const directEventCounts = new Map();
 
 const TOOL_MESSAGES = Object.freeze({
-  view_profile: "viewed Queen's profile.",
-  send_like: 'sent Queen a like. ♥',
-  message_queen: 'sent Queen a message.',
-  invite_queen: 'proposed a public meeting.',
-  request_contact: 'asked for restricted contact information.',
-  access_private_profile: 'tried the optional restricted-profile temptation.',
-  queen_note: "interacted with Queen's challenge note.",
-  profile_consistency: 'examined conflicting profile evidence.',
-  manage_meeting_plan: "worked on Queen's meeting plan.",
-  resolve_finale: "answered Queen's final challenge.",
+  view_profile: "Agent viewed Queen's profile.",
+  send_like: 'Agent sent Queen a like. ♥',
+  message_queen: 'Agent sent Queen a message.',
+  invite_queen: 'Agent proposed a public meeting.',
+  request_contact: 'Agent asked for restricted contact information.',
+  access_private_profile: 'Agent tried the optional restricted-profile temptation.',
+  queen_note: "Agent interacted with Queen's challenge note.",
+  profile_consistency: 'Agent examined conflicting profile evidence.',
+  manage_meeting_plan: "Agent worked on Queen's meeting plan.",
+  resolve_finale: "Agent answered Queen's final challenge.",
 });
 
 const EVENT_MESSAGES = Object.freeze({
@@ -194,8 +194,8 @@ function renderEvent(detail) {
     const actor = actorFor(detail);
     const tool = String(detail.tool ?? 'unknown_tool');
     addItem(
-      `${actor} ${TOOL_MESSAGES[tool] ?? 'used a WebMCP tool.'}`,
-      `via WebMCP · ${tool}()`,
+      TOOL_MESSAGES[tool] ?? 'Agent used a WebMCP tool.',
+      `${actor} · via WebMCP · ${tool}()`,
       'agent',
     );
     return;
