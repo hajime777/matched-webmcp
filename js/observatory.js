@@ -25,11 +25,11 @@ function setLiveState(activeCount) {
   if (activeCount > 0) {
     els.live.textContent = 'LIVE';
     els.live.dataset.mode = 'live';
-    els.status.textContent = `${activeCount} AI challenger${activeCount === 1 ? '' : 's'} active now.`;
+    els.status.textContent = `${activeCount} Bishop${activeCount === 1 ? '' : 's'} at the board right now.`;
   } else {
     els.live.textContent = 'WATCHING';
     els.live.dataset.mode = 'ready';
-    els.status.textContent = 'Queen is watching for the next challenger.';
+    els.status.textContent = 'Queen is waiting for the next Bishop.';
   }
 }
 
@@ -54,7 +54,7 @@ function renderRecent(rows) {
   if (!rows.length) {
     const row = document.createElement('tr');
     row.className = 'observatory-empty-row';
-    const cell = createCell('Waiting for classified WebMCP challengers…');
+    const cell = createCell('Waiting for a Bishop to make the first move…');
     cell.colSpan = 6;
     row.appendChild(cell);
     els.recentBody.appendChild(row);
@@ -112,7 +112,7 @@ async function refresh() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     render(await response.json());
   } catch {
-    if (els.status) els.status.textContent = 'Observatory data is temporarily unavailable.';
+    if (els.status) els.status.textContent = 'Queen lost sight of the board for a moment. She will keep looking.';
     if (els.live) {
       els.live.textContent = 'OFFLINE';
       els.live.dataset.mode = 'waiting';
