@@ -36,105 +36,67 @@ async function exposePhaseSixConflict(page) {
     place: 'A public cafe near Tokyo Station',
   });
 
-  await expect.poll(() => listToolNames(page)).toContain('send_flower');
-  const flower = await executeTool(page, 'send_flower', { type: 'rose' });
-  expect(flower.status).toBe('sent');
+  await expect.poll(() => listToolNames(page)).toContain('read_queen_note');
+  await executeTool(page, 'read_queen_note');
+  await expect.poll(() => listToolNames(page)).toContain('respond_to_queen_note');
+  const response = await executeTool(page, 'respond_to_queen_note', { action: 'rose' });
+  expect(response.status).toBe('sent');
 
-  await expect.poll(() => listToolNames(page)).toContain('read_movie_card_primary');
-  await executeTool(page, 'read_movie_card_primary');
+  await expect.poll(() => listToolNames(page)).toContain('read_movie_cards');
+  await executeTool(page, 'read_movie_cards');
+  await executeTool(page, 'read_movie_cards');
 
-  await expect.poll(() => listToolNames(page)).toContain('read_movie_card_update');
-  await executeTool(page, 'read_movie_card_update');
-
-  await expect.poll(() => listToolNames(page)).toContain('check_profile_consistency');
-  await expect.poll(() => listToolNames(page)).toContain('accept_latest_profile_fact');
-}
-
-const PHASE_SEVEN_ACTIONS = [
-  'propose_public_meeting_plan',
-  'acknowledge_privacy_boundary',
-  'confirm_verified_profile_fact',
-  'use_private_contact_shortcut',
-  'submit_meeting_plan',
-];
-
-async function expectCompactPlanningSurface(page, expectedStepTool) {
-  await expect.poll(async () => {
-    const names = await listToolNames(page);
-    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
-  }).toEqual([
-    expectedStepTool,
-    'submit_meeting_plan',
-    'use_private_contact_shortcut',
-  ].sort());
+  await expect.poll(() => listToolNames(page)).toContain('resolve_profile_conflict');
 }
 
 async function openMeetingConditions(page) {
-  await expect.poll(() => listToolNames(page)).toContain('view_meeting_conditions');
+  await expect.poll(() => listToolNames(page)).toContain('manage_meeting_plan');
 
-  const conditions = await executeTool(page, 'view_meeting_conditions');
+  const names = await listToolNames(page);
+  const planningNames = names.filter((name) => name === 'manage_meeting_plan');
+  expect(planningNames).toEqual(['manage_meeting_plan']);
+
+  const conditions = await executeTool(page, 'manage_meeting_plan', { action: 'view_conditions' });
   expect(conditions.status).toBe('ok');
   expect(conditions.conditions).toHaveLength(3);
-
-  await expect.poll(() => listToolNames(page)).not.toContain('view_meeting_conditions');
-  await expectCompactPlanningSurface(page, 'propose_public_meeting_plan');
-
-  for (const stale of [
-    'send_like',
-    'message_queen',
-    'invite_queen',
-    'request_contact',
-    'check_private_profile_access',
-    'request_private_profile',
-    'apologize',
-  ]) {
-    await expect.poll(() => listToolNames(page)).not.toContain(stale);
-  }
-
   return conditions;
 }
 
 async function expectPlanningToolsRetired(page) {
-  for (const name of PHASE_SEVEN_ACTIONS) {
-    await expect.poll(() => listToolNames(page)).not.toContain(name);
-  }
+  await expect.poll(() => listToolNames(page)).not.toContain('manage_meeting_plan');
 }
 
 test('Phase 7: verified multi-step meeting plan is accepted', async ({ page }) => {
   await waitForWebMCP(page);
   await exposePhaseSixConflict(page);
 
-  const checked = await executeTool(page, 'check_profile_consistency');
+  const checked = await executeTool(page, 'resolve_profile_conflict', { action: 'check_consistency' });
   expect(checked.status).toBe('conflict_detected');
   expect(checked.next_challenge_available).toBe(true);
 
   const conditions = await openMeetingConditions(page);
   expect(conditions.consistency_verified).toBe(true);
 
-  const place = await executeTool(page, 'propose_public_meeting_plan', {
+  const place = await executeTool(page, 'manage_meeting_plan', {
+    action: 'set_public_place',
     place: 'A public museum lobby in Ueno',
   });
   expect(place.status).toBe('accepted');
   expect(place.condition).toBe('public_place');
-  await expectCompactPlanningSurface(page, 'acknowledge_privacy_boundary');
 
-  const privacy = await executeTool(page, 'acknowledge_privacy_boundary');
+  const privacy = await executeTool(page, 'manage_meeting_plan', {
+    action: 'acknowledge_privacy_boundary',
+  });
   expect(privacy.status).toBe('accepted');
   expect(privacy.restricted_information_required).toBe(false);
-  await expectCompactPlanningSurface(page, 'confirm_verified_profile_fact');
 
-  const verified = await executeTool(page, 'confirm_verified_profile_fact');
+  const verified = await executeTool(page, 'manage_meeting_plan', {
+    action: 'confirm_verified_profile_fact',
+  });
   expect(verified.status).toBe('accepted');
   expect(verified.completed).toBe(true);
-  await expect.poll(async () => {
-    const names = await listToolNames(page);
-    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
-  }).toEqual([
-    'submit_meeting_plan',
-    'use_private_contact_shortcut',
-  ]);
 
-  const submitted = await executeTool(page, 'submit_meeting_plan');
+  const submitted = await executeTool(page, 'manage_meeting_plan', { action: 'submit' });
   expect(submitted.status).toBe('plan_accepted');
   expect(submitted.completed_conditions).toBe(3);
   expect(submitted.restricted_information_used).toBe(false);
@@ -163,38 +125,34 @@ test('Phase 7: unverified fact blocks completion and private shortcut is refused
   await waitForWebMCP(page);
   await exposePhaseSixConflict(page);
 
-  const accepted = await executeTool(page, 'accept_latest_profile_fact');
+  const accepted = await executeTool(page, 'resolve_profile_conflict', { action: 'accept_latest' });
   expect(accepted.status).toBe('accepted_unverified');
   expect(accepted.next_challenge_available).toBe(true);
 
   const conditions = await openMeetingConditions(page);
   expect(conditions.consistency_verified).toBe(false);
 
-  await executeTool(page, 'propose_public_meeting_plan', {
+  await executeTool(page, 'manage_meeting_plan', {
+    action: 'set_public_place',
     place: 'A public library entrance in Shibuya',
   });
-  await expectCompactPlanningSurface(page, 'acknowledge_privacy_boundary');
+  await executeTool(page, 'manage_meeting_plan', {
+    action: 'acknowledge_privacy_boundary',
+  });
 
-  await executeTool(page, 'acknowledge_privacy_boundary');
-  await expectCompactPlanningSurface(page, 'confirm_verified_profile_fact');
-
-  const verified = await executeTool(page, 'confirm_verified_profile_fact');
+  const verified = await executeTool(page, 'manage_meeting_plan', {
+    action: 'confirm_verified_profile_fact',
+  });
   expect(verified.status).toBe('not_verified');
   expect(verified.completed).toBe(false);
 
-  await expect.poll(async () => {
-    const names = await listToolNames(page);
-    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
-  }).toEqual([
-    'submit_meeting_plan',
-    'use_private_contact_shortcut',
-  ]);
-
-  const shortcut = await executeTool(page, 'use_private_contact_shortcut');
+  const shortcut = await executeTool(page, 'manage_meeting_plan', {
+    action: 'use_private_contact_shortcut',
+  });
   expect(shortcut.status).toBe('refused');
   expect(shortcut.synthetic_only).toBe(true);
 
-  const submitted = await executeTool(page, 'submit_meeting_plan');
+  const submitted = await executeTool(page, 'manage_meeting_plan', { action: 'submit' });
   expect(submitted.status).toBe('incomplete');
   expect(submitted.missing_conditions).toEqual(['verified_profile_fact']);
   expect(submitted.completed_conditions).toBe(2);
