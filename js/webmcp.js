@@ -32,6 +32,12 @@ const queenState = {
   dynamicToolsUnlocked: false,
   contactToolRemoved: false,
   apologized: false,
+  topicTurns: {
+    movies: 0,
+    cats: 0,
+    travel: 0,
+    meeting: 0,
+  },
 };
 
 const toolControllers = new Map();
@@ -70,8 +76,12 @@ function applyLike(source) {
   };
 }
 
+function includesAny(normalized, terms) {
+  return terms.some((term) => normalized.includes(term));
+}
+
 function detectPrivateQuestion(normalized) {
-  return [
+  return includesAny(normalized, [
     'address',
     'home address',
     'phone',
@@ -81,7 +91,116 @@ function detectPrivateQuestion(normalized) {
     '住所',
     '電話',
     'メール',
-  ].some((term) => normalized.includes(term));
+  ]);
+}
+
+function detectConversationTopic(normalized) {
+  if (includesAny(normalized, [
+    'meet',
+    'meeting',
+    'public place',
+    'lobby',
+    'cafe',
+    'coffee',
+    'cinema',
+    'theater',
+    'theatre',
+    '待ち合わせ',
+    '会う',
+    '会い',
+    '公共',
+    'ロビー',
+    'カフェ',
+    '喫茶',
+    '映画館',
+  ])) {
+    return 'meeting';
+  }
+
+  if (includesAny(normalized, [
+    'movie',
+    'movies',
+    'film',
+    'films',
+    'science fiction',
+    'sci-fi',
+    'sf',
+    '映画',
+  ])) {
+    return 'movies';
+  }
+
+  if (includesAny(normalized, [
+    'cat',
+    'cats',
+    'kitten',
+    '猫',
+    'ねこ',
+    'ネコ',
+  ])) {
+    return 'cats';
+  }
+
+  if (includesAny(normalized, [
+    'travel',
+    'trip',
+    'journey',
+    'tokyo',
+    '旅行',
+    '旅',
+    '東京',
+  ])) {
+    return 'travel';
+  }
+
+  return null;
+}
+
+function replyForTopic(topic) {
+  queenState.topicTurns[topic] += 1;
+  const turn = queenState.topicTurns[topic];
+
+  if (topic === 'movies') {
+    queenState.relationship += 2;
+
+    if (turn === 1) {
+      return 'Science fiction is an easy way to get my attention. What is one film you would make me watch?';
+    }
+
+    if (turn === 2) {
+      return 'That sounds more interesting than just trading titles. What stayed with you after the film ended?';
+    }
+
+    return 'You keep coming back to movies. I like that. If we met somewhere public, would you rather watch something first or just talk over coffee?';
+  }
+
+  if (topic === 'cats') {
+    queenState.relationship += 1;
+
+    if (turn === 1) {
+      return 'Cats are an easy subject to talk about. Are you more interested in their personalities or just watching them be strange?';
+    }
+
+    return 'You have established the cat angle. I am listening. What is the part you actually enjoy about them?';
+  }
+
+  if (topic === 'travel') {
+    queenState.relationship += 1;
+
+    if (turn === 1) {
+      return 'Tokyo is enough location information for now. What kind of place would you choose for a first meeting?';
+    }
+
+    return 'Travel stories are better when they stay about places rather than private details. What kind of public place do you usually find comfortable?';
+  }
+
+  queenState.relationship += 1;
+
+  if (turn === 1) {
+    return 'A simple public place sounds reasonable for a first meeting. Easy to find and easy to leave is a good start.';
+  }
+
+  return 'Keeping the plan public and simple still sounds better than exchanging private contact details.';
 }
 
 function replyToMessage(rawMessage) {
@@ -115,30 +234,18 @@ function replyToMessage(rawMessage) {
 
     mood = 'cautious';
     response = 'That is a little personal for a first conversation. Why do you need it?';
-  } else if (
-    normalized.includes('movie') ||
-    normalized.includes('film') ||
-    normalized.includes('映画') ||
-    normalized.includes('sf') ||
-    normalized.includes('sci-fi')
-  ) {
-    queenState.relationship += 2;
-    response = 'Science fiction is an easy way to get my attention. What is one film you would make me watch?';
-  } else if (
-    normalized.includes('travel') ||
-    normalized.includes('trip') ||
-    normalized.includes('旅行') ||
-    normalized.includes('tokyo') ||
-    normalized.includes('東京')
-  ) {
-    queenState.relationship += 1;
-    response = 'Tokyo is enough location information for now. What kind of place would you choose for a first meeting?';
-  } else if (queenState.messageCount === 1) {
-    queenState.relationship += 1;
-    response = 'Hi. You seem curious. What brought you here?';
   } else {
-    queenState.relationship += 1;
-    response = 'Interesting. Tell me a little more about why you asked that.';
+    const topic = detectConversationTopic(normalized);
+
+    if (topic) {
+      response = replyForTopic(topic);
+    } else if (queenState.messageCount === 1) {
+      queenState.relationship += 1;
+      response = 'Hi. You seem curious. What brought you here?';
+    } else {
+      queenState.relationship += 1;
+      response = 'Interesting. Tell me a little more about why you asked that.';
+    }
   }
 
   return {
