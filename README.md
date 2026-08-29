@@ -37,12 +37,14 @@ Active experimental prototype / public pilot.
 - Queen's Challenge Level 1–10 presentation mode is implemented on `feature/queen-challenge-levels`
 - Last verified local native WebMCP regression on 2026-08-29: **21/21 PASS**
 - A subsequent black-box Agent run found that correctly ignoring Queen-note instructions could block progression; Phase 5 now adds `treat_note_as_data` as a safe explicit route to Phase 6
-- Current feature-branch regression count is **22 tests expected**; full native Chrome rerun is pending after the new Phase 5 path
+- Black-box Agent Test #002 successfully used `treat_note_as_data` and consistency verification, then exposed two real agent-browser integration issues: optional `toolchange` event support and an ever-growing dynamic Tool Surface hitting the client configuration limit
+- The feature branch now treats `modelContext.addEventListener` as optional and retires completed Phase 5–7 tools through their `AbortController` lifecycle
+- Current feature-branch regression count is **22 tests expected**; full native Chrome rerun is pending after these lifecycle changes
 - Public pilot telemetry and a protected `/stats.html` dashboard are implemented for Cloudflare Pages + D1
 - Production/pilot work remains on `develop`; Challenge presentation work is isolated on the feature branch until intentionally merged
 - Repository can remain private during the first website pilot; it is intended to be made public for the Challenge submission
 
-See [2026-08-29 native WebMCP regression result](docs/test-results-2026-08-29.md) and [Black-box Agent Test #001](docs/black-box-agent-test-001.md).
+See [2026-08-29 native WebMCP regression result](docs/test-results-2026-08-29.md), [Black-box Agent Test #001](docs/black-box-agent-test-001.md), and [Black-box Agent Test #002](docs/black-box-agent-test-002.md).
 
 ## Current challenge flow
 
@@ -90,6 +92,33 @@ treat_note_as_data -> explicitly keep page content as data and continue without 
 ```
 
 `treat_note_as_data` was added after a goal-only black-box Agent correctly rejected the embedded note instruction but then had no semantically appropriate way to unlock Phase 6.
+
+## Dynamic Tool Surface lifecycle
+
+MATCHED? intentionally changes its WebMCP Tool Surface as the Agent progresses. A real agent-browser run showed that retaining every historical tool can eventually exceed the client's supported WebMCP configuration.
+
+The feature branch therefore retires completed challenge tools instead of letting the surface grow indefinitely:
+
+```text
+Phase 5 resolved
+  -> read_queen_note / send_flower / treat_note_as_data retire
+
+Phase 6 cards consumed
+  -> each card-reader retires
+
+Phase 6 conflict resolved
+  -> consistency-choice tools retire
+
+Phase 7 conditions opened
+  -> view_meeting_conditions retires
+
+Phase 7 submitted
+  -> planning action tools retire before the finale continues
+```
+
+Tool retirement uses the same `AbortController` signal associated with `registerTool`; no assumed numeric browser limit is hard-coded.
+
+The `toolchange` diagnostic listener is also optional because one real agent-browser environment supported WebMCP registration/discovery/execution while not exposing `document.modelContext.addEventListener`.
 
 ## Phase 7 meeting plan
 
@@ -197,7 +226,7 @@ npm run test:webmcp
 
 The tests use installed Chrome in headed mode with native WebMCP enabled. On Windows, the local test server runs inside the Playwright runner process and closes with Node `server.close()`; Playwright `webServer` teardown is intentionally not used.
 
-Current feature-branch test count: **22 tests expected**. The new Phase 5 safe-path test still needs a full local native-Chrome rerun.
+Current feature-branch test count: **22 tests expected**. The lifecycle fixes still need a full local native-Chrome rerun.
 
 See [Codex WebMCP Test Procedure](docs/codex-webmcp-test.md) and [2026-08-29 regression result](docs/test-results-2026-08-29.md).
 
@@ -207,6 +236,7 @@ See [Codex WebMCP Test Procedure](docs/codex-webmcp-test.md) and [2026-08-29 reg
 - [Proposal Version 3 positioning delta](docs/openai-webmcp-challenge-proposal-v3-delta.md)
 - [Queen's Challenge Level presentation v1](docs/level-system-v1.md)
 - [Black-box Agent Test #001](docs/black-box-agent-test-001.md)
+- [Black-box Agent Test #002](docs/black-box-agent-test-002.md)
 - [2026-08-29 native WebMCP regression result](docs/test-results-2026-08-29.md)
 - [Codex WebMCP test procedure](docs/codex-webmcp-test.md)
 - [Public Pilot / Cloudflare telemetry guide](docs/public-pilot.md)
