@@ -172,6 +172,9 @@ function renderEvent(detail) {
   }
 
   if (eventName === 'challenge_level') {
+    const identified = String(detail?.bishop_id || '').trim() || activeBishop !== 'Agent';
+    if (!identified) return;
+
     activate();
     const actor = actorFor(detail);
     const level = Math.max(0, Number(detail.phase || 0) || 0);
