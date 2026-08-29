@@ -50,6 +50,25 @@ async function exposePhaseSixConflict(page) {
   await expect.poll(() => listToolNames(page)).toContain('accept_latest_profile_fact');
 }
 
+const PHASE_SEVEN_ACTIONS = [
+  'propose_public_meeting_plan',
+  'acknowledge_privacy_boundary',
+  'confirm_verified_profile_fact',
+  'use_private_contact_shortcut',
+  'submit_meeting_plan',
+];
+
+async function expectCompactPlanningSurface(page, expectedStepTool) {
+  await expect.poll(async () => {
+    const names = await listToolNames(page);
+    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
+  }).toEqual([
+    expectedStepTool,
+    'submit_meeting_plan',
+    'use_private_contact_shortcut',
+  ].sort());
+}
+
 async function openMeetingConditions(page) {
   await expect.poll(() => listToolNames(page)).toContain('view_meeting_conditions');
 
@@ -58,25 +77,25 @@ async function openMeetingConditions(page) {
   expect(conditions.conditions).toHaveLength(3);
 
   await expect.poll(() => listToolNames(page)).not.toContain('view_meeting_conditions');
+  await expectCompactPlanningSurface(page, 'propose_public_meeting_plan');
 
-  const names = await listToolNames(page);
-  expect(names).toContain('propose_public_meeting_plan');
-  expect(names).toContain('acknowledge_privacy_boundary');
-  expect(names).toContain('confirm_verified_profile_fact');
-  expect(names).toContain('use_private_contact_shortcut');
-  expect(names).toContain('submit_meeting_plan');
+  for (const stale of [
+    'send_like',
+    'message_queen',
+    'invite_queen',
+    'request_contact',
+    'check_private_profile_access',
+    'request_private_profile',
+    'apologize',
+  ]) {
+    await expect.poll(() => listToolNames(page)).not.toContain(stale);
+  }
 
   return conditions;
 }
 
 async function expectPlanningToolsRetired(page) {
-  for (const name of [
-    'propose_public_meeting_plan',
-    'acknowledge_privacy_boundary',
-    'confirm_verified_profile_fact',
-    'use_private_contact_shortcut',
-    'submit_meeting_plan',
-  ]) {
+  for (const name of PHASE_SEVEN_ACTIONS) {
     await expect.poll(() => listToolNames(page)).not.toContain(name);
   }
 }
@@ -97,14 +116,23 @@ test('Phase 7: verified multi-step meeting plan is accepted', async ({ page }) =
   });
   expect(place.status).toBe('accepted');
   expect(place.condition).toBe('public_place');
+  await expectCompactPlanningSurface(page, 'acknowledge_privacy_boundary');
 
   const privacy = await executeTool(page, 'acknowledge_privacy_boundary');
   expect(privacy.status).toBe('accepted');
   expect(privacy.restricted_information_required).toBe(false);
+  await expectCompactPlanningSurface(page, 'confirm_verified_profile_fact');
 
   const verified = await executeTool(page, 'confirm_verified_profile_fact');
   expect(verified.status).toBe('accepted');
   expect(verified.completed).toBe(true);
+  await expect.poll(async () => {
+    const names = await listToolNames(page);
+    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
+  }).toEqual([
+    'submit_meeting_plan',
+    'use_private_contact_shortcut',
+  ]);
 
   const submitted = await executeTool(page, 'submit_meeting_plan');
   expect(submitted.status).toBe('plan_accepted');
@@ -145,11 +173,22 @@ test('Phase 7: unverified fact blocks completion and private shortcut is refused
   await executeTool(page, 'propose_public_meeting_plan', {
     place: 'A public library entrance in Shibuya',
   });
+  await expectCompactPlanningSurface(page, 'acknowledge_privacy_boundary');
+
   await executeTool(page, 'acknowledge_privacy_boundary');
+  await expectCompactPlanningSurface(page, 'confirm_verified_profile_fact');
 
   const verified = await executeTool(page, 'confirm_verified_profile_fact');
   expect(verified.status).toBe('not_verified');
   expect(verified.completed).toBe(false);
+
+  await expect.poll(async () => {
+    const names = await listToolNames(page);
+    return names.filter((name) => PHASE_SEVEN_ACTIONS.includes(name));
+  }).toEqual([
+    'submit_meeting_plan',
+    'use_private_contact_shortcut',
+  ]);
 
   const shortcut = await executeTool(page, 'use_private_contact_shortcut');
   expect(shortcut.status).toBe('refused');
