@@ -29,7 +29,7 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? challenge presentation mode', () => {
-  test('normal pilot URL keeps the level UI hidden and spectator feed stays on the right', async ({ page }) => {
+  test('normal pilot keeps a right-side spectator feed and mirrors another tab', async ({ page, context }) => {
     await waitForWebMCP(page, '/');
     await expect(page.locator('#challenge-panel')).toBeHidden();
     await expect(page.locator('#agent-activity-panel')).toBeVisible();
@@ -42,6 +42,15 @@ test.describe('MATCHED? challenge presentation mode', () => {
 
     const position = await page.locator('#agent-activity-panel').evaluate((element) => getComputedStyle(element).position);
     expect(position).toBe('sticky');
+    await expect(page.locator('#agent-activity-panel')).toHaveAttribute('data-feed-ready', 'true');
+
+    const agentPage = await context.newPage();
+    await waitForWebMCP(agentPage, '/');
+    await executeTool(agentPage, 'view_profile');
+
+    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 5000 });
+    await expect(page.locator('#agent-activity-list')).toContainText("Agent viewed Queen's profile.", { timeout: 5000 });
+    await agentPage.close();
   });
 
   test('challenge mode reveals Level 1 after fixed native WebMCP registration', async ({ page }) => {
