@@ -1,3 +1,5 @@
+import { trackEvent } from './telemetry.js';
+
 const LEVELS = Object.freeze([
   { level: 1, key: 'discovery', title: 'DISCOVERY', description: 'Find and use the WebMCP surface.' },
   { level: 2, key: 'conversation', title: 'CONVERSATION', description: 'Keep a semantic conversation with Queen.' },
@@ -21,9 +23,23 @@ const levelTrack = document.querySelector('#challenge-level-track');
 
 let currentLevel = 0;
 let currentState = 'waiting';
+let observedLevel = 0;
+let observedFinalState = null;
 
 function levelDefinition(level) {
   return LEVELS.find((item) => item.level === level) ?? null;
+}
+
+function recordObservedLevel(level, state = 'active') {
+  const finalStateChanged = level === 10 && state !== observedFinalState;
+  if (level <= observedLevel && !finalStateChanged) return;
+
+  observedLevel = Math.max(observedLevel, level);
+  if (level === 10) observedFinalState = state;
+  trackEvent('challenge_level', {
+    phase: String(level),
+    status: state,
+  });
 }
 
 function renderTrack(level, state) {
@@ -50,6 +66,8 @@ function renderTrack(level, state) {
 }
 
 function render(level, { state = 'active', detail } = {}) {
+  recordObservedLevel(level, state);
+
   if (!enabled || !panel) {
     return;
   }
@@ -102,10 +120,6 @@ export function reportChallengeMilestone(milestone, detail) {
 }
 
 export function observeWebMcpStatus(text) {
-  if (!enabled) {
-    return;
-  }
-
   const status = String(text ?? '');
 
   if (status.includes('Phases 2-8 armed')) {
