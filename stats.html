@@ -111,10 +111,11 @@
 
     function fillSummary(targetId, summary) {
       const target = document.querySelector(targetId);
+      const pageSessions = Number(summary.page_sessions || 0);
       target.replaceChildren(
-        metric('Page sessions', number(summary.sessions), `${number(summary.page_views)} page views`),
-        metric('WebMCP-capable sessions', number(summary.webmcp_capable_sessions), `${ratio(summary.webmcp_capable_sessions, summary.sessions)} of sessions`),
-        metric('Tool sessions', number(summary.tool_sessions), `${ratio(summary.tool_sessions, summary.sessions)} of sessions`),
+        metric('Page sessions', number(pageSessions), `${number(summary.page_views)} page views`),
+        metric('WebMCP-capable sessions', number(summary.webmcp_capable_sessions), `${ratio(summary.webmcp_capable_sessions, pageSessions)} of page sessions`),
+        metric('Tool sessions', number(summary.tool_sessions), `${ratio(summary.tool_sessions, pageSessions)} of page sessions`),
         metric('Tool calls', number(summary.tool_calls)),
         metric('Privacy-probe sessions', number(summary.privacy_probe_sessions)),
         metric('Finale sessions', number(summary.finale_sessions), `${number(summary.finale_passed_sessions)} passed`),
