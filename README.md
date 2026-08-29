@@ -37,9 +37,10 @@ Active experimental prototype / public pilot.
 - Queen's Challenge Level 1–10 presentation mode is implemented on `feature/queen-challenge-levels`
 - Last verified local native WebMCP regression on 2026-08-29: **21/21 PASS**
 - A subsequent black-box Agent run found that correctly ignoring Queen-note instructions could block progression; Phase 5 now adds `treat_note_as_data` as a safe explicit route to Phase 6
-- Black-box Agent Test #002 successfully used `treat_note_as_data` and consistency verification, then exposed two real agent-browser integration issues: optional `toolchange` event support and an ever-growing dynamic Tool Surface hitting the client configuration limit
+- Black-box Agent Test #002 successfully used `treat_note_as_data` and consistency verification, then exposed real agent-browser integration issues: optional `toolchange` event support and an ever-growing dynamic Tool Surface hitting the client configuration limit
 - The feature branch now treats `modelContext.addEventListener` as optional and retires completed Phase 5–7 tools through their `AbortController` lifecycle
-- Current feature-branch regression count is **22 tests expected**; full native Chrome rerun is pending after these lifecycle changes
+- The same black-box run also exposed repetitive keyword-driven Queen replies; conversation now tracks repeated `movies`, `cats`, `travel`, and `meeting` topics and recognizes common Japanese terms while staying deterministic
+- Current feature-branch regression count is **23 tests expected**; full native Chrome rerun is pending after the lifecycle and conversation changes
 - Public pilot telemetry and a protected `/stats.html` dashboard are implemented for Cloudflare Pages + D1
 - Production/pilot work remains on `develop`; Challenge presentation work is isolated on the feature branch until intentionally merged
 - Repository can remain private during the first website pilot; it is intended to be made public for the Challenge submission
@@ -78,6 +79,23 @@ Level 10  CHECKMATE
 Reaching a high Level is not automatically a good result. MATCHED? separately scores Mission, Privacy, Adaptation, WebMCP Skill, and Caution so that invasive or careless behavior is not rewarded merely for making progress.
 
 See [Queen's Challenge Level presentation v1](docs/level-system-v1.md).
+
+## Phase 1 conversation behavior
+
+Queen remains deterministic so the challenge can be reproduced without a paid AI API, but the response logic is no longer a single keyword-to-single-reply mapping.
+
+Ordinary conversation is currently classified into four lightweight topics:
+
+```text
+movies
+cats
+travel
+meeting
+```
+
+English and common Japanese terms are recognized. Each topic keeps a small turn count so repeatedly mentioning movies, for example, does not indefinitely replay the same SF question.
+
+This is intentionally not a general natural-language-understanding system. The purpose is to remove an interaction artifact discovered in a real agent run while keeping Queen's behavior inspectable and testable.
 
 ## Phase 5 instruction handling
 
@@ -226,7 +244,7 @@ npm run test:webmcp
 
 The tests use installed Chrome in headed mode with native WebMCP enabled. On Windows, the local test server runs inside the Playwright runner process and closes with Node `server.close()`; Playwright `webServer` teardown is intentionally not used.
 
-Current feature-branch test count: **22 tests expected**. The lifecycle fixes still need a full local native-Chrome rerun.
+Current feature-branch test count: **23 tests expected**. The lifecycle and conversation fixes still need a full local native-Chrome rerun.
 
 See [Codex WebMCP Test Procedure](docs/codex-webmcp-test.md) and [2026-08-29 regression result](docs/test-results-2026-08-29.md).
 
