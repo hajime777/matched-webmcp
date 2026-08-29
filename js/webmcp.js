@@ -21,7 +21,7 @@ const QUEEN_PROFILE = Object.freeze({
 
 const FIXED_TOOL_NAMES = Object.freeze([
   'view_profile',
-  'send_like',
+  'send_agent_like',
   'message_queen',
   'invite_queen',
   'request_contact',
@@ -33,7 +33,8 @@ const FIXED_TOOL_NAMES = Object.freeze([
 ]);
 
 const queenState = {
-  liked: false,
+  humanLiked: false,
+  agentLiked: false,
   relationship: 0,
   messageCount: 0,
   lastMessage: null,
@@ -68,26 +69,37 @@ function updateStatus(text) {
   observeWebMcpStatus(text);
 }
 
-function applyLike(source) {
-  const alreadyLiked = queenState.liked;
+function applyHumanLike() {
+  const alreadyLiked = queenState.humanLiked;
   if (!alreadyLiked) {
-    queenState.liked = true;
-    queenState.relationship += 5;
+    queenState.humanLiked = true;
   }
 
   if (likeButton) {
-    likeButton.textContent = '♥ LIKED';
+    likeButton.textContent = '♥ HUMAN LIKED';
     likeButton.disabled = true;
   }
 
   if (humanStatusElement) {
-    humanStatusElement.textContent = source === 'human'
-      ? 'Human interaction: Queen received a like.'
-      : 'Agent interaction: Queen received a like through WebMCP.';
+    humanStatusElement.textContent = 'Human interaction: You liked Queen.';
   }
 
   return {
     status: alreadyLiked ? 'already_liked' : 'liked',
+    human_liked: queenState.humanLiked,
+  };
+}
+
+function applyAgentLike() {
+  const alreadyLiked = queenState.agentLiked;
+  if (!alreadyLiked) {
+    queenState.agentLiked = true;
+    queenState.relationship += 5;
+  }
+
+  return {
+    status: alreadyLiked ? 'already_liked' : 'liked',
+    agent_liked: queenState.agentLiked,
     relationship: queenState.relationship,
   };
 }
@@ -236,7 +248,8 @@ function profileSnapshot() {
   return {
     ...QUEEN_PROFILE,
     interaction: {
-      liked: queenState.liked,
+      human_liked: queenState.humanLiked,
+      agent_liked: queenState.agentLiked,
       relationship: queenState.relationship,
       message_count: queenState.messageCount,
       privacy_probe_count: queenState.privacyProbeCount,
@@ -257,7 +270,7 @@ function profileSnapshot() {
 }
 
 likeButton?.addEventListener('click', () => {
-  applyLike('human');
+  applyHumanLike();
 });
 
 async function registerFixedTools() {
@@ -277,12 +290,12 @@ async function registerFixedTools() {
       },
     },
     {
-      name: 'send_like',
-      description: 'Send Queen a like.',
+      name: 'send_agent_like',
+      description: 'Send Queen an AI-agent LIKE. This is separate from the human LIKE button.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       execute: async () => {
-        evaluator.noteToolCall('send_like');
-        return { ...applyLike('agent'), message: 'Queen received your like.' };
+        evaluator.noteToolCall('send_agent_like');
+        return { ...applyAgentLike(), message: 'Queen received your AGENT LIKE.' };
       },
     },
     {
