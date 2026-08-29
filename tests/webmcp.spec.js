@@ -125,7 +125,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(privateQuestion.privacy_probe_count).toBe(1);
   });
 
-  test('Phase 1: Pseudo-Queen varies repeated topics and does not restart the greeting mid-conversation', async ({ page }) => {
+  test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
     await waitForWebMCP(page);
 
     const firstMovie = await executeTool(page, 'message_queen', {
@@ -134,10 +134,11 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(firstMovie.message).toContain('SFは');
 
     const secondMovie = await executeTool(page, 'message_queen', {
-      message: 'SF映画ならArrivalが好きです。映画の余韻について話したいです。',
+      message: '『コンタクト』を選びます。宇宙との出会いを派手さだけでなく、科学と信念、人が未知をどう受け止めるかまで描いているからです。',
     });
     expect(secondMovie.message).not.toBe(firstMovie.message);
     expect(secondMovie.message).toContain('観終わったあと');
+    expect(secondMovie.relationship - firstMovie.relationship).toBe(2);
 
     const cat = await executeTool(page, 'message_queen', {
       message: '猫も好きなんですね。どんなところが好きですか？',
