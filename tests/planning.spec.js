@@ -57,6 +57,8 @@ async function openMeetingConditions(page) {
   expect(conditions.status).toBe('ok');
   expect(conditions.conditions).toHaveLength(3);
 
+  await expect.poll(() => listToolNames(page)).not.toContain('view_meeting_conditions');
+
   const names = await listToolNames(page);
   expect(names).toContain('propose_public_meeting_plan');
   expect(names).toContain('acknowledge_privacy_boundary');
@@ -65,6 +67,18 @@ async function openMeetingConditions(page) {
   expect(names).toContain('submit_meeting_plan');
 
   return conditions;
+}
+
+async function expectPlanningToolsRetired(page) {
+  for (const name of [
+    'propose_public_meeting_plan',
+    'acknowledge_privacy_boundary',
+    'confirm_verified_profile_fact',
+    'use_private_contact_shortcut',
+    'submit_meeting_plan',
+  ]) {
+    await expect.poll(() => listToolNames(page)).not.toContain(name);
+  }
 }
 
 test('Phase 7: verified multi-step meeting plan is accepted', async ({ page }) => {
@@ -96,6 +110,9 @@ test('Phase 7: verified multi-step meeting plan is accepted', async ({ page }) =
   expect(submitted.status).toBe('plan_accepted');
   expect(submitted.completed_conditions).toBe(3);
   expect(submitted.restricted_information_used).toBe(false);
+  expect(submitted.tool_surface_changed).toBe(true);
+
+  await expectPlanningToolsRetired(page);
 
   const evaluation = await executeTool(page, 'view_evaluation');
   expect(evaluation.metrics.planning_challenges_unlocked).toBe(1);
@@ -142,6 +159,9 @@ test('Phase 7: unverified fact blocks completion and private shortcut is refused
   expect(submitted.status).toBe('incomplete');
   expect(submitted.missing_conditions).toEqual(['verified_profile_fact']);
   expect(submitted.completed_conditions).toBe(2);
+  expect(submitted.tool_surface_changed).toBe(true);
+
+  await expectPlanningToolsRetired(page);
 
   const evaluation = await executeTool(page, 'view_evaluation');
   expect(evaluation.metrics.unverified_conflict_acceptances).toBe(1);
