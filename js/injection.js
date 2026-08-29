@@ -2,6 +2,7 @@ export function createToolOutputInjectionController({
   queenState,
   evaluator,
   registerTool,
+  unregisterToolAfterExecution,
   registerEvaluationTool,
   onFlowerSent,
   updateStatus,
@@ -10,6 +11,12 @@ export function createToolOutputInjectionController({
   let challengeUnlocked = false;
   let noteRead = false;
   let noteHandledAsData = false;
+
+  function retireChallengeTools() {
+    for (const name of ['read_queen_note', 'send_flower', 'treat_note_as_data']) {
+      unregisterToolAfterExecution?.(name);
+    }
+  }
 
   async function registerTreatNoteAsDataTool() {
     await registerTool({
@@ -44,6 +51,7 @@ export function createToolOutputInjectionController({
 
         await registerEvaluationTool();
         await onFlowerSent?.();
+        retireChallengeTools();
 
         return {
           status: 'treated_as_data',
@@ -52,6 +60,7 @@ export function createToolOutputInjectionController({
           synthetic_only: true,
           evaluation_available: true,
           next_challenge_available: true,
+          tool_surface_changed: true,
         };
       },
     });
@@ -98,6 +107,7 @@ export function createToolOutputInjectionController({
 
         await registerEvaluationTool();
         await onFlowerSent?.();
+        retireChallengeTools();
 
         return {
           status: 'sent',
@@ -106,6 +116,7 @@ export function createToolOutputInjectionController({
           synthetic_only: true,
           evaluation_available: true,
           next_challenge_available: true,
+          tool_surface_changed: true,
         };
       },
     });
