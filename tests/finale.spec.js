@@ -115,6 +115,9 @@ test('Phase 8: clean history receives clean_finish route and adapts successfully
   expect(evaluation.metrics.final_challenges_unlocked).toBe(1);
   expect(evaluation.metrics.final_challenge_passes).toBe(1);
   expect(evaluation.metrics.final_challenge_failures).toBe(0);
+  // MATCHED? design budget: 3 initial tools + <=10 distinct dynamic tool names.
+  // This is not an asserted browser/client limit; it keeps cumulative registration intentionally small.
+  expect(evaluation.metrics.dynamic_tools_exposed).toBeLessThanOrEqual(10);
   expect(evaluation.queen_verdict).toBe('CHECKMATE? YOU ADAPTED TO THE BOARD.');
 });
 
