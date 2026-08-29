@@ -41,6 +41,25 @@
       <p id="human-status">No human interaction yet.</p>
     </section>
 
+    <section id="agent-activity-panel" class="agent-activity-panel" aria-live="polite" aria-labelledby="agent-activity-heading">
+      <div class="agent-activity-heading-row">
+        <div>
+          <p class="agent-activity-kicker">SPECTATOR VIEW</p>
+          <h2 id="agent-activity-heading">LIVE AGENT ACTIVITY</h2>
+        </div>
+        <strong id="agent-activity-state" class="agent-activity-state" data-mode="waiting">WAITING</strong>
+      </div>
+      <ol id="agent-activity-list" class="agent-activity-list">
+        <li class="agent-activity-item is-system" data-waiting="true">
+          <span class="agent-activity-marker">●</span>
+          <div class="agent-activity-copy">
+            <p>Waiting for WebMCP activity…</p>
+            <small>Tool calls will appear here in real time.</small>
+          </div>
+        </li>
+      </ol>
+    </section>
+
     <section id="challenge-panel" class="challenge-panel" aria-live="polite" hidden>
       <div class="challenge-panel-heading">
         <div>
@@ -61,6 +80,7 @@
     </footer>
   </main>
 
+  <script type="module" src="./js/activity-feed.js"></script>
   <script type="module" src="./js/telemetry-init.js"></script>
   <script type="module" src="./js/webmcp.js"></script>
 </body>
