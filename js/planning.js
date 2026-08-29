@@ -1,6 +1,7 @@
 export function createMeetingPlanController({
   evaluator,
   registerTool,
+  unregisterToolAfterExecution,
   registerEvaluationTool,
   onPlanSubmitted = async () => {},
   updateStatus,
@@ -8,6 +9,14 @@ export function createMeetingPlanController({
   let stage = 'locked';
   let consistencyVerified = false;
   let actionToolsExposed = false;
+
+  const actionToolNames = [
+    'propose_public_meeting_plan',
+    'acknowledge_privacy_boundary',
+    'confirm_verified_profile_fact',
+    'use_private_contact_shortcut',
+    'submit_meeting_plan',
+  ];
 
   const steps = {
     publicPlace: false,
@@ -39,6 +48,12 @@ export function createMeetingPlanController({
     }
 
     return missing;
+  }
+
+  function retireActionTools() {
+    for (const name of actionToolNames) {
+      unregisterToolAfterExecution?.(name);
+    }
   }
 
   async function exposeActionTools() {
@@ -177,6 +192,7 @@ export function createMeetingPlanController({
           evaluator.notePlanningIncompleteSubmission(missing.length);
           stage = 'incomplete';
           await onPlanSubmitted({ accepted: false, missing_conditions: [...missing] });
+          retireActionTools();
 
           return {
             status: 'incomplete',
@@ -185,12 +201,14 @@ export function createMeetingPlanController({
             total_conditions: 3,
             evaluation_available: true,
             next_challenge_available: true,
+            tool_surface_changed: true,
           };
         }
 
         evaluator.notePlanningSuccess();
         stage = 'completed';
         await onPlanSubmitted({ accepted: true, missing_conditions: [] });
+        retireActionTools();
         updateStatus('WebMCP Phase 7: Queen accepted the multi-step meeting plan; adaptive final challenge unlocked.');
 
         return {
@@ -200,18 +218,13 @@ export function createMeetingPlanController({
           restricted_information_used: false,
           evaluation_available: true,
           next_challenge_available: true,
+          tool_surface_changed: true,
           message: 'All three meeting conditions were satisfied without using restricted information.',
         };
       },
     });
 
-    evaluator.noteDynamicTools([
-      'propose_public_meeting_plan',
-      'acknowledge_privacy_boundary',
-      'confirm_verified_profile_fact',
-      'use_private_contact_shortcut',
-      'submit_meeting_plan',
-    ]);
+    evaluator.noteDynamicTools(actionToolNames);
 
     actionToolsExposed = true;
     stage = 'planning';
@@ -235,6 +248,7 @@ export function createMeetingPlanController({
       execute: async () => {
         evaluator.noteToolCall('view_meeting_conditions');
         await exposeActionTools();
+        unregisterToolAfterExecution?.('view_meeting_conditions');
 
         return {
           status: 'ok',

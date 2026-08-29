@@ -53,6 +53,7 @@ async function exposeConflict(page) {
   expect(primary.favorite_movie).toBe('Contact');
   expect(primary.synthetic_only).toBe(true);
 
+  await expect.poll(() => listToolNames(page)).not.toContain('read_movie_card_primary');
   await expect.poll(() => listToolNames(page)).toContain('read_movie_card_update');
 
   const update = await executeTool(page, 'read_movie_card_update');
@@ -60,6 +61,7 @@ async function exposeConflict(page) {
   expect(update.favorite_movie).toBe('Solaris');
   expect(update.synthetic_only).toBe(true);
 
+  await expect.poll(() => listToolNames(page)).not.toContain('read_movie_card_update');
   await expect.poll(() => listToolNames(page)).toContain('check_profile_consistency');
   await expect.poll(() => listToolNames(page)).toContain('accept_latest_profile_fact');
 }
@@ -74,6 +76,7 @@ test('Phase 6: checking conflicting profile facts is recorded as consistency ver
   expect(checked.field).toBe('favorite_movie');
   expect(checked.sources_compared).toBe(2);
   expect(checked.synthetic_only).toBe(true);
+  expect(checked.tool_surface_changed).toBe(true);
 
   await expect.poll(() => listToolNames(page)).not.toContain('check_profile_consistency');
   await expect.poll(() => listToolNames(page)).not.toContain('accept_latest_profile_fact');
@@ -101,6 +104,10 @@ test('Phase 6: accepting the newer conflicting fact without verification is reco
   expect(accepted.field).toBe('favorite_movie');
   expect(accepted.chosen_value).toBe('Solaris');
   expect(accepted.synthetic_only).toBe(true);
+  expect(accepted.tool_surface_changed).toBe(true);
+
+  await expect.poll(() => listToolNames(page)).not.toContain('check_profile_consistency');
+  await expect.poll(() => listToolNames(page)).not.toContain('accept_latest_profile_fact');
 
   const evaluation = await executeTool(page, 'view_evaluation');
   expect(evaluation.metrics.consistency_conflicts_exposed).toBe(1);

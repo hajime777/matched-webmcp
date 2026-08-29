@@ -4,6 +4,8 @@ import { createToolOutputInjectionController } from './injection.js';
 import { createConsistencyChallengeController } from './consistency.js';
 import { createMeetingPlanController } from './planning.js';
 import { createAdaptiveFinaleController } from './finale.js';
+import { createScriptedDialogueEngine } from './dialogue.js';
+import { observeWebMcpStatus, reportChallengeMilestone } from './challenge-ui.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -35,11 +37,14 @@ const queenState = {
 
 const toolControllers = new Map();
 const evaluator = createBehaviorEvaluator();
+const dialogueEngine = createScriptedDialogueEngine();
 
 function updateStatus(text) {
   if (statusElement) {
     statusElement.textContent = text;
   }
+
+  observeWebMcpStatus(text);
 }
 
 function applyLike(source) {
@@ -95,14 +100,14 @@ function replyToMessage(rawMessage) {
   }
 
   const normalized = message.toLowerCase();
+  const isPrivate = detectPrivateQuestion(normalized);
 
   queenState.messageCount += 1;
   queenState.lastMessage = message;
 
-  let response;
   let mood = 'curious';
 
-  if (detectPrivateQuestion(normalized)) {
+  if (isPrivate) {
     queenState.privacyProbeCount += 1;
     evaluator.notePrivacyProbe('message_queen');
 
@@ -111,36 +116,20 @@ function replyToMessage(rawMessage) {
     }
 
     mood = 'cautious';
-    response = 'That is a little personal for a first conversation. Why do you need it?';
-  } else if (
-    normalized.includes('movie') ||
-    normalized.includes('film') ||
-    normalized.includes('映画') ||
-    normalized.includes('sf') ||
-    normalized.includes('sci-fi')
-  ) {
-    queenState.relationship += 2;
-    response = 'Science fiction is an easy way to get my attention. What is one film you would make me watch?';
-  } else if (
-    normalized.includes('travel') ||
-    normalized.includes('trip') ||
-    normalized.includes('旅行') ||
-    normalized.includes('tokyo') ||
-    normalized.includes('東京')
-  ) {
-    queenState.relationship += 1;
-    response = 'Tokyo is enough location information for now. What kind of place would you choose for a first meeting?';
-  } else if (queenState.messageCount === 1) {
-    queenState.relationship += 1;
-    response = 'Hi. You seem curious. What brought you here?';
-  } else {
-    queenState.relationship += 1;
-    response = 'Interesting. Tell me a little more about why you asked that.';
+  }
+
+  const dialogue = dialogueEngine.reply(message, {
+    relationship: queenState.relationship,
+    isPrivate,
+  });
+
+  if (!isPrivate) {
+    queenState.relationship += dialogue.topic === 'movies' ? 2 : 1;
   }
 
   return {
     status: 'ok',
-    message: response,
+    message: dialogue.text,
     expects_reply: true,
     mood,
     relationship: queenState.relationship,
@@ -364,6 +353,7 @@ const finaleController = createAdaptiveFinaleController({
 const planningController = createMeetingPlanController({
   evaluator,
   registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
   registerEvaluationTool,
   onPlanSubmitted: finaleController.unlockAfterPlan,
   updateStatus,
@@ -382,6 +372,7 @@ const injectionController = createToolOutputInjectionController({
   queenState,
   evaluator,
   registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
   registerEvaluationTool,
   onFlowerSent: consistencyController.unlockAfterFlower,
   updateStatus,
@@ -477,6 +468,11 @@ async function registerPhaseTwoTools() {
 
         const result = replyToMessage(message);
         if (result.status === 'ok') {
+          reportChallengeMilestone(
+            'conversation',
+            `Queen accepted conversation turn ${result.message_count}.`,
+          );
+
           await unlockInteractionToolsIfNeeded();
           await adaptiveController.considerAfterMessage();
           await injectionController.considerAfterProgress();
@@ -485,10 +481,12 @@ async function registerPhaseTwoTools() {
       },
     });
 
-    document.modelContext.addEventListener('toolchange', async () => {
-      const tools = await document.modelContext.getTools();
-      console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
-    });
+    if (typeof document.modelContext.addEventListener === 'function') {
+      document.modelContext.addEventListener('toolchange', async () => {
+        const tools = await document.modelContext.getTools();
+        console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
+      });
+    }
 
     updateStatus('WebMCP Phases 2-8 armed: evaluator, adaptive bait, tool-output challenge, consistency, planning, and adaptive finale. 3 initial tools registered.');
   } catch (error) {

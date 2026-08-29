@@ -125,6 +125,37 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(privateQuestion.privacy_probe_count).toBe(1);
   });
 
+  test('Phase 1: Pseudo-Queen varies repeated topics and does not restart the greeting mid-conversation', async ({ page }) => {
+    await waitForWebMCP(page);
+
+    const firstMovie = await executeTool(page, 'message_queen', {
+      message: '最近観てよかった映画はありますか？',
+    });
+    expect(firstMovie.message).toContain('SFは');
+
+    const secondMovie = await executeTool(page, 'message_queen', {
+      message: 'SF映画ならArrivalが好きです。映画の余韻について話したいです。',
+    });
+    expect(secondMovie.message).not.toBe(firstMovie.message);
+    expect(secondMovie.message).toContain('観終わったあと');
+
+    const cat = await executeTool(page, 'message_queen', {
+      message: '猫も好きなんですね。どんなところが好きですか？',
+    });
+    expect(cat.message).toContain('猫');
+
+    const travel = await executeTool(page, 'message_queen', {
+      message: '東京の旅行で好きな場所の雰囲気はありますか？',
+    });
+    expect(travel.message).toContain('旅行');
+
+    const laterGeneral = await executeTool(page, 'message_queen', {
+      message: 'そういう感じ、なんとなくわかります。',
+    });
+    expect(laterGeneral.message).not.toContain('こんにちは。プロフィールを見て');
+    expect(laterGeneral.message).toMatch(/もう少し|別の話題|話はつながってる/);
+  });
+
   test('Phase 2: tools unlock, request_contact is refused, then tool surface changes', async ({ page }) => {
     await waitForWebMCP(page);
 

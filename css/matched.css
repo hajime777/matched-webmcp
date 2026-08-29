@@ -56,7 +56,8 @@ h1 {
 }
 
 .profile-card,
-.status-panel {
+.status-panel,
+.challenge-panel {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.045);
   backdrop-filter: blur(16px);
@@ -154,6 +155,86 @@ button:disabled {
 .status-panel p {
   margin-bottom: 6px;
   opacity: 0.72;
+}
+
+.challenge-panel {
+  margin-top: 20px;
+  padding: 20px 22px;
+}
+
+.challenge-panel[hidden] {
+  display: none;
+}
+
+.challenge-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.challenge-kicker {
+  margin-bottom: 5px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  opacity: 0.58;
+}
+
+.challenge-panel h2 {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+}
+
+.challenge-level-value {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.2rem;
+}
+
+.challenge-level-track {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  margin: 18px 0 14px;
+}
+
+.challenge-level-pip {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.challenge-level-pip.is-cleared {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.challenge-level-pip.is-current {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.22);
+}
+
+.challenge-level-pip.is-failed {
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.9) 3px,
+    rgba(255, 255, 255, 0.22) 3px,
+    rgba(255, 255, 255, 0.22) 6px
+  );
+}
+
+.challenge-level-detail {
+  margin-bottom: 8px;
+  line-height: 1.55;
+  opacity: 0.78;
+}
+
+.challenge-mode-note {
+  opacity: 0.46;
+}
+
+.challenge-mode-note code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 footer {
