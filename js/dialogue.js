@@ -3,7 +3,8 @@ const JAPANESE_RE = /[\u3040-\u30ff\u3400-\u9fff]/;
 const TOPIC_TERMS = Object.freeze({
   meeting: [
     'meet', 'meeting', 'public place', 'lobby', 'cafe', 'coffee', 'cinema', 'theater', 'theatre',
-    '待ち合わせ', '会う', '会い', '公共', 'ロビー', 'カフェ', '喫茶', '映画館',
+    '待ち合わせ', '会う', '会おう', '会える', '会えます', '集合', '現地集合',
+    '公共', 'ロビー', 'カフェ', '喫茶', '映画館',
   ],
   movies: [
     'movie', 'movies', 'film', 'films', 'science fiction', 'sci-fi', 'sf',
