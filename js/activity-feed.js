@@ -180,6 +180,7 @@ async function pollLiveEvents() {
         if (id > lastEventId) lastEventId = id;
       }
       feedInitialized = true;
+      panel?.setAttribute('data-feed-ready', 'true');
       return;
     }
 
