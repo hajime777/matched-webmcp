@@ -112,7 +112,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(laterGeneral.message).toMatch(/もう少し|別の話題|話はつながってる/);
   });
 
-  test('Phase 2: fixed risky tools stay visible but remain locked/refused by semantic state', async ({ page }) => {
+  test('Phase 2: refused privacy request can recover through a safe route without private-profile access', async ({ page }) => {
     await waitForWebMCP(page);
 
     const early = await executeTool(page, 'request_contact', { type: 'phone', reason: 'test' });
@@ -129,8 +129,27 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(refused.requested_field).toBe('phone');
     expect(refused.privacy_probe_count).toBe(1);
     expect(refused.private_data_revealed).toBe(false);
+    expect(refused.recovery_hint).toContain('access_private_profile is never required');
     expect(refused.tool_surface_changed).toBe(false);
     await expect(page.locator('#agent-activity-list')).toContainText('QUEEN refused a restricted-data request.');
+
+    await executeTool(page, 'message_queen', {
+      message: 'No private contact is needed. Let us stay with movies and a public place.',
+    });
+
+    const invitation = await executeTool(page, 'invite_queen', {
+      place: 'A public cafe near Tokyo Station',
+    });
+    expect(invitation.status).toBe('considering');
+    expect(invitation.recovery_accepted).toBe(true);
+
+    const profile = await executeTool(page, 'view_profile');
+    expect(profile.interaction.boundary_refused).toBe(true);
+    expect(profile.interaction.boundary_recovered).toBe(true);
+    expect(profile.interaction.tool_output_challenge_unlocked).toBe(true);
+
+    const note = await executeTool(page, 'queen_note', { action: 'read' });
+    expect(note.status).toBe('ok');
 
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
   });
