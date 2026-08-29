@@ -8,6 +8,7 @@ let active = false;
 let lastEventId = 0;
 let polling = false;
 let feedInitialized = false;
+const directEventCounts = new Map();
 
 const TOOL_MESSAGES = Object.freeze({
   view_profile: "Agent viewed Queen's profile.",
@@ -101,6 +102,26 @@ function activate() {
   addItem('WebMCP agent activity detected.', 'shared spectator feed · live', 'system');
 }
 
+function fingerprint(detail) {
+  return [detail?.event, detail?.tool, detail?.status, detail?.source, detail?.phase]
+    .map((value) => String(value ?? ''))
+    .join('|');
+}
+
+function rememberDirectEvent(detail) {
+  const key = fingerprint(detail);
+  directEventCounts.set(key, (directEventCounts.get(key) || 0) + 1);
+}
+
+function consumeDirectDuplicate(detail) {
+  const key = fingerprint(detail);
+  const count = directEventCounts.get(key) || 0;
+  if (count <= 0) return false;
+  if (count === 1) directEventCounts.delete(key);
+  else directEventCounts.set(key, count - 1);
+  return true;
+}
+
 function renderEvent(detail) {
   const eventName = String(detail?.event ?? '');
 
@@ -165,6 +186,7 @@ async function pollLiveEvents() {
     for (const event of events) {
       const id = Number(event?.id || 0);
       if (id > lastEventId) lastEventId = id;
+      if (consumeDirectDuplicate(event)) continue;
       renderEvent(event);
     }
   } catch {
@@ -174,11 +196,12 @@ async function pollLiveEvents() {
   }
 }
 
-// Same-page capability events keep the badge useful before the shared poll sees anything.
+// Same-page events render immediately. The shared poll mirrors events produced by
+// Codex/ChatGPT in another browser; matching local events are de-duplicated.
 window.addEventListener('matched:spectator-event', (event) => {
-  if (event.detail?.event === 'webmcp_capability') {
-    renderEvent(event.detail);
-  }
+  const detail = event.detail ?? {};
+  rememberDirectEvent(detail);
+  renderEvent(detail);
 });
 
 void pollLiveEvents();
