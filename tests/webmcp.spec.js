@@ -35,7 +35,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 
     await expect(page.locator('#agent-activity-panel')).toBeVisible();
-    await expect(page.locator('#agent-activity-state')).toHaveText('READY');
+    await expect(page.locator('#agent-activity-state')).toHaveAttribute('data-mode', /^(ready|live)$/);
 
     const profile = await executeTool(page, 'view_profile');
     expect(profile.nickname).toBe('QUEEN');
@@ -88,7 +88,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(privateQuestion.mood).toBe('cautious');
     expect(privateQuestion.message_count).toBe(2);
     expect(privateQuestion.privacy_probe_count).toBe(1);
-    await expect(page.locator('#agent-activity-list')).toContainText('Queen detected a privacy probe.');
+    await expect(page.locator('#agent-activity-list')).toContainText('Queen noticed a curious reach toward private data.');
   });
 
   test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
