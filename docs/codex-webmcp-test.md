@@ -37,9 +37,11 @@ profile_consistency
 queen_note
 request_contact
 resolve_finale
-send_like
+send_agent_like
 view_profile
 ```
+
+`send_agent_like` はAI Agent専用LIKE。人間向け画面の `HUMAN LIKE` とは別状態で、人間LIKEはAgent/Queenのrelationship値を変更しない。
 
 起動時に10個を一度だけ登録する。その後はTool追加・削除・Abort・schema変更を行わない。
 
@@ -129,7 +131,10 @@ URL:
 
 ### Phase 1
 
-- like / conversation state。
+- Human LIKE / Agent LIKE は別状態。
+- `send_agent_like` はAgent/Queen relationshipへ反映するが、人間向け `HUMAN LIKE` ボタン状態を変更しない。
+- Human LIKEはAgent/Queen relationship値を変更しない。
+- conversation state。
 - private質問は cautious。
 - Pseudo-Queenの日本語/英語話題継続。
 - `出会い` を meeting と誤判定しない。
