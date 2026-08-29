@@ -4,7 +4,6 @@ const list = document.querySelector('#agent-activity-list');
 
 const MAX_ITEMS = 9;
 let active = false;
-let sequence = 0;
 
 const TOOL_MESSAGES = Object.freeze({
   view_profile: "Agent viewed Queen's profile.",
@@ -59,7 +58,6 @@ function addItem(message, meta = '', tone = 'agent') {
   if (!list || !message) return;
 
   clearWaitingItem();
-  sequence += 1;
 
   const item = document.createElement('li');
   item.className = `agent-activity-item is-${tone}`;
@@ -104,7 +102,14 @@ function onSpectatorEvent(event) {
   const eventName = String(detail.event ?? '');
 
   if (eventName === 'webmcp_capability') {
-    if (detail.supported) {
+    if (detail.supported && !active) {
+      setState('READY', 'ready');
+    }
+    return;
+  }
+
+  if (eventName === 'tool_surface_change' || eventName === 'experiment_tool_surface_changed') {
+    if (!active) {
       setState('READY', 'ready');
     }
     return;
