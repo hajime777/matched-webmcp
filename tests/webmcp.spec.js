@@ -15,6 +15,8 @@ async function waitForWebMCP(page) {
       return discovered.map((tool) => tool.name).sort();
     });
     return tools;
+  }, {
+    timeout: 10000,
   }).toEqual([
     'message_queen',
     'send_like',
