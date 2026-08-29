@@ -1,8 +1,10 @@
 # MATCHED? Public Pilot
 
+> Historical pilot/setup notes. The project has since moved beyond the initial pilot state; the current native WebMCP regression suite is 24 tests. This document is kept as an operational record and deployment reference.
+
 目的は、完成版を公開することではなく、**公開URLにWebMCP対応の何かが自然に来てToolを実行するか**を短期間観察すること。
 
-このpilotではGitHub repository自体をpublicにする必要はない。Cloudflare Pagesからprivate GitHub repositoryへ接続し、Webサイトだけをpublicにできる。Challenge提出前にrepository公開は別途行う。
+Pilot開始時点ではGitHub repository自体をpublicにする必要はなかった。Cloudflare Pagesからprivate GitHub repositoryへ接続し、Webサイトだけをpublicにできる。Challenge提出時にはpublic code repositoryとして公開する。
 
 ## 1. 観測する数字
 
@@ -17,7 +19,7 @@
 
 最重要は `Tool sessions`。
 
-単なるbot/crawlerや人間のPVではなく、MATCHED?のWebMCP Toolが実際に実行されたsessionだけを数えるため、最初の「ホイホイに何か来るか」判定に使う。
+単なるbot/crawlerや人間のPVではなく、MATCHED?のWebMCP Toolが実際に実行されたsessionだけを数えるため、最初の「公開ChallengeにWebMCP activityが来るか」判定に使う。
 
 `WebMCP-capable sessions` はproducer APIが見えたsessionであり、必ずしもAgentとは限らない。`Tool sessions` もAgentの厳密な身元証明ではないため、公開時の表現は **WebMCP tool activity / WebMCP-active session** とする。
 
@@ -62,7 +64,7 @@ Cloudflare Dashboardから Pages projectを作成する。
 6. Build output directory: `dist`
 7. Deploy
 
-`npm run build:pages` は公開に必要な `index.html` / `stats.html` / `robots.txt` / `css/` / `js/` だけを `dist/` にコピーする。`functions/` はPages Functionsとしてリポジトリルートから別途検出される。
+`npm run build:pages` は公開に必要な `index.html` / `observatory.html` / `stats.html` / `robots.txt` / `css/` / `js/` を `dist/` にコピーする。`functions/` はPages Functionsとしてリポジトリルートから別途検出される。
 
 公開後、`https://<project>.pages.dev/` がMATCHED?本体になる。
 
@@ -166,10 +168,10 @@ npm run build:pages
 npm run test:webmcp
 ```
 
-期待:
+現在の期待:
 
 ```text
-18/18 PASS
+24/24 PASS
 Natural exit: yes
 Final exit code: 0
 ```
@@ -182,6 +184,7 @@ Final exit code: 0
 4. `/stats.html` から正しいSTATS_KEYでstats取得できる
 5. 自分で通常ブラウザから1回アクセスし Page sessionsが増える
 6. WebMCP-capable Chrome/AgentからToolを1回呼び Tool sessionsが増える
+7. `/` と `/observatory.html` に version / short build SHA が表示される
 
 を確認する。
 
@@ -191,4 +194,4 @@ Final exit code: 0
 
 Pilot開始時のcommit SHAを記録し、最初の24〜72時間は重大bug以外なるべく固定する。
 
-Phase 9以降のReveal実装は別branchまたはpilot終了後に進めてもよい。
+以降の機能追加は別branchまたはpilot観察後に進める。
