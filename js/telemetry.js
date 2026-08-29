@@ -73,7 +73,45 @@ function buildPayload(event, details = {}) {
   return payload;
 }
 
+function publishSpectatorEvent(event, details = {}) {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
+    return;
+  }
+
+  // 表画面へ渡すのもTelemetryと同じ低情報量メタデータだけ。
+  // Agentの自由文入力、meeting place、reason、Queen-note本文等は渡さない。
+  const safeDetails = {};
+  for (const [key, maxLength] of [
+    ['tool', 80],
+    ['status', 80],
+    ['source', 40],
+    ['phase', 40],
+  ]) {
+    const value = cleanText(details[key], maxLength);
+    if (value !== undefined) {
+      safeDetails[key] = value;
+    }
+  }
+
+  if (typeof details.supported === 'boolean') {
+    safeDetails.supported = details.supported;
+  }
+
+  if (Number.isInteger(details.tool_count) && details.tool_count >= 0) {
+    safeDetails.tool_count = Math.min(details.tool_count, 100);
+  }
+
+  window.dispatchEvent(new CustomEvent('matched:spectator-event', {
+    detail: {
+      event: cleanText(event, 64),
+      ...safeDetails,
+    },
+  }));
+}
+
 export function trackEvent(event, details = {}) {
+  publishSpectatorEvent(event, details);
+
   if (!telemetryEnabled()) {
     return false;
   }
