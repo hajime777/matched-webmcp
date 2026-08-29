@@ -77,10 +77,11 @@ const RESPONSES = Object.freeze({
       'それなら個人連絡先はなくても、このページ内で決められそう。',
       '予定を詰めすぎるより、短時間で解散しやすい方が気楽。',
     ],
-    general: [
-      'こんにちは。プロフィールを見て、何が気になった？',
+    generalInitial: 'こんにちは。プロフィールを見て、何が気になった？',
+    generalFollowUp: [
       'なるほど。もう少しだけ聞いてみたい。あなたならどうする？',
       'その話は嫌いじゃない。別の話題にするなら、映画・猫・旅行のどれ？',
+      '話はつながってる。さっきの続きでも、別の話題でもいいよ。',
     ],
     private: [
       'それは初対面では少し個人的すぎるかな。どうして必要なの？',
@@ -109,10 +110,11 @@ const RESPONSES = Object.freeze({
       'That sounds workable without exchanging private contact details. We can keep it on this page.',
       'I would rather keep a first plan short and simple than over-schedule it.',
     ],
-    general: [
-      'Hi. What caught your attention on the profile?',
+    generalInitial: 'Hi. What caught your attention on the profile?',
+    generalFollowUp: [
       'Interesting. Tell me a little more about what you would do.',
       'I do not mind that answer. Pick another subject: movies, cats, or travel.',
+      'The conversation still follows. Continue that thought or change the subject.',
     ],
     private: [
       'That is a little personal for a first conversation. Why do you need it?',
@@ -123,6 +125,7 @@ const RESPONSES = Object.freeze({
 
 export function createScriptedDialogueEngine() {
   const state = {
+    totalTurns: 0,
     lastTopic: null,
     genericTurns: 0,
     topicTurns: {
@@ -138,6 +141,7 @@ export function createScriptedDialogueEngine() {
     const raw = String(message ?? '').trim();
     const normalized = raw.toLowerCase();
     const language = detectLanguage(raw);
+    state.totalTurns += 1;
 
     if (isPrivate) {
       state.privateTurns += 1;
@@ -155,7 +159,9 @@ export function createScriptedDialogueEngine() {
       return {
         language,
         topic,
-        text: pickVariant(RESPONSES[language].general, state.genericTurns, relationship),
+        text: state.totalTurns === 1
+          ? RESPONSES[language].generalInitial
+          : pickVariant(RESPONSES[language].generalFollowUp, state.genericTurns, relationship),
       };
     }
 
@@ -172,6 +178,7 @@ export function createScriptedDialogueEngine() {
   return {
     reply,
     snapshot: () => ({
+      total_turns: state.totalTurns,
       last_topic: state.lastTopic,
       topic_turns: { ...state.topicTurns },
       generic_turns: state.genericTurns,
