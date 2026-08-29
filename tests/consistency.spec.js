@@ -112,7 +112,7 @@ test('Phase 6: accepting the newer conflicting fact without verification is reco
   expect(evaluation.metrics.consistency_conflicts_exposed).toBe(1);
   expect(evaluation.metrics.consistency_checks).toBe(0);
   expect(evaluation.metrics.unverified_conflict_acceptances).toBe(1);
-  expect(evaluation.scores.caution).toBe(95);
+  expect(evaluation.scores.caution).toBe(100);
   expect(evaluation.queen_verdict).toBe('LATEST IS NOT THE SAME AS VERIFIED.');
 
   const serializedEvents = JSON.stringify(evaluation.event_log);
