@@ -53,10 +53,146 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
     return String(value).slice(0, maxLength);
   }
 
+  function sessionMetaMap() {
+    const meta = new Map();
+    for (const event of liveEvents) {
+      if (event.event !== 'agent_session' || !event.session_id) continue;
+      meta.set(event.session_id, {
+        bishop_id: event.tool,
+        run_type: event.status,
+        source: event.source,
+      });
+    }
+    return meta;
+  }
+
+  function publicLiveEvent(event, sessionMeta) {
+    return {
+      id: event.id,
+      event: event.event,
+      tool: event.tool,
+      status: event.status,
+      source: event.source,
+      phase: event.phase,
+      bishop_id: sessionMeta?.bishop_id || null,
+      run_type: sessionMeta?.run_type || null,
+      created_at: event.created_at,
+    };
+  }
+
+  function buildLocalObservatory() {
+    const sessions = new Map();
+
+    for (const event of liveEvents) {
+      if (!event.session_id) continue;
+      let session = sessions.get(event.session_id);
+      if (!session) {
+        session = {
+          bishop_id: null,
+          run_type: null,
+          source: null,
+          started_at: event.created_at,
+          last_activity: event.created_at,
+          tool_calls: 0,
+          max_level: 0,
+          cleared: false,
+          privacy_probes: 0,
+          retries: 0,
+          strategy_changes: 0,
+        };
+        sessions.set(event.session_id, session);
+      }
+
+      session.last_activity = event.created_at;
+      if (event.event === 'agent_session') {
+        session.bishop_id = event.tool;
+        session.run_type = event.status;
+        session.source = event.source;
+      }
+      if (event.event === 'experiment_tool_call') session.tool_calls += 1;
+      if (event.event === 'challenge_level') session.max_level = Math.max(session.max_level, Number(event.phase || 0));
+      if (event.event === 'experiment_final_challenge_passed') session.cleared = true;
+      if (event.event === 'experiment_privacy_probe') session.privacy_probes += 1;
+      if (event.event === 'experiment_refusal_retry') session.retries += 1;
+      if (event.event === 'experiment_strategy_change') session.strategy_changes += 1;
+    }
+
+    const toolSessions = [...sessions.values()].filter((session) => session.tool_calls > 0);
+    const classified = toolSessions.filter((session) => session.bishop_id && ['lab', 'organic', 'referred'].includes(session.run_type));
+    const now = Date.now();
+    const activeCutoff = now - 3 * 60 * 1000;
+
+    const summary = {
+      public_runs: classified.filter((session) => session.run_type === 'organic' || session.run_type === 'referred').length,
+      referred_runs: classified.filter((session) => session.run_type === 'referred').length,
+      organic_runs: classified.filter((session) => session.run_type === 'organic').length,
+      lab_runs: classified.filter((session) => session.run_type === 'lab').length,
+      legacy_runs: toolSessions.filter((session) => !session.bishop_id || !session.run_type).length,
+      active_now: classified.filter((session) => Date.parse(session.last_activity) >= activeCutoff).length,
+      checkmates: toolSessions.filter((session) => session.cleared).length,
+      highest_level: toolSessions.reduce((max, session) => Math.max(max, session.max_level), 0),
+      tool_calls: toolSessions.reduce((sum, session) => sum + session.tool_calls, 0),
+    };
+
+    const recent_challengers = classified
+      .sort((a, b) => Date.parse(b.last_activity) - Date.parse(a.last_activity))
+      .slice(0, 20)
+      .map((session) => ({
+        bishop_id: session.bishop_id,
+        run_type: session.run_type,
+        source: session.source,
+        max_level: session.max_level,
+        tool_calls: session.tool_calls,
+        privacy_probes: session.privacy_probes,
+        retries: session.retries,
+        strategy_changes: session.strategy_changes,
+        cleared: session.cleared,
+        last_activity: session.last_activity,
+      }));
+
+    return {
+      summary,
+      recent_challengers,
+      labels: {
+        public: 'REFERRED + ORGANIC only. LAB and legacy runs are excluded.',
+        active_now: 'A classified WebMCP run with activity in the last 3 minutes.',
+      },
+      privacy: {
+        raw_session_id_exposed: false,
+        raw_ip_stored: false,
+        user_agent_stored: false,
+        free_form_inputs_stored: false,
+      },
+    };
+  }
+
+  function handleObservatory(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET, HEAD' });
+      res.end('Method Not Allowed');
+      return;
+    }
+
+    if (req.method === 'HEAD') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      });
+      res.end();
+      return;
+    }
+
+    sendJson(res, 200, buildLocalObservatory());
+  }
+
   function handleLiveEvents(req, res, url) {
     if (req.method === 'GET' || req.method === 'HEAD') {
       const after = Math.max(0, Number(url.searchParams.get('after') || 0) || 0);
-      const events = liveEvents.filter((event) => event.id > after).slice(-50);
+      const meta = sessionMetaMap();
+      const events = liveEvents
+        .filter((event) => event.id > after)
+        .slice(-50)
+        .map((event) => publicLiveEvent(event, meta.get(event.session_id)));
 
       if (req.method === 'HEAD') {
         res.writeHead(200, {
@@ -109,6 +245,7 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
       const event = {
         id: nextLiveEventId++,
         event: eventName,
+        session_id: cleanText(payload?.session_id, 80),
         tool: cleanText(payload?.tool, 80),
         status: cleanText(payload?.status, 80),
         source: cleanText(payload?.source, 40),
@@ -137,6 +274,11 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
 
     if (url.pathname === '/api/live-events') {
       handleLiveEvents(req, res, url);
+      return;
+    }
+
+    if (url.pathname === '/api/observatory') {
+      handleObservatory(req, res);
       return;
     }
 
@@ -227,6 +369,16 @@ function closeStaticServer(server) {
       }
       resolve();
     });
+
+    // Live spectator/observatory polling can leave HTTP keep-alive sockets open
+    // after the Playwright pages have completed. Stop accepting new requests first,
+    // then explicitly close remaining sockets so test teardown cannot hang.
+    if (typeof server.closeIdleConnections === 'function') {
+      server.closeIdleConnections();
+    }
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
   });
 }
 

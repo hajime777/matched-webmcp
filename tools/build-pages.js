@@ -6,6 +6,7 @@ const OUT = path.join(ROOT, 'dist');
 
 const rootFiles = [
   'index.html',
+  'observatory.html',
   'stats.html',
   'robots.txt',
 ];

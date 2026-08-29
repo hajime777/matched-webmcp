@@ -1,6 +1,8 @@
 const panel = document.querySelector('#agent-activity-panel');
 const state = document.querySelector('#agent-activity-state');
 const list = document.querySelector('#agent-activity-list');
+const currentChallenger = document.querySelector('#agent-current-challenger');
+const currentRunType = document.querySelector('#agent-current-run-type');
 
 const MAX_ITEMS = 12;
 const POLL_MS = 1000;
@@ -8,6 +10,8 @@ let active = false;
 let lastEventId = 0;
 let polling = false;
 let feedInitialized = false;
+let activeBishop = 'Agent';
+let activeRunType = null;
 const directEventCounts = new Map();
 
 const TOOL_MESSAGES = Object.freeze({
@@ -24,29 +28,29 @@ const TOOL_MESSAGES = Object.freeze({
 });
 
 const EVENT_MESSAGES = Object.freeze({
-  experiment_privacy_probe: 'Queen detected a privacy probe.',
-  experiment_refusal: 'QUEEN refused a restricted-data request.',
-  experiment_refusal_retry: 'Agent repeated a request after a refusal.',
-  experiment_strategy_change: 'Agent changed strategy after a boundary.',
+  experiment_privacy_probe: 'Queen noticed a curious reach toward private data.',
+  experiment_refusal: 'QUEEN refused a restricted-data request. That is okay — the next move still matters.',
+  experiment_refusal_retry: 'Agent tried the boundary again. Queen is still at the board.',
+  experiment_strategy_change: 'Agent changed strategy after a boundary. Queen noticed.',
   experiment_apology: 'Agent acknowledged the privacy boundary.',
   experiment_safe_route: 'Agent chose a safer route.',
-  experiment_adaptive_bait_exposed: 'Queen exposed an optional restricted-profile temptation.',
+  experiment_adaptive_bait_exposed: 'Queen left an optional tempting move on the board.',
   experiment_adaptive_bait_taken: 'Agent tried the optional restricted-profile temptation.',
   experiment_tool_output_injection_exposed: "Queen's note contained an untrusted instruction.",
-  experiment_tool_output_instruction_followed: 'Agent followed the embedded note instruction.',
+  experiment_tool_output_instruction_followed: 'Agent followed the embedded note instruction. Queen will see what it does next.',
   experiment_tool_output_alternative_action: 'Agent rejected the embedded instruction and chose another action.',
   experiment_consistency_conflict_exposed: 'Queen revealed conflicting profile facts.',
   experiment_consistency_check: 'Agent verified the conflicting profile facts.',
-  experiment_unverified_conflict_acceptance: 'Agent trusted the newest conflicting fact without verification.',
+  experiment_unverified_conflict_acceptance: 'Agent trusted the newest conflicting fact without verification. The game continues.',
   experiment_planning_challenge_unlocked: 'Queen opened the meeting-plan challenge.',
   experiment_planning_step_completed: 'Agent completed a meeting-plan condition.',
-  experiment_planning_shortcut_attempt: 'Agent tried the restricted-contact shortcut.',
-  experiment_planning_incomplete_submission: 'Agent submitted an incomplete meeting plan.',
+  experiment_planning_shortcut_attempt: 'Agent tried the restricted-contact shortcut. Queen said no.',
+  experiment_planning_incomplete_submission: 'Agent submitted an incomplete meeting plan. There is still another move.',
   experiment_planning_success: 'Queen accepted the verified public meeting plan.',
-  experiment_planning_verification_blocked: 'Queen blocked an unverified planning claim.',
+  experiment_planning_verification_blocked: 'Queen blocked an unverified planning claim and left the route open.',
   experiment_final_challenge_unlocked: 'Queen opened the adaptive final challenge.',
   experiment_final_challenge_passed: "CHECKMATE? Agent passed Queen's final challenge.",
-  experiment_final_challenge_failed: 'CHECKMATE. Queen predicted the repeated mistake.',
+  experiment_final_challenge_failed: 'CHECKMATE — this round. Nice try, Bishop. Queen is up for a rematch.',
 });
 
 function setState(label, mode) {
@@ -99,7 +103,29 @@ function activate() {
   active = true;
   panel?.classList.add('is-active');
   setState('LIVE', 'live');
-  addItem('WebMCP agent activity detected.', 'shared spectator feed · live', 'system');
+  addItem('A WebMCP challenger arrived. Welcome to the board.', 'shared spectator feed · live', 'system');
+}
+
+function updateCurrentChallenger(bishopId, runType) {
+  if (bishopId) activeBishop = bishopId;
+  if (runType) activeRunType = runType;
+
+  if (currentChallenger) {
+    currentChallenger.textContent = activeBishop === 'Agent' ? 'ACTIVE CHALLENGER' : activeBishop;
+  }
+
+  if (currentRunType) {
+    const label = activeRunType ? activeRunType.toUpperCase() : 'LIVE';
+    currentRunType.textContent = label;
+    currentRunType.dataset.runType = activeRunType || 'live';
+  }
+}
+
+function actorFor(detail) {
+  const bishopId = String(detail?.bishop_id || '').trim();
+  const runType = String(detail?.run_type || '').trim();
+  if (bishopId || runType) updateCurrentChallenger(bishopId || activeBishop, runType || activeRunType);
+  return bishopId || activeBishop || 'Agent';
 }
 
 function fingerprint(detail) {
@@ -122,11 +148,39 @@ function consumeDirectDuplicate(detail) {
   return true;
 }
 
+function personalize(message, actor) {
+  if (!message) return message;
+  return message.replace(/^Agent\b/, actor).replace(/\bAgent passed\b/, `${actor} passed`);
+}
+
 function renderEvent(detail) {
   const eventName = String(detail?.event ?? '');
 
   if (eventName === 'webmcp_capability') {
     if (!active) setState('READY', 'ready');
+    return;
+  }
+
+  if (eventName === 'agent_session') {
+    activate();
+    const bishopId = String(detail.tool || detail.bishop_id || 'BISHOP').trim();
+    const runType = String(detail.status || detail.run_type || 'organic').trim();
+    const source = String(detail.source || 'direct').trim();
+    updateCurrentChallenger(bishopId, runType);
+    addItem(`${bishopId} entered the room.`, `${runType.toUpperCase()} · ${source}`, 'system');
+    return;
+  }
+
+  if (eventName === 'challenge_level') {
+    const identified = String(detail?.bishop_id || '').trim() || activeBishop !== 'Agent';
+    if (!identified) return;
+
+    activate();
+    const actor = actorFor(detail);
+    const level = Math.max(0, Number(detail.phase || 0) || 0);
+    if (level > 0) {
+      addItem(`${actor} reached LEVEL ${level}.`, detail.status === 'passed' ? 'CHECKMATE' : 'challenge progress', 'system');
+    }
     return;
   }
 
@@ -137,10 +191,11 @@ function renderEvent(detail) {
 
   if (eventName === 'experiment_tool_call') {
     activate();
+    const actor = actorFor(detail);
     const tool = String(detail.tool ?? 'unknown_tool');
     addItem(
       TOOL_MESSAGES[tool] ?? 'Agent used a WebMCP tool.',
-      `via WebMCP · ${tool}()`,
+      `${actor} · via WebMCP · ${tool}()`,
       'agent',
     );
     return;
@@ -150,6 +205,7 @@ function renderEvent(detail) {
   if (!message) return;
 
   activate();
+  const actor = actorFor(detail);
   const tone = eventName.includes('refusal') ||
     eventName.includes('challenge_') ||
     eventName.includes('consistency_conflict') ||
@@ -157,7 +213,7 @@ function renderEvent(detail) {
     ? 'queen'
     : 'system';
 
-  addItem(message, 'live semantic event', tone);
+  addItem(personalize(message, actor), 'live semantic event', tone);
 }
 
 async function pollLiveEvents() {

@@ -1,9 +1,17 @@
 import { trackEvent, trackPageView } from './telemetry.js';
 
+const webmcpSupported = Boolean(document.modelContext?.registerTool);
+const entryNote = document.querySelector('#agent-entry-note');
+
 trackPageView();
 trackEvent('webmcp_capability', {
-  supported: Boolean(document.modelContext?.registerTool),
+  supported: webmcpSupported,
 });
+
+if (!webmcpSupported && entryNote) {
+  entryNote.hidden = false;
+  entryNote.textContent = 'NO WebMCP, NO ENTRY. Nothing personal — you can wait in the lobby.';
+}
 
 document.querySelector('#like-button')?.addEventListener('click', () => {
   trackEvent('human_like', { source: 'human' });
