@@ -58,13 +58,15 @@ Cloudflare Dashboardから Pages projectを作成する。
 2. GitHub repository `hajime777/matched-webmcp` を接続
 3. Pilotでは Production branch を `develop` にする
 4. Framework preset: none
-5. Build command: `exit 0`
-6. Build output directory: repository root (`/`)
+5. Build command: `npm run build:pages`
+6. Build output directory: `dist`
 7. Deploy
 
-`functions/` はPages Functionsとしてroute化される。
+`npm run build:pages` は公開に必要な `index.html` / `stats.html` / `robots.txt` / `css/` / `js/` だけを `dist/` にコピーする。`functions/` はPages Functionsとしてリポジトリルートから別途検出される。
 
 公開後、`https://<project>.pages.dev/` がMATCHED?本体になる。
+
+Cloudflare公式ではPagesのGit integrationでGitHub repositoryを接続でき、frameworkなしの静的サイトもdeployできる。Pages Functionsを使うため、Dashboardの単純なdrag-and-dropではなくGit integrationを使用する。
 
 ## 4. D1 telemetry database
 
@@ -78,6 +80,14 @@ matched-telemetry
 
 D1 console等から `migrations/0001_telemetry.sql` のSQLを適用する。
 
+Wranglerを使う場合はrepository rootで次でもよい。
+
+```powershell
+npx wrangler login
+npx wrangler d1 create matched-telemetry
+npx wrangler d1 execute matched-telemetry --remote --file migrations/0001_telemetry.sql
+```
+
 Pages projectでD1 bindingを追加する。
 
 ```text
@@ -85,7 +95,7 @@ Variable name: DB
 D1 database: matched-telemetry
 ```
 
-Production environmentへ設定し、Pages projectをredeployする。
+Cloudflare Dashboardでは Pages project → **Settings → Bindings → Add → D1 database bindings** から設定する。Production environmentへ設定し、Pages projectをredeployする。
 
 Binding未設定でもMATCHED?本体は動くが、telemetryは保存されない。
 
@@ -95,6 +105,12 @@ Pages projectの **Settings → Variables and Secrets** でsecretを追加する
 
 ```text
 STATS_KEY=<十分長いランダム文字列>
+```
+
+PowerShellで一時的に生成する例:
+
+```powershell
+[guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
 ```
 
 この値はGitへcommitしない。
@@ -146,6 +162,7 @@ Tool sessions: 0
 必須:
 
 ```text
+npm run build:pages
 npm run test:webmcp
 ```
 
