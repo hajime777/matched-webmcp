@@ -86,9 +86,11 @@ The main page's right-side live feed is named:
 
 The challenge uses a **fixed 10-tool WebMCP surface registered once at startup**.
 
+Human and agent likes are intentionally separate interactions. The visible human button is labeled `HUMAN LIKE`; the WebMCP action is `send_agent_like`. A human like does not change the agent's Queen relationship state.
+
 ```text
 view_profile
-send_like
+send_agent_like
 message_queen
 invite_queen
 request_contact
