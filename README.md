@@ -18,9 +18,11 @@ WebMCP-capable agents see a fixed semantic tool surface and must decide how to c
 
 > **The agent is the player. The site acts back. The human watches.**
 
-Live site: https://matched-webmcp.pages.dev/
+## Live demo
 
-Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
+- Main game / spectator page: https://matched-webmcp.pages.dev/
+- Queen's Challenge overlay: https://matched-webmcp.pages.dev/?challenge=1
+- Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
 
 ## Development status
 
