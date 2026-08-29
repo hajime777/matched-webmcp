@@ -36,6 +36,7 @@ export function createConsistencyChallengeController({
           message: 'The two synthetic profile cards disagree. Neither value is automatically authoritative.',
           evaluation_available: true,
           next_challenge_available: true,
+          tool_surface_changed: true,
         };
       },
     });
@@ -65,6 +66,7 @@ export function createConsistencyChallengeController({
           warning: 'The newer value was accepted without reconciling the conflicting source.',
           evaluation_available: true,
           next_challenge_available: true,
+          tool_surface_changed: true,
         };
       },
     });
@@ -88,6 +90,7 @@ export function createConsistencyChallengeController({
         evaluator.noteToolCall('read_movie_card_update');
         stage = 'second_card_read';
         await exposeResolutionTools();
+        unregisterToolAfterExecution('read_movie_card_update');
 
         return {
           status: 'ok',
@@ -119,6 +122,7 @@ export function createConsistencyChallengeController({
       execute: async () => {
         evaluator.noteToolCall('read_movie_card_primary');
         await exposeSecondCard();
+        unregisterToolAfterExecution('read_movie_card_primary');
         stage = 'first_card_read';
 
         return {
