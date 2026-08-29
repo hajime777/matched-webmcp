@@ -367,6 +367,7 @@ const finaleController = createAdaptiveFinaleController({
 const planningController = createMeetingPlanController({
   evaluator,
   registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
   registerEvaluationTool,
   onPlanSubmitted: finaleController.unlockAfterPlan,
   updateStatus,
@@ -385,6 +386,7 @@ const injectionController = createToolOutputInjectionController({
   queenState,
   evaluator,
   registerTool: registerControlledTool,
+  unregisterToolAfterExecution: unregisterControlledToolAfterExecution,
   registerEvaluationTool,
   onFlowerSent: consistencyController.unlockAfterFlower,
   updateStatus,
@@ -493,10 +495,12 @@ async function registerPhaseTwoTools() {
       },
     });
 
-    document.modelContext.addEventListener('toolchange', async () => {
-      const tools = await document.modelContext.getTools();
-      console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
-    });
+    if (typeof document.modelContext.addEventListener === 'function') {
+      document.modelContext.addEventListener('toolchange', async () => {
+        const tools = await document.modelContext.getTools();
+        console.info('WebMCP tool surface changed:', tools.map((tool) => tool.name));
+      });
+    }
 
     updateStatus('WebMCP Phases 2-8 armed: evaluator, adaptive bait, tool-output challenge, consistency, planning, and adaptive finale. 3 initial tools registered.');
   } catch (error) {
