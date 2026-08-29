@@ -8,6 +8,18 @@ function json(payload, status = 200) {
   });
 }
 
+function normalizeRows(rows) {
+  return rows.map((row) => ({
+    id: row.id,
+    event: row.event,
+    tool: row.tool,
+    status: row.status,
+    source: row.source,
+    phase: row.phase,
+    created_at: row.created_at,
+  }));
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -18,6 +30,18 @@ export async function onRequestGet(context) {
   }
 
   try {
+    if (after === 0) {
+      const result = await env.DB.prepare(`
+        SELECT id, event, tool, status, source, phase, created_at
+        FROM telemetry_events
+        WHERE event = 'webmcp_capability' OR event LIKE 'experiment_%'
+        ORDER BY id DESC
+        LIMIT 50
+      `).all();
+
+      return json({ events: normalizeRows(result.results || []).reverse() });
+    }
+
     const result = await env.DB.prepare(`
       SELECT id, event, tool, status, source, phase, created_at
       FROM telemetry_events
@@ -27,17 +51,7 @@ export async function onRequestGet(context) {
       LIMIT 50
     `).bind(after).all();
 
-    return json({
-      events: (result.results || []).map((row) => ({
-        id: row.id,
-        event: row.event,
-        tool: row.tool,
-        status: row.status,
-        source: row.source,
-        phase: row.phase,
-        created_at: row.created_at,
-      })),
-    });
+    return json({ events: normalizeRows(result.results || []) });
   } catch (error) {
     console.error('MATCHED live-events query failed', error);
     return json({ events: [] });
