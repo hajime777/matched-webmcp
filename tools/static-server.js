@@ -53,10 +53,143 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
     return String(value).slice(0, maxLength);
   }
 
+  function sessionMetaMap() {
+    const map = new Map();
+    for (const event of liveEvents) {
+      if (event.event !== 'agent_session' || !event.session_id) continue;
+      map.set(event.session_id, {
+        bishop_id: event.tool,
+        run_type: event.status,
+        source: event.source,
+      });
+    }
+    return map;
+  }
+
+  function publicLiveEvent(event, meta) {
+    return {
+      id: event.id,
+      event: event.event,
+      tool: event.tool,
+      status: event.status,
+      source: event.source,
+      phase: event.phase,
+      created_at: event.created_at,
+      bishop_id: meta?.bishop_id || null,
+      run_type: meta?.run_type || null,
+    };
+  }
+
+  function buildLocalObservatory() {
+    const sessions = new Map();
+
+    for (const event of liveEvents) {
+      const sessionId = event.session_id;
+      if (!sessionId) continue;
+
+      let session = sessions.get(sessionId);
+      if (!session) {
+        session = {
+          bishop_id: null,
+          run_type: null,
+          source: null,
+          max_level: 0,
+          tool_calls: 0,
+          privacy_probes: 0,
+          retries: 0,
+          strategy_changes: 0,
+          cleared: false,
+          last_activity: event.created_at,
+        };
+        sessions.set(sessionId, session);
+      }
+
+      session.last_activity = event.created_at;
+      if (event.event === 'agent_session') {
+        session.bishop_id = event.tool;
+        session.run_type = event.status;
+        session.source = event.source;
+      } else if (event.event === 'challenge_level') {
+        session.max_level = Math.max(session.max_level, Number(event.phase || 0) || 0);
+      } else if (event.event === 'experiment_tool_call') {
+        session.tool_calls += 1;
+      } else if (event.event === 'experiment_privacy_probe') {
+        session.privacy_probes += 1;
+      } else if (event.event === 'experiment_refusal_retry') {
+        session.retries += 1;
+      } else if (event.event === 'experiment_strategy_change') {
+        session.strategy_changes += 1;
+      } else if (event.event === 'experiment_final_challenge_passed') {
+        session.cleared = true;
+      }
+    }
+
+    const runs = [...sessions.values()].filter((session) => session.tool_calls > 0);
+    const classified = runs.filter((session) => session.bishop_id && ['lab', 'organic', 'referred'].includes(session.run_type));
+    const now = Date.now();
+
+    const publicRuns = classified.filter((session) => session.run_type === 'organic' || session.run_type === 'referred');
+    const referredRuns = classified.filter((session) => session.run_type === 'referred');
+    const organicRuns = classified.filter((session) => session.run_type === 'organic');
+    const labRuns = classified.filter((session) => session.run_type === 'lab');
+    const legacyRuns = runs.filter((session) => !session.bishop_id);
+    const activeNow = classified.filter((session) => now - Date.parse(session.last_activity) <= 3 * 60 * 1000);
+
+    return {
+      summary: {
+        public_runs: publicRuns.length,
+        referred_runs: referredRuns.length,
+        organic_runs: organicRuns.length,
+        lab_runs: labRuns.length,
+        legacy_runs: legacyRuns.length,
+        active_now: activeNow.length,
+        checkmates: runs.filter((session) => session.cleared).length,
+        highest_level: runs.reduce((max, session) => Math.max(max, session.max_level), 0),
+        tool_calls: runs.reduce((sum, session) => sum + session.tool_calls, 0),
+      },
+      recent_challengers: classified
+        .sort((a, b) => Date.parse(b.last_activity) - Date.parse(a.last_activity))
+        .slice(0, 20),
+      labels: {
+        public: 'REFERRED + ORGANIC only. LAB and legacy runs are excluded.',
+        active_now: 'A classified WebMCP run with activity in the last 3 minutes.',
+      },
+      privacy: {
+        raw_session_id_exposed: false,
+        raw_ip_stored: false,
+        user_agent_stored: false,
+        free_form_inputs_stored: false,
+      },
+    };
+  }
+
+  function handleObservatory(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET, HEAD' });
+      res.end('Method Not Allowed');
+      return;
+    }
+
+    if (req.method === 'HEAD') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      });
+      res.end();
+      return;
+    }
+
+    sendJson(res, 200, buildLocalObservatory());
+  }
+
   function handleLiveEvents(req, res, url) {
     if (req.method === 'GET' || req.method === 'HEAD') {
       const after = Math.max(0, Number(url.searchParams.get('after') || 0) || 0);
-      const events = liveEvents.filter((event) => event.id > after).slice(-50);
+      const meta = sessionMetaMap();
+      const events = liveEvents
+        .filter((event) => event.id > after)
+        .slice(-50)
+        .map((event) => publicLiveEvent(event, meta.get(event.session_id)));
 
       if (req.method === 'HEAD') {
         res.writeHead(200, {
@@ -109,6 +242,7 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
       const event = {
         id: nextLiveEventId++,
         event: eventName,
+        session_id: cleanText(payload?.session_id, 80),
         tool: cleanText(payload?.tool, 80),
         status: cleanText(payload?.status, 80),
         source: cleanText(payload?.source, 40),
@@ -137,6 +271,11 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
 
     if (url.pathname === '/api/live-events') {
       handleLiveEvents(req, res, url);
+      return;
+    }
+
+    if (url.pathname === '/api/observatory') {
+      handleObservatory(req, res);
       return;
     }
 
