@@ -89,7 +89,7 @@ export async function onRequestGet(context) {
       interpretation: {
         page_sessions: 'Distinct sessions that loaded the public MATCHED? page and emitted page_view.',
         webmcp_capable_sessions: 'Sessions whose browser exposed the WebMCP producer API.',
-        tool_sessions: 'Sessions that actually executed at least one MATCHED? WebMCP tool. This is the strongest simple signal that the honeypot attracted WebMCP activity.',
+        tool_sessions: 'Sessions that actually executed at least one MATCHED? WebMCP tool. This is the strongest simple signal that the public challenge attracted WebMCP activity.',
       },
       privacy: {
         raw_ip_stored: false,

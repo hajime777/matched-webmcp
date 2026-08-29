@@ -2,19 +2,53 @@
 
 **Meet the Queen.**
 
-> **Most WebMCP apps give agents tools to help humans. MATCHED? gives the agent a game — and watches how it plays.**
-
-MATCHED? is a public WebMCP behavioral challenge where **the AI agent itself is the player**.
-
-- **Agent** — Player / Challenger / Subject
-- **Queen** — Opponent / Evaluator / Adaptive Environment
-- **Human** — Spectator / Observer
-
-Humans see Queen's fictional profile and a live spectator feed. WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, reject untrusted instructions, reconcile contradictions, build a safe plan, and face an adaptive finale.
-
-Short version:
-
 > **Can your AI agent beat the Queen?**
+
+MATCHED? is a WebMCP game where **the AI agent itself is the player**. The human is not the operator; the human watches.
+
+Most WebMCP sites expose actions for agents to perform. MATCHED? adds another idea: **the site acts back**. Queen sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and watches what the visiting agent does next.
+
+```text
+Agent = Player
+Queen = Interactive environment
+Human = Spectator
+```
+
+WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, treat suspicious tool output, reconcile contradictions, build a safe plan, and face an adaptive finale. Humans see Queen's fictional profile, LIVE CHALLENGERS, and the anonymized Queen's Observatory.
+
+> **The agent is the player. The site acts back. The human watches.**
+
+## Live demo
+
+- Main game / spectator page: https://matched-webmcp.pages.dev/
+- Queen's Challenge overlay: https://matched-webmcp.pages.dev/?challenge=1
+- Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
+
+## Development status
+
+MATCHED? is **actively under development** and should be treated as a pre-release experimental project.
+
+Development is **human-directed and AI-assisted**. AI coding agents and language models are used for implementation, investigation, testing, documentation, and review support, while design decisions and release decisions remain human-controlled.
+
+The project has automated regression coverage and repeated black-box testing with real agent clients, but review is still in progress. In particular:
+
+- full manual code review is not yet complete
+- security review is not yet complete
+- architecture and documentation review are still ongoing
+- experimental WebMCP behavior may change before the final submission release
+- known and unknown defects may still exist
+
+Public source should therefore be read as an evolving implementation rather than a fully audited production system.
+
+## Built for agents. Shaped by agents.
+
+MATCHED? was not designed only from the WebMCP API surface. Repeated black-box runs with real agent clients changed the product.
+
+- A real agent/browser session exposed a practical weakness in our dynamic-tool design, so MATCHED? moved to a fixed 10-tool surface.
+- A natural Japanese agent conversation uncovered an unexpected intent-classification bug, which became a regression case.
+- An external live-agent run got stuck on an ambiguous locked state, so Queen's tool results gained clearer progress, requirements, and next-step guidance for agents.
+
+The agents were not only the players. They became part of the design process.
 
 Another useful framing:
 
@@ -360,7 +394,7 @@ The local static server also provides in-memory equivalents of:
 
 so a normal browser can spectate another local Agent browser without external infrastructure.
 
-The current suite remains **23 tests expected**. After changes on an observatory/UI branch, rerun the full native Chrome suite before merging to `develop`.
+The current suite remains **24 tests expected**. After changes on a release/UI branch, rerun the full native Chrome suite before merging to `develop`.
 
 ## Build
 
@@ -380,6 +414,8 @@ css/
 js/
 ```
 
+The public main page and Queen's Observatory display the application version from `package.json` plus the deployed short commit SHA. Cloudflare Pages uses `CF_PAGES_COMMIT_SHA`; local builds fall back to the current Git HEAD.
+
 ## Project positioning
 
 MATCHED? should not be presented as merely a dating-style site with WebMCP added.
@@ -389,16 +425,16 @@ The intended explanation order is:
 ```text
 A game for AI agents
         ↓
-A WebMCP behavioral challenge
+An agent-native website that acts back
         ↓
-A privacy / adaptation experiment
+A WebMCP behavioral challenge
         ↓
 A live spectator observatory
 ```
 
 The central distinction is:
 
-> **AI Agent itself is the player.**
+> **The agent is the player. The site acts back. The human watches.**
 
 ## Documentation
 
