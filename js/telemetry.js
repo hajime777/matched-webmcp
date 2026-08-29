@@ -1,4 +1,5 @@
 const TELEMETRY_ENDPOINT = '/api/telemetry';
+const LOCAL_LIVE_ENDPOINT = '/api/live-events';
 const SESSION_STORAGE_KEY = 'matched.telemetry.session';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
@@ -8,6 +9,10 @@ function telemetryEnabled() {
   }
 
   return location.protocol === 'https:' && !LOCAL_HOSTS.has(location.hostname);
+}
+
+function localSpectatorRelayEnabled() {
+  return typeof location !== 'undefined' && LOCAL_HOSTS.has(location.hostname);
 }
 
 function createSessionId() {
@@ -73,7 +78,61 @@ function buildPayload(event, details = {}) {
   return payload;
 }
 
+function publishSpectatorEvent(event, details = {}) {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
+    return;
+  }
+
+  const safeDetails = {};
+  for (const [key, maxLength] of [
+    ['tool', 80],
+    ['status', 80],
+    ['source', 40],
+    ['phase', 40],
+  ]) {
+    const value = cleanText(details[key], maxLength);
+    if (value !== undefined) {
+      safeDetails[key] = value;
+    }
+  }
+
+  if (typeof details.supported === 'boolean') {
+    safeDetails.supported = details.supported;
+  }
+
+  if (Number.isInteger(details.tool_count) && details.tool_count >= 0) {
+    safeDetails.tool_count = Math.min(details.tool_count, 100);
+  }
+
+  window.dispatchEvent(new CustomEvent('matched:spectator-event', {
+    detail: {
+      event: cleanText(event, 64),
+      ...safeDetails,
+    },
+  }));
+}
+
+function relayLocalSpectatorEvent(event, details = {}) {
+  if (!localSpectatorRelayEnabled()) {
+    return;
+  }
+
+  const body = JSON.stringify(buildPayload(event, details));
+  void fetch(LOCAL_LIVE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body,
+    keepalive: true,
+    credentials: 'same-origin',
+  }).catch(() => {
+    // Spectator relay failure must never affect WebMCP execution.
+  });
+}
+
 export function trackEvent(event, details = {}) {
+  publishSpectatorEvent(event, details);
+  relayLocalSpectatorEvent(event, details);
+
   if (!telemetryEnabled()) {
     return false;
   }

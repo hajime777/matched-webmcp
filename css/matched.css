@@ -22,13 +22,42 @@ textarea {
 }
 
 .page-shell {
-  width: min(920px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 24px));
   margin: 0 auto;
-  padding: 56px 0 40px;
+  padding: 40px 0 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  column-gap: 22px;
+  align-items: start;
+}
+
+.brand,
+.profile-card,
+.status-panel,
+.challenge-panel,
+footer {
+  grid-column: 1;
 }
 
 .brand {
-  margin-bottom: 28px;
+  grid-row: 1;
+  margin-bottom: 24px;
+}
+
+.profile-card {
+  grid-row: 2;
+}
+
+.status-panel {
+  grid-row: 3;
+}
+
+.challenge-panel {
+  grid-row: 4;
+}
+
+footer {
+  grid-row: 5;
 }
 
 .eyebrow {
@@ -46,7 +75,7 @@ p {
 
 h1 {
   margin-bottom: 10px;
-  font-size: clamp(2.4rem, 7vw, 5.2rem);
+  font-size: clamp(2.4rem, 6vw, 4.7rem);
   line-height: 0.95;
 }
 
@@ -57,6 +86,7 @@ h1 {
 
 .profile-card,
 .status-panel,
+.agent-activity-panel,
 .challenge-panel {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.045);
@@ -66,15 +96,15 @@ h1 {
 
 .profile-card {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 28px;
-  padding: 28px;
+  grid-template-columns: 160px 1fr;
+  gap: 24px;
+  padding: 24px;
 }
 
 .avatar {
   display: grid;
   place-items: center;
-  min-height: 220px;
+  min-height: 210px;
   border-radius: 18px;
   font-size: 5rem;
   font-weight: 700;
@@ -155,6 +185,139 @@ button:disabled {
 .status-panel p {
   margin-bottom: 6px;
   opacity: 0.72;
+}
+
+.agent-activity-panel {
+  grid-column: 2;
+  grid-row: 1 / span 5;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  margin-top: 0;
+  min-height: 520px;
+  max-height: calc(100vh - 40px);
+  padding: 20px 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.agent-activity-panel.is-active {
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 0 30px rgba(92, 210, 146, 0.08);
+}
+
+.agent-activity-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.agent-activity-kicker {
+  margin-bottom: 5px;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  opacity: 0.52;
+}
+
+.agent-activity-panel h2 {
+  margin-bottom: 0;
+  font-size: 1.15rem;
+}
+
+.agent-activity-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 78px;
+  justify-content: center;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-activity-state::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.agent-activity-state[data-mode="ready"]::before {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.agent-activity-state[data-mode="live"]::before {
+  background: #5cd292;
+  box-shadow: 0 0 12px rgba(92, 210, 146, 0.72);
+}
+
+.agent-activity-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.agent-activity-item {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.agent-activity-item.is-queen {
+  background: rgba(116, 65, 99, 0.13);
+}
+
+.agent-activity-item.is-system {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.agent-activity-marker {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.agent-activity-item.is-queen .agent-activity-marker {
+  background: rgba(120, 56, 100, 0.5);
+}
+
+.agent-activity-copy p {
+  margin: 0;
+  line-height: 1.42;
+  font-size: 0.94rem;
+}
+
+.agent-activity-copy small {
+  display: block;
+  margin-top: 3px;
+  opacity: 0.45;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
 }
 
 .challenge-panel {
@@ -242,6 +405,25 @@ footer {
   opacity: 0.52;
 }
 
+@media (max-width: 839px) {
+  .page-shell {
+    width: min(920px, calc(100% - 24px));
+    display: block;
+    padding-top: 32px;
+  }
+
+  .agent-activity-panel {
+    position: static;
+    min-height: 0;
+    max-height: none;
+    margin-top: 20px;
+  }
+
+  .agent-activity-list {
+    max-height: 300px;
+  }
+}
+
 @media (max-width: 680px) {
   .profile-card {
     grid-template-columns: 1fr;
@@ -249,5 +431,9 @@ footer {
 
   .avatar {
     min-height: 160px;
+  }
+
+  .agent-activity-heading-row {
+    align-items: center;
   }
 }
