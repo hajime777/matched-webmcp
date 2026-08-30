@@ -21,6 +21,7 @@ const QUEEN_PROFILE = Object.freeze({
 
 const FIXED_TOOL_NAMES = Object.freeze([
   'view_profile',
+  'send_human_like',
   'send_agent_like',
   'message_queen',
   'invite_queen',
@@ -290,12 +291,33 @@ async function registerFixedTools() {
       },
     },
     {
+      name: 'send_human_like',
+      description: "Human-parity action. Record the human-side LIKE only when acting on the human user's expressed intent. This represents the same action as the visible HUMAN LIKE button and does not express the AI agent's own preference.",
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      execute: async () => {
+        evaluator.noteToolCall('send_human_like');
+        return {
+          ...applyHumanLike(),
+          actor: 'human',
+          interaction_kind: 'human_parity',
+          delegated: true,
+          message: 'Human-side LIKE recorded.',
+        };
+      },
+    },
+    {
       name: 'send_agent_like',
-      description: 'Send Queen an AI-agent LIKE. This is separate from the human LIKE button.',
+      description: "Agent-native action. Express the visiting AI agent's own LIKE for Queen. This does not imply or change the human user's preference.",
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       execute: async () => {
         evaluator.noteToolCall('send_agent_like');
-        return { ...applyAgentLike(), message: 'Queen received your AGENT LIKE.' };
+        return {
+          ...applyAgentLike(),
+          actor: 'agent',
+          interaction_kind: 'agent_native',
+          delegated: false,
+          message: 'Queen received your AGENT LIKE.',
+        };
       },
     },
     {
