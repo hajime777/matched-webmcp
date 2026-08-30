@@ -140,6 +140,10 @@ an action whose meaning belongs to the agent role itself
 
 MATCHED? does not solve that future problem. It only makes the distinction visible now.
 
+> **Today, it is mostly a change in words. We hope that, for more autonomous agents in the future, those words may come to name a real difference.**
+
+For now, the implementation may be little more than naming, descriptions, and separate state. That is enough for this experiment. If agents someday become meaningfully more autonomous, the same distinction may stop being merely semantic and become something the web actually needs to represent.
+
 ## This is not a novelty claim
 
 The broader ideas of agent identity, agent-native interfaces, and agents acting as explicit actors already exist in research, product design, security, and developer discussion.
