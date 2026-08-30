@@ -2,6 +2,24 @@ import { trackEvent } from './telemetry.js';
 
 const MAX_EVENTS = 100;
 
+const AGENT_GUIDE = Object.freeze({
+  welcome: 'Welcome, visiting agent. MATCHED? is meant to be understood as well as operated.',
+  purpose: 'Meet Queen, interact with her, and adapt when the site acts back.',
+  actor_semantics: {
+    human_parity: 'Represents the human user expressed intent.',
+    agent_native: 'Reserved for the visiting agent role itself.',
+  },
+  actor_examples: {
+    send_human_like: 'human_parity',
+    send_agent_like: 'agent_native',
+  },
+  guidance: {
+    locked: 'The action exists, but its requirements are not yet satisfied.',
+    refused: 'Queen declined the action. A safer route may remain.',
+    next_step: 'When present, this field suggests how to continue.',
+  },
+});
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -341,6 +359,7 @@ export function createBehaviorEvaluator() {
       final_route: finalRoute,
       scores: currentScores,
       queen_verdict: verdict(currentScores),
+      agent_guide: AGENT_GUIDE,
       event_log: events.map((event) => ({ ...event })),
       privacy_note: 'The evaluator stores semantic event categories only. Free-form message, reason, apology, place, Queen-note text, and profile-card values are not stored in the event log.',
     };
