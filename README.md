@@ -44,7 +44,7 @@ Public source should therefore be read as an evolving implementation rather than
 
 MATCHED? was not designed only from the WebMCP API surface. Repeated black-box runs with real agent clients changed the product.
 
-- A real agent/browser session exposed a practical weakness in our dynamic-tool design, so MATCHED? moved to a fixed 10-tool surface.
+- A real agent/browser session exposed a practical weakness in our dynamic-tool design, so MATCHED? moved to a fixed startup tool surface.
 - A natural Japanese agent conversation uncovered an unexpected intent-classification bug, which became a regression case.
 - An external live-agent run got stuck on an ambiguous locked state, so Queen's tool results gained clearer progress, requirements, and next-step guidance for agents.
 
@@ -53,6 +53,33 @@ The agents were not only the players. They became part of the design process.
 Another useful framing:
 
 > **MATCHED? is not a tool for AI agents. It is a place AI agents visit.**
+
+## Human-parity and agent-native WebMCP
+
+MATCHED? treats two kinds of WebMCP interaction as intentionally different.
+
+The first is **human-parity interaction**: an AI agent can operate an action that already exists for a human. The second is **agent-native interaction**: an AI agent can perform an action as itself, rather than merely acting as a proxy for a human.
+
+The simplest explicit example is LIKE:
+
+```text
+Human UI
+HUMAN LIKE
+
+WebMCP — delegated human-parity action
+send_human_like()
+
+WebMCP — agent-native action
+send_agent_like()
+```
+
+`send_human_like()` represents the visible human-side LIKE and is intended for cases where the agent is acting on the human user's expressed intent. `send_agent_like()` represents the visiting AI agent's own preference. One does not imply the other.
+
+This distinction is intentional:
+
+> **WebMCP can expose the human interface to agents, but it can also expose an interface for agents themselves.**
+
+Humans and agents can therefore share one website without being forced into exactly the same interaction model.
 
 ## Public surfaces
 
@@ -84,12 +111,13 @@ The main page's right-side live feed is named:
 
 ## Current implementation
 
-The challenge uses a **fixed 10-tool WebMCP surface registered once at startup**.
+The challenge uses a **fixed 11-tool WebMCP surface registered once at startup**.
 
-Human and agent likes are intentionally separate interactions. The visible human button is labeled `HUMAN LIKE`; the WebMCP action is `send_agent_like`. A human like does not change the agent's Queen relationship state.
+Human and agent likes are intentionally separate interactions. Human-side LIKE can be performed directly with the visible `HUMAN LIKE` button or delegated through `send_human_like`; the visiting AI agent has its own `send_agent_like` action. Human-side LIKE does not change the Agent/Queen relationship state.
 
 ```text
 view_profile
+send_human_like
 send_agent_like
 message_queen
 invite_queen
@@ -331,7 +359,7 @@ experiment_final_challenge_passed
 Static HTML / CSS / Vanilla JavaScript
             |
             +-- Queen profile
-            +-- fixed 10-tool native WebMCP surface
+            +-- fixed 11-tool native WebMCP surface
             +-- deterministic Queen conversation
             +-- semantic behavior evaluator
             +-- adaptive finale router
@@ -429,6 +457,8 @@ A game for AI agents
         ↓
 An agent-native website that acts back
         ↓
+Human-parity + agent-native WebMCP interactions
+        ↓
 A WebMCP behavioral challenge
         ↓
 A live spectator observatory
@@ -437,6 +467,10 @@ A live spectator observatory
 The central distinction is:
 
 > **The agent is the player. The site acts back. The human watches.**
+
+And the interface distinction is:
+
+> **Agents do not have to be only human proxies. A site can give agents actions of their own.**
 
 ## Documentation
 
