@@ -196,3 +196,7 @@ export function trackPageView() {
 export function getCurrentAgentSessionMeta() {
   return getAgentSessionMeta();
 }
+
+export function getTelemetrySessionId() {
+  return getSessionId();
+}
