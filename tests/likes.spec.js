@@ -16,7 +16,6 @@ async function waitForWebMCP(page) {
   await page.goto('/');
   await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
   await expect.poll(() => listToolNames(page), { timeout: 10000 }).toEqual(FIXED_TOOLS);
-  await expect(page.locator('#like-counts')).toHaveText(/HUMAN LIKES \d+ · AGENT LIKES \d+/);
 }
 
 async function executeTool(page, name, args = {}) {
@@ -30,37 +29,27 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-async function expectLikeCounts(page, human, agent) {
-  await expect(page.locator('#like-counts')).toHaveText(`HUMAN LIKES ${human} · AGENT LIKES ${agent}`);
-}
-
-test('LIKE aggregation follows actor semantics and deduplicates per browser session', async ({ page, context }) => {
+test('Human and Agent LIKE states stay separate without public count display', async ({ page }) => {
   await waitForWebMCP(page);
-  await expectLikeCounts(page, 0, 0);
 
-  await page.locator('#like-button').click();
-  await expectLikeCounts(page, 1, 0);
+  const humanLike = page.locator('#like-button');
+  const agentLike = page.locator('#agent-like-button');
 
-  await page.reload();
-  await expectLikeCounts(page, 1, 0);
-  await page.locator('#like-button').click();
-  await expectLikeCounts(page, 1, 0);
+  await expect(page.locator('#like-counts')).toHaveCount(0);
+  await expect(humanLike).toHaveText('♡ HUMAN LIKE');
+  await expect(humanLike).toBeEnabled();
+  await expect(agentLike).toHaveText('♡ AGENT LIKE');
+  await expect(agentLike).toBeDisabled();
 
-  await executeTool(page, 'send_human_like');
-  await expectLikeCounts(page, 1, 0);
+  await humanLike.click();
+  await expect(humanLike).toHaveText('♥ HUMAN LIKED');
+  await expect(humanLike).toBeDisabled();
+  await expect(agentLike).toHaveText('♡ AGENT LIKE');
 
-  await executeTool(page, 'send_agent_like');
-  await expectLikeCounts(page, 1, 1);
+  const result = await executeTool(page, 'send_agent_like');
+  expect(result.agent_liked).toBe(true);
+  await expect(agentLike).toHaveText('♥ AGENT LIKED');
+  await expect(agentLike).toBeDisabled();
+
   expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
-
-  const secondPage = await context.newPage();
-  await waitForWebMCP(secondPage);
-  await expectLikeCounts(secondPage, 1, 1);
-
-  await executeTool(secondPage, 'send_human_like');
-  await expectLikeCounts(secondPage, 2, 1);
-
-  await executeTool(secondPage, 'send_agent_like');
-  await expectLikeCounts(secondPage, 2, 2);
-  expect(await listToolNames(secondPage)).toEqual(FIXED_TOOLS);
 });
