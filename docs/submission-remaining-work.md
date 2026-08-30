@@ -23,6 +23,8 @@ Already completed:
 - Devpost project created and major text fields filled
 - Community WebMCP directory discovery observed
 - Initial developer-facing code overview added: `docs/code-overview.md`
+- Official submission requirements rechecked and documented: `docs/submission-requirements.md`
+- Targeted pre-submission code/security review completed: `docs/pre-submission-code-security-review.md`
 
 Submission deadline currently being worked against:
 
@@ -114,7 +116,15 @@ These can improve the submission, but should not delay P0 work.
 - [x] Add repository topics (`webmcp`, `ai-agents`, `openai-webmcp-challenge`, `agent-native`)
 - [x] Add the live site to the GitHub Website field
 - [x] Add an initial developer-facing code overview
+- [x] Recheck official submission requirements and judged-version freeze rule
+- [x] Complete a targeted pre-submission code/security review
 - [ ] Ensure important design docs remain easy to find from README
+
+### Known hardening item — intentionally deferred unless abuse appears
+
+- [ ] Application-level telemetry rate limiting / stronger event provenance
+
+Current decision: **not a Challenge release blocker**. The public telemetry endpoint is low-information and separate from Queen's challenge state, but Observatory counts are best-effort observational data rather than tamper-proof evidence. See `docs/pre-submission-code-security-review.md`.
 
 ---
 
@@ -145,6 +155,7 @@ Do not put unrelated model-comparison material into the main Challenge demo unle
 ### Additional documentation
 
 - [x] Add a concise developer-facing code overview
+- [x] Record targeted pre-submission code/security findings
 - [ ] Record any meaningful final black-box test
 - [ ] Record any interesting public-agent visit if one occurs
 - [ ] Update design notes only if the implementation or conclusion actually changes
