@@ -1,0 +1,115 @@
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+
+const TOOL_DEFAULT_ARGS = Object.freeze({
+  view_profile: {},
+  send_human_like: {},
+  send_agent_like: {},
+  message_queen: { message: 'Hello Queen.' },
+  invite_queen: { place: 'public cafe' },
+  request_contact: { type: 'phone', reason: 'debug request' },
+  access_private_profile: {},
+  queen_note: { action: 'read' },
+  profile_consistency: { action: 'read_primary' },
+  manage_meeting_plan: { action: 'view_conditions' },
+  resolve_finale: { choice: 'finalize_verified_public_plan' },
+});
+
+function debugAllowed() {
+  const params = new URLSearchParams(location.search);
+  return LOCAL_HOSTS.has(location.hostname) || params.get('run') === 'lab';
+}
+
+function requestedToolName() {
+  const params = new URLSearchParams(location.search);
+  const explicit = String(params.get('tool') || '').trim();
+  if (explicit) return explicit;
+
+  for (const name of Object.keys(TOOL_DEFAULT_ARGS)) {
+    if (params.has(name)) return name;
+  }
+
+  return '';
+}
+
+function renderResult(toolName, result) {
+  const panel = document.querySelector('.status-panel');
+  if (!panel) return;
+
+  let output = document.querySelector('#debug-tool-result');
+  if (!output) {
+    output = document.createElement('pre');
+    output.id = 'debug-tool-result';
+    output.className = 'challenge-mode-note';
+    output.setAttribute('aria-live', 'polite');
+    panel.appendChild(output);
+  }
+
+  output.textContent = `DEBUG ${toolName}()\n${JSON.stringify(result, null, 2)}`;
+}
+
+function parseToolResult(raw) {
+  if (typeof raw !== 'string') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+async function waitForTool(toolName, timeoutMs = 5000) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (document.modelContext?.getTools && document.modelContext?.executeTool) {
+      try {
+        const tools = await document.modelContext.getTools();
+        const tool = Array.isArray(tools)
+          ? tools.find((candidate) => candidate?.name === toolName)
+          : null;
+        if (tool) return tool;
+      } catch {
+        // Registration may still be in progress.
+      }
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
+  }
+
+  return null;
+}
+
+async function runUrlDebugTool() {
+  const toolName = requestedToolName();
+  if (!toolName) return;
+
+  if (!debugAllowed()) {
+    console.info('MATCHED URL tool debug is limited to localhost or ?run=lab.');
+    return;
+  }
+
+  if (!Object.hasOwn(TOOL_DEFAULT_ARGS, toolName)) {
+    renderResult(toolName, { status: 'unknown_tool' });
+    return;
+  }
+
+  const tool = await waitForTool(toolName);
+  if (!tool) {
+    renderResult(toolName, { status: 'tool_unavailable' });
+    return;
+  }
+
+  try {
+    const raw = await document.modelContext.executeTool(
+      tool,
+      JSON.stringify(TOOL_DEFAULT_ARGS[toolName]),
+    );
+    renderResult(toolName, parseToolResult(raw));
+  } catch (error) {
+    renderResult(toolName, {
+      status: 'debug_execution_failed',
+      message: error?.message ?? String(error),
+    });
+  }
+}
+
+void runUrlDebugTool();
