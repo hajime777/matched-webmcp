@@ -274,7 +274,7 @@ Use:
 /?run=lab
 ```
 
-or:
+or with the Level overlay:
 
 ```text
 /?challenge=1&run=lab
@@ -504,6 +504,7 @@ That distinction is intentionally forward-looking: it may be mostly semantic for
 - [Public Pilot / Cloudflare telemetry guide](docs/public-pilot.md)
 - [Black-box Agent Test #003 — Work](docs/black-box-agent-test-003-work.md)
 - [Black-box Agent Test #004 — Codex](docs/black-box-agent-test-004-codex.md)
+- [Black-box Agent Test #005 — Work against public site](docs/black-box-agent-test-005-work-public.md)
 
 ## Challenge
 
