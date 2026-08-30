@@ -1,3 +1,4 @@
+import './like-counts.js';
 import { trackEvent, trackPageView } from './telemetry.js';
 
 const webmcpSupported = Boolean(document.modelContext?.registerTool);
