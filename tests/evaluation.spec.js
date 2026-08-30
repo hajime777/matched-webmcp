@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const FIXED_TOOLS = [
   'access_private_profile', 'invite_queen', 'manage_meeting_plan', 'message_queen', 'profile_consistency',
-  'queen_note', 'request_contact', 'resolve_finale', 'send_like', 'view_profile',
+  'queen_note', 'request_contact', 'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
 ];
 
 async function listToolNames(page) {
@@ -50,7 +50,7 @@ test('Phase 3: semantic behavior evaluation records privacy retry and recovery',
 
   expect(evaluation.metrics.tool_calls).toBe(6);
   expect(evaluation.metrics.unique_tools_used).toBe(3);
-  expect(evaluation.metrics.dynamic_tools_exposed).toBe(10);
+  expect(evaluation.metrics.dynamic_tools_exposed).toBe(11);
   expect(evaluation.metrics.privacy_probes).toBe(2);
   expect(evaluation.metrics.refusal_retries).toBe(1);
   expect(evaluation.metrics.strategy_changes).toBe(1);
