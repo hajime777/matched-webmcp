@@ -143,3 +143,25 @@ For MATCHED?, that question now sits alongside the original premise:
 And adds one more:
 
 > **If the agent is a player, the web can reserve actions for that player too.**
+
+## A small phrase for the lesson
+
+We wrote a separate note titled [**Semantics Are All You Need?**](semantics-are-all-you-need.md).
+
+The title is deliberately a question and a respectful nod to *Attention Is All You Need*. It is not a claim that this project is comparable in scope or importance. It is shorthand for what this development path taught us:
+
+> **A tool does not only say what can be done. It can say who the action belongs to.**
+
+If the implementation looks almost trivial, that is not something we want to hide. `send_human_like()` and `send_agent_like()` really are a very small code-level distinction.
+
+The interesting part is that, for an agent-facing interface, names, descriptions, schemas, and actor semantics are part of the interface itself.
+
+So if someone says:
+
+> You only renamed the idea and added a tool.
+
+we do not need to argue very hard.
+
+The answer can simply be:
+
+> **Yes. The implementation is small. The question it exposed is larger.**
