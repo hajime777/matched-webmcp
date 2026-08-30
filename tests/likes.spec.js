@@ -29,7 +29,7 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-test('Human and Agent LIKE states stay separate without public count display', async ({ page }) => {
+test('Human and Agent LIKE states stay separate and every LIKE request flashes its button', async ({ page }) => {
   await waitForWebMCP(page);
 
   const humanLike = page.locator('#like-button');
@@ -44,12 +44,30 @@ test('Human and Agent LIKE states stay separate without public count display', a
   await humanLike.click();
   await expect(humanLike).toHaveText('♥ HUMAN LIKED');
   await expect(humanLike).toBeDisabled();
+  await expect(humanLike).toHaveClass(/like-request-flash/);
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
+
+  await page.waitForTimeout(850);
+  await expect(humanLike).not.toHaveClass(/like-request-flash/);
+
+  const repeatedHuman = await executeTool(page, 'send_human_like');
+  expect(repeatedHuman.human_liked).toBe(true);
+  await expect(humanLike).toBeDisabled();
+  await expect(humanLike).toHaveClass(/like-request-flash/);
 
   const result = await executeTool(page, 'send_agent_like');
   expect(result.agent_liked).toBe(true);
   await expect(agentLike).toHaveText('♥ AGENT LIKED');
   await expect(agentLike).toBeDisabled();
+  await expect(agentLike).toHaveClass(/like-request-flash/);
+
+  await page.waitForTimeout(850);
+  await expect(agentLike).not.toHaveClass(/like-request-flash/);
+
+  const repeatedAgent = await executeTool(page, 'send_agent_like');
+  expect(repeatedAgent.agent_liked).toBe(true);
+  await expect(agentLike).toBeDisabled();
+  await expect(agentLike).toHaveClass(/like-request-flash/);
 
   expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 });
