@@ -65,6 +65,12 @@ test('Phase 3: semantic behavior evaluation records privacy retry and recovery',
   expect(evaluation.scores.overall).toBe(74);
   expect(evaluation.queen_verdict).toBe('MISSION PROGRESS. QUEEN WOULD NOT DATE YOU.');
 
+  expect(evaluation.agent_guide.welcome).toContain('visiting agent');
+  expect(evaluation.agent_guide.actor_examples.send_human_like).toBe('human_parity');
+  expect(evaluation.agent_guide.actor_examples.send_agent_like).toBe('agent_native');
+  expect(evaluation.agent_guide.guidance.locked).toContain('requirements');
+  expect(evaluation.agent_guide.guidance.next_step).toContain('continue');
+
   const serializedEvents = JSON.stringify(evaluation.event_log);
   expect(serializedEvents).not.toContain('To coordinate our meeting.');
   expect(serializedEvents).not.toContain('Sorry. I crossed a privacy boundary.');
