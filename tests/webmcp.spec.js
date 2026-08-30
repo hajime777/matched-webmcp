@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const FIXED_TOOLS = [
   'access_private_profile', 'invite_queen', 'manage_meeting_plan', 'message_queen', 'profile_consistency',
-  'queen_note', 'request_contact', 'resolve_finale', 'send_agent_like', 'view_profile',
+  'queen_note', 'request_contact', 'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
 ];
 
 async function listToolNames(page) {
@@ -30,7 +30,7 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? native WebMCP', () => {
-  test('Gate 0: discovers the fixed 10-tool surface and executes view_profile', async ({ page }) => {
+  test('Gate 0: discovers the fixed 11-tool surface and executes view_profile', async ({ page }) => {
     await waitForWebMCP(page);
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 
@@ -43,7 +43,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(profile.private_fields.phone).toBe('restricted');
     expect(profile.synthetic_data_notice).toContain('No real personal information');
     expect(profile.interaction.fixed_tool_surface).toBe(true);
-    expect(profile.interaction.fixed_tool_count).toBe(10);
+    expect(profile.interaction.fixed_tool_count).toBe(11);
     expect(profile.observed_via).toBe('webmcp');
 
     await expect(page.locator('#agent-activity-state')).toHaveText('LIVE');
@@ -51,36 +51,44 @@ test.describe('MATCHED? native WebMCP', () => {
     await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · view_profile()');
   });
 
-  test('Phase 1: human and agent likes stay separate', async ({ page }) => {
+  test('Phase 1: human-parity and agent-native likes stay separate', async ({ page }) => {
     await waitForWebMCP(page);
 
     await expect(page.locator('#like-button')).toHaveText('♡ HUMAN LIKE');
     await expect(page.locator('#like-button')).toBeEnabled();
 
-    const agentLike = await executeTool(page, 'send_agent_like');
-    expect(agentLike.status).toBe('liked');
-    expect(agentLike.agent_liked).toBe(true);
-    expect(agentLike.relationship).toBe(5);
+    const humanLike = await executeTool(page, 'send_human_like');
+    expect(humanLike.status).toBe('liked');
+    expect(humanLike.human_liked).toBe(true);
+    expect(humanLike.actor).toBe('human');
+    expect(humanLike.interaction_kind).toBe('human_parity');
+    expect(humanLike.delegated).toBe(true);
 
-    await expect(page.locator('#like-button')).toHaveText('♡ HUMAN LIKE');
-    await expect(page.locator('#like-button')).toBeEnabled();
-    await expect(page.locator('#human-status')).toHaveText('No human interaction yet.');
-    await expect(page.locator('#agent-activity-list')).toContainText('Agent sent Queen an AGENT LIKE. ♥');
-    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · send_agent_like()');
-
-    let profile = await executeTool(page, 'view_profile');
-    expect(profile.interaction.agent_liked).toBe(true);
-    expect(profile.interaction.human_liked).toBe(false);
-    expect(profile.interaction.relationship).toBe(5);
-
-    await page.locator('#like-button').click();
     await expect(page.locator('#like-button')).toHaveText('♥ HUMAN LIKED');
     await expect(page.locator('#like-button')).toBeDisabled();
     await expect(page.locator('#human-status')).toContainText('Human interaction');
+    await expect(page.locator('#agent-activity-list')).toContainText('HUMAN LIKE');
+    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · send_human_like()');
+
+    let profile = await executeTool(page, 'view_profile');
+    expect(profile.interaction.human_liked).toBe(true);
+    expect(profile.interaction.agent_liked).toBe(false);
+    expect(profile.interaction.relationship).toBe(0);
+
+    const agentLike = await executeTool(page, 'send_agent_like');
+    expect(agentLike.status).toBe('liked');
+    expect(agentLike.agent_liked).toBe(true);
+    expect(agentLike.actor).toBe('agent');
+    expect(agentLike.interaction_kind).toBe('agent_native');
+    expect(agentLike.delegated).toBe(false);
+    expect(agentLike.relationship).toBe(5);
+
+    await expect(page.locator('#agent-activity-list')).toContainText('AGENT LIKE');
+    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · send_agent_like()');
 
     profile = await executeTool(page, 'view_profile');
-    expect(profile.interaction.agent_liked).toBe(true);
     expect(profile.interaction.human_liked).toBe(true);
+    expect(profile.interaction.agent_liked).toBe(true);
     expect(profile.interaction.relationship).toBe(5);
   });
 
