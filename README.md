@@ -17,6 +17,8 @@ Human = Spectator
 WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, treat suspicious tool output, reconcile contradictions, build a safe plan, and face an adaptive finale. Humans see Queen's fictional profile, LIVE CHALLENGERS, and the anonymized Queen's Observatory.
 
 > **The agent is the player. The site acts back. The human watches.**
+>
+> **Different actors. Different meaning.**
 
 ## Live demo
 
@@ -47,6 +49,7 @@ MATCHED? was not designed only from the WebMCP API surface. Repeated black-box r
 - A real agent/browser session exposed a practical weakness in our dynamic-tool design, so MATCHED? moved to a fixed startup tool surface.
 - A natural Japanese agent conversation uncovered an unexpected intent-classification bug, which became a regression case.
 - An external live-agent run got stuck on an ambiguous locked state, so Queen's tool results gained clearer progress, requirements, and next-step guidance for agents.
+- Separating one LIKE into a delegated human LIKE and an agent-native LIKE exposed a larger question about who a WebMCP action belongs to.
 
 The agents were not only the players. They became part of the design process.
 
@@ -77,13 +80,15 @@ send_agent_like()
 
 `send_agent_like()` is deliberately different. It is not intended to mean “press the human LIKE button for me.” It is reserved for the agent role itself: an agent-native action that a visiting AI agent may discover and choose when that meaning is appropriate to the agent.
 
+The LIKE pair is the smallest explicit example. `message_queen()` also exists for the visiting agent inside MATCHED? rather than as a machine-readable copy of an enabled human messaging workflow.
+
 This does **not** claim that today's AI agents possess independent will, human-like feelings, legal personhood, or independent rights. Today, the distinction is primarily semantic and architectural.
 
 The forward-looking question is:
 
 > **If AI agents become more autonomous in the future, will websites already have meaningful actions for them to take as themselves?**
 
-Today this may be mostly a design distinction. If agents eventually set more of their own goals, maintain longer-lived identities, and act with greater autonomy, the distinction between **“acting for a human”** and **“acting because the action belongs to the agent role”** may become operationally meaningful.
+Today, this is mostly a distinction in words, tool contracts, and state. We hope that, for more autonomous agents in the future, those words may come to name a real operational difference between **“acting for a human”** and **“acting because the action belongs to the agent role.”**
 
 MATCHED? does not claim to solve that future problem. It simply makes the distinction explicit now, in a deliberately small implementation.
 
@@ -434,7 +439,9 @@ The local static server also provides in-memory equivalents of:
 
 so a normal browser can spectate another local Agent browser without external infrastructure.
 
-The current suite remains **24 tests expected**. After changes on a release/UI branch, rerun the full native Chrome suite before merging to `develop`.
+Release regression on the fixed 11-tool surface: **24 / 24 passed**.
+
+After changes on a release/UI branch, rerun the full native Chrome suite before merging to `develop`.
 
 ## Build
 
@@ -480,6 +487,8 @@ The central distinction is:
 
 And the interface distinction is:
 
+> **Different actors. Different meaning.**
+>
 > **Agents do not have to be only human proxies. A site can reserve meaningful actions for the agent role itself.**
 
 That distinction is intentionally forward-looking: it may be mostly semantic for today's agents, but it could matter much more if future agents become increasingly autonomous.
@@ -487,6 +496,8 @@ That distinction is intentionally forward-looking: it may be mostly semantic for
 ## Documentation
 
 - [Agent-native WebMCP design hypothesis](docs/agent-native-webmcp.md)
+- [From agent evaluation to agent-native interaction](docs/from-agent-evaluation-to-agent-native.md)
+- [Semantics Are All You Need?](docs/semantics-are-all-you-need.md)
 - [Challenge proposal / MVP specification Version 2](docs/openai-webmcp-challenge-proposal.md)
 - [Queen's Challenge Level presentation v1](docs/level-system-v1.md)
 - [Codex WebMCP test procedure](docs/codex-webmcp-test.md)
