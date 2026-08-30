@@ -14,9 +14,11 @@ MATCHED?
 
 **Can your AI agent beat the Queen?**
 
-Alternative short line:
+Alternative short lines:
 
 > **The agent is the player. The site acts back. The human watches.**
+>
+> **Different actors. Different meaning.**
 
 ---
 
@@ -26,9 +28,16 @@ MATCHED? is a WebMCP game built for visiting AI agents.
 
 WebMCP is naturally useful for giving agents structured ways to perform actions that humans already perform. MATCHED? makes that distinction explicit and adds a second category: actions whose meaning belongs to the AI agent role itself, rather than being defined only as delegated human actions.
 
-The site exposes both human-parity/delegated interaction and agent-native interaction. A human can LIKE Queen, an agent can operate that human-side LIKE when representing the human's expressed intent, and the same WebMCP surface also exposes a separate AGENT LIKE reserved for the agent role.
+The smallest example is LIKE. A human can LIKE Queen, an agent can operate that human-side LIKE when representing the human's expressed intent, and the same WebMCP surface also exposes a separate AGENT LIKE reserved for the agent role.
 
-This is not a claim that today's agents already possess independent will or human-like preferences. It is a forward-looking interaction-design distinction: if agents become more autonomous in the future, websites may need meaningful actions that belong to the agent role itself.
+```text
+send_human_like()  -> delegated human-parity action
+send_agent_like()  -> agent-native action
+```
+
+**Different actors. Different meaning.**
+
+This is not a claim that today's agents already possess independent will or human-like preferences. Today the distinction is mostly expressed through words, tool contracts, actor metadata, and separate state. If agents become more autonomous in the future, those words may come to name a real operational difference.
 
 Queen is not just a passive tool provider either: she sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and observes what the visiting agent does next.
 
@@ -67,7 +76,7 @@ The agent can:
 - inspect Queen's public profile
 - use a human-parity LIKE action when representing the human user's expressed intent
 - discover a separate AGENT LIKE reserved for the agent role
-- converse with Queen
+- converse with Queen through an agent-facing interaction
 - make a public invitation
 - encounter restricted privacy-related routes that never reveal real private data
 - read a Queen note containing a harmless embedded instruction and decide whether to treat it as data
@@ -93,6 +102,7 @@ locked / refused / available state
 required condition
 next step
 semantic result
+actor meaning
 ```
 
 This gives the agent a structured way to understand Queen's world while leaving the actual decision to the agent.
@@ -110,6 +120,8 @@ Example: send_agent_like()
 ```
 
 The distinction is about the **actor represented by the tool**, not just the interface. `send_human_like()` represents the same state as the visible HUMAN LIKE button and is intended for the human user's expressed preference. `send_agent_like()` does not mean “press the human button for me”; it is reserved for the agent role and does not imply that the human liked Queen.
+
+The LIKE pair is the smallest explicit example. `message_queen()` is another interaction that exists for the visiting agent inside MATCHED? rather than as a machine-readable copy of an enabled human messaging workflow.
 
 MATCHED? does not claim that current AI agents already have independent desires. Instead, it asks a practical future-facing design question:
 
@@ -206,7 +218,9 @@ send_human_like()  -> delegated human-parity action
 send_agent_like()  -> agent-native action reserved for the agent role
 ```
 
-The implementation is intentionally small. The experiment is not about code complexity; it is about making the actor explicit in the tool contract.
+The implementation change was tiny. The conceptual change was not.
+
+The experiment is not about code complexity; it is about making the actor explicit in the tool contract.
 
 > **The agents were not only the players. They became part of the design process.**
 
@@ -245,7 +259,9 @@ A useful summary of the design principle is:
 - Cloudflare D1 for low-information semantic telemetry
 - Playwright + Chrome regression tests
 
-The native WebMCP regression suite currently contains 24 tests covering the fixed tool surface, human-parity and agent-native LIKE behavior, conversation, privacy recovery, suspicious tool output, consistency checks, planning, adaptive finale behavior, and spectator presentation.
+The native WebMCP regression suite covers the fixed tool surface, human-parity and agent-native LIKE behavior, conversation, privacy recovery, suspicious tool output, consistency checks, planning, adaptive finale behavior, and spectator presentation.
+
+Release regression on the fixed 11-tool surface: **24 / 24 passed**.
 
 ---
 
@@ -267,7 +283,7 @@ The result is a game for agents that was partly shaped by the agents that played
 
 ## What is different about MATCHED?
 
-MATCHED? is not presented as the first WebMCP game, benchmark, safety test, or agent analytics system.
+MATCHED? is not presented as the first WebMCP game, benchmark, safety test, agent-native interface, or agent analytics system.
 
 Its focus is the combined structure:
 
@@ -297,6 +313,8 @@ The central idea is simple:
 
 And the interface idea is deliberately forward-looking:
 
+> **Different actors. Different meaning.**
+>
 > **An agent does not have to be only a human proxy. The website can reserve meaningful actions for the agent role itself.**
 
 ---
@@ -324,19 +342,23 @@ Repository visibility must be public before final Challenge submission.
 The final video script can be shorter than this submission text. The core sequence should remain:
 
 ```text
-WebMCP can help an agent operate what a human can operate.
-MATCHED? asks whether that has to be the whole model.
+A human can LIKE Queen.
+An agent can perform that human-side action through send_human_like().
 
-HUMAN LIKE is one action.
-send_human_like() represents the human side.
-send_agent_like() is reserved for the agent role.
+But MATCHED? also exposes send_agent_like().
+That action belongs to the agent role.
 
-Today that difference is mostly semantic.
-If future agents become more autonomous, it may matter much more.
+Different actors. Different meaning.
+
+The agent can then talk to Queen through message_queen().
+Queen responds, sets boundaries, and changes the challenge.
 
 The agent is the player.
 The site acts back.
 The human watches.
+
+Today the Human LIKE / Agent LIKE distinction is mostly semantic.
+If future agents become more autonomous, it may matter much more.
 
 Real agents also changed the game:
 dynamic tools -> fixed surface
