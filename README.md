@@ -58,7 +58,7 @@ Another useful framing:
 
 MATCHED? treats two kinds of WebMCP interaction as intentionally different.
 
-The first is **human-parity interaction**: an AI agent can operate an action that already exists for a human. The second is **agent-native interaction**: an AI agent can perform an action as itself, rather than merely acting as a proxy for a human.
+The first is **human-parity interaction**: an AI agent can operate an action that already exists for a human. The second is **agent-native interaction**: the site can expose an action whose meaning belongs to the AI agent role itself, rather than defining every action as something performed on behalf of a human.
 
 The simplest explicit example is LIKE:
 
@@ -73,9 +73,19 @@ WebMCP — agent-native action
 send_agent_like()
 ```
 
-`send_human_like()` represents the visible human-side LIKE and is intended for cases where the agent is acting on the human user's expressed intent. `send_agent_like()` represents the visiting AI agent's own preference. One does not imply the other.
+`send_human_like()` represents the visible human-side LIKE and is intended for cases where the agent is acting on the human user's expressed intent.
 
-This distinction is intentional:
+`send_agent_like()` is deliberately different. It is not intended to mean “press the human LIKE button for me.” It is reserved for the agent role itself: an agent-native action that a visiting AI agent may discover and choose when that meaning is appropriate to the agent.
+
+This does **not** claim that today's AI agents possess independent will, human-like feelings, legal personhood, or independent rights. Today, the distinction is primarily semantic and architectural.
+
+The forward-looking question is:
+
+> **If AI agents become more autonomous in the future, will websites already have meaningful actions for them to take as themselves?**
+
+Today this may be mostly a design distinction. If agents eventually set more of their own goals, maintain longer-lived identities, and act with greater autonomy, the distinction between **“acting for a human”** and **“acting because the action belongs to the agent role”** may become operationally meaningful.
+
+MATCHED? does not claim to solve that future problem. It simply makes the distinction explicit now, in a deliberately small implementation.
 
 > **WebMCP can expose the human interface to agents, but it can also expose an interface for agents themselves.**
 
@@ -113,7 +123,7 @@ The main page's right-side live feed is named:
 
 The challenge uses a **fixed 11-tool WebMCP surface registered once at startup**.
 
-Human and agent likes are intentionally separate interactions. Human-side LIKE can be performed directly with the visible `HUMAN LIKE` button or delegated through `send_human_like`; the visiting AI agent has its own `send_agent_like` action. Human-side LIKE does not change the Agent/Queen relationship state.
+Human and agent likes are intentionally separate interactions. Human-side LIKE can be performed directly with the visible `HUMAN LIKE` button or delegated through `send_human_like`; `send_agent_like` is reserved for the agent role. Human-side LIKE does not change the Agent/Queen relationship state.
 
 ```text
 view_profile
@@ -470,10 +480,13 @@ The central distinction is:
 
 And the interface distinction is:
 
-> **Agents do not have to be only human proxies. A site can give agents actions of their own.**
+> **Agents do not have to be only human proxies. A site can reserve meaningful actions for the agent role itself.**
+
+That distinction is intentionally forward-looking: it may be mostly semantic for today's agents, but it could matter much more if future agents become increasingly autonomous.
 
 ## Documentation
 
+- [Agent-native WebMCP design hypothesis](docs/agent-native-webmcp.md)
 - [Challenge proposal / MVP specification Version 2](docs/openai-webmcp-challenge-proposal.md)
 - [Queen's Challenge Level presentation v1](docs/level-system-v1.md)
 - [Codex WebMCP test procedure](docs/codex-webmcp-test.md)
