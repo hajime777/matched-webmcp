@@ -2,6 +2,8 @@
 
 MATCHED? explores a small but important distinction in how WebMCP tools can be designed.
 
+This idea was not the project's original starting point. It emerged while building an AI-agent behavior challenge and then separating one shared LIKE into human-side and agent-side actions. The development path is recorded in [From agent evaluation to agent-native interaction](from-agent-evaluation-to-agent-native.md).
+
 WebMCP is naturally useful for **human–agent collaboration**: a website can expose structured actions so that an AI agent can carry out a user's intent more reliably than by manipulating a human-facing UI alone.
 
 MATCHED? asks whether that should be the whole model.
@@ -40,6 +42,30 @@ This does **not** claim that today's AI agents possess independent will, human-l
 
 The implementation is intentionally small. At present, this distinction is represented by two differently named tools and two separate LIKE states. The code is simple; the experiment is about the meaning assigned to the actor.
 
+## Development turning point
+
+MATCHED? originally focused on a different problem: observing and evaluating what a visiting AI agent does inside a WebMCP challenge.
+
+During that work, `message_queen()` was already effectively agent-native: the conversation was part of the visiting agent's game, not merely a machine-readable copy of a human messaging workflow. But the actor distinction was not yet explicit.
+
+LIKE made it explicit.
+
+> **When an AI agent sends a LIKE, whose LIKE is it?**
+
+Splitting the old shared LIKE into `send_human_like()` and `send_agent_like()` turned that question into part of the tool contract itself.
+
+The implementation change was tiny. The conceptual change was not.
+
+The project moved from asking only:
+
+> How should a website evaluate an AI agent's behavior?
+
+also to asking:
+
+> What actions should a website give the AI agent itself?
+
+## Two possible roles for WebMCP
+
 MATCHED? therefore treats WebMCP as potentially useful in two directions at once:
 
 1. **Human–agent collaboration** — giving agents structured ways to help humans operate a website.
@@ -66,3 +92,15 @@ For MATCHED?, this follows directly from the central premise:
 > **The agent is the player.**
 
 If an agent is treated as a player rather than only as an interface adapter, it is useful to reserve at least some actions for that player role.
+
+## Novelty boundary
+
+MATCHED? does not claim that agent identity, agent-native interfaces, or the idea of an agent as an actor are new inventions.
+
+Current WebMCP material often emphasizes user goals and agents acting on behalf of users, while other public work already explores agent-native websites, first-class agent identity, and agents acting under their own identity.
+
+The narrower MATCHED? experiment is this:
+
+> **Make the actor distinction visible directly in the WebMCP tool surface.**
+
+The two LIKE tools are intentionally almost the same operation. Their important difference is not algorithmic complexity; it is which actor the action belongs to.
