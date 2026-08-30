@@ -33,6 +33,21 @@ This is useful operational evidence that an external Agent-facing discovery laye
 
 It should not be treated as a WebMCP protocol failure; it is an external crawling / indexing freshness issue.
 
+### Same-day recheck
+
+A later public recheck on 2026-08-30 still reported:
+
+```text
+10 tools
+send_like
+```
+
+while the deployed/repository release remains on the fixed 11-tool surface.
+
+The directory detail page also showed at least one internally inconsistent cached tool record (an old tool name paired with description/schema content belonging to a different current action). This strengthens the interpretation that the directory entry is stale or partially refreshed rather than reflecting the current MATCHED? implementation.
+
+Treat the live site and repository release as the source of truth for the submitted tool surface.
+
 ### Follow-up
 
 After the 11-tool surface remains stable:
