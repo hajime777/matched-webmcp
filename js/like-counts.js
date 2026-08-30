@@ -2,6 +2,9 @@ import { getTelemetrySessionId } from './telemetry.js';
 
 const LIKES_ENDPOINT = '/api/likes';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const FLASH_CLASS = 'like-request-flash';
+const FLASH_DURATION_MS = 780;
+const flashTimers = new WeakMap();
 const ALLOWED_SOURCES = Object.freeze({
   human: new Set(['human_ui', 'webmcp_delegated']),
   agent: new Set(['webmcp_agent_native']),
@@ -9,6 +12,32 @@ const ALLOWED_SOURCES = Object.freeze({
 
 function localMode() {
   return typeof location !== 'undefined' && LOCAL_HOSTS.has(location.hostname);
+}
+
+function buttonForActor(actor) {
+  if (actor === 'human') return document.querySelector('#like-button');
+  if (actor === 'agent') return document.querySelector('#agent-like-button');
+  return null;
+}
+
+function flashLikeButton(actor) {
+  const button = buttonForActor(actor);
+  if (!button) return;
+
+  const previousTimer = flashTimers.get(button);
+  if (previousTimer) clearTimeout(previousTimer);
+
+  // Restart the animation even when another request arrives while the button is
+  // already disabled or while a previous flash is still running.
+  button.classList.remove(FLASH_CLASS);
+  void button.offsetWidth;
+  button.classList.add(FLASH_CLASS);
+
+  const timer = window.setTimeout(() => {
+    button.classList.remove(FLASH_CLASS);
+    flashTimers.delete(button);
+  }, FLASH_DURATION_MS);
+  flashTimers.set(button, timer);
 }
 
 function reflectAgentLike() {
@@ -74,5 +103,6 @@ window.addEventListener('matched:spectator-event', (event) => {
     reflectAgentLike();
   }
 
+  flashLikeButton(like.actor);
   void recordLike(like.actor, like.source);
 });
