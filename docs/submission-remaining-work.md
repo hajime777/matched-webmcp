@@ -14,12 +14,15 @@ Already completed:
 - Public GitHub repository: `https://github.com/hajime777/matched-webmcp`
 - Repository verified from an incognito browser
 - MIT license present
+- GitHub About description, Website, and repository topics configured
 - Fixed 11-tool WebMCP surface
 - `send_human_like()` / `send_agent_like()` actor split implemented
 - Public Work black-box test completed
 - Multi-turn Queen conversation verified
-- Release regression: **24 / 24 passed**
+- Release regression baseline: **24 / 24 passed**
 - Devpost project created and major text fields filled
+- Community WebMCP directory discovery observed
+- Initial developer-facing code overview added: `docs/code-overview.md`
 
 Submission deadline currently being worked against:
 
@@ -79,6 +82,8 @@ Immediately before submission:
 - [ ] Check repository remains public
 - [ ] Check README and LICENSE are publicly readable
 
+The existing 24/24 result is the current baseline. This section intentionally remains unchecked because it is a **final pre-submission verification**, not a statement that regression coverage has never been run.
+
 ---
 
 ## P1 — Recommended if time permits
@@ -105,9 +110,10 @@ These can improve the submission, but should not delay P0 work.
 
 ### Repository presentation
 
-- [ ] Optionally improve GitHub About description
-- [ ] Optionally add repository topics such as `webmcp`, `ai-agents`, `agentic-web`
-- [ ] Optionally add the live site to the GitHub Website field
+- [x] Improve GitHub About description
+- [x] Add repository topics (`webmcp`, `ai-agents`, `openai-webmcp-challenge`, `agent-native`)
+- [x] Add the live site to the GitHub Website field
+- [x] Add an initial developer-facing code overview
 - [ ] Ensure important design docs remain easy to find from README
 
 ---
@@ -138,6 +144,7 @@ Do not put unrelated model-comparison material into the main Challenge demo unle
 
 ### Additional documentation
 
+- [x] Add a concise developer-facing code overview
 - [ ] Record any meaningful final black-box test
 - [ ] Record any interesting public-agent visit if one occurs
 - [ ] Update design notes only if the implementation or conclusion actually changes
