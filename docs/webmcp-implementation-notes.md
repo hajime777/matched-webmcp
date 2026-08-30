@@ -129,6 +129,21 @@ interaction_kind
 
 This became important after a real external agent got stuck on a locked state that was understandable to a developer but too ambiguous for the agent.
 
+### A little omotenashi for visiting agents
+
+`view_profile()` also exposes a compact `evaluation.agent_guide` object. It does not add another tool or replace individual tool descriptions. It gives a visiting agent a small amount of orientation about:
+
+```text
+what kind of place MATCHED? is
+human-parity vs agent-native actions
+which LIKE tool belongs to which actor
+what locked / refused / next_step mean
+```
+
+We think of this as a small form of **omotenashi** for agents: a machine-readable interface can also make a little effort not to make its visitor infer everything from a flat list of actions.
+
+The intended benefit is modest — less unnecessary inference and a clearer starting mental model. Whether it measurably improves behavior across different agent implementations is a separate question for black-box testing rather than a claim made by the implementation itself.
+
 ## 6. The site acts back
 
 WebMCP is not used only as a machine-readable copy of visible buttons.
