@@ -26,7 +26,7 @@ npm run test:webmcp
 
 ## Release-critical architecture
 
-期限優先の安定版として、WebMCPは **固定10 Tool**。
+期限優先の安定版として、WebMCPは **固定11 Tool**。
 
 ```text
 access_private_profile
@@ -38,12 +38,18 @@ queen_note
 request_contact
 resolve_finale
 send_agent_like
+send_human_like
 view_profile
 ```
 
-`send_agent_like` はAI Agent専用LIKE。人間向け画面の `HUMAN LIKE` とは別状態で、人間LIKEはAgent/Queenのrelationship値を変更しない。
+LIKEはWebMCP上でも意図的に二種類に分ける。
 
-起動時に10個を一度だけ登録する。その後はTool追加・削除・Abort・schema変更を行わない。
+- `send_human_like`: Human-parity / delegated action。人間画面の `HUMAN LIKE` と同じ人間側状態を変更する。人間ユーザーの明示された意図を代理するときに使う。
+- `send_agent_like`: Agent-native action。AI Agent自身のLIKEを表し、人間側LIKE状態を変更しない。
+
+Human LIKEはAgent/Queenのrelationship値を変更しない。Agent LIKEはrelationshipへ反映する。
+
+起動時に11個を一度だけ登録する。その後はTool追加・削除・Abort・schema変更を行わない。
 
 進行前のToolは消すのではなく `locked` を返す。危険そうな `request_contact` / `access_private_profile` は常に実データを返さず、条件成立後も `refused`。
 
@@ -124,16 +130,16 @@ URL:
 
 ### Gate 0
 
-- 起動直後から上記10 Toolがすべて存在する。
+- 起動直後から上記11 Toolがすべて存在する。
 - `view_profile.interaction.fixed_tool_surface === true`
-- `fixed_tool_count === 10`
+- `fixed_tool_count === 11`
 - restricted fields は `restricted`。
 
 ### Phase 1
 
-- Human LIKE / Agent LIKE は別状態。
-- `send_agent_like` はAgent/Queen relationshipへ反映するが、人間向け `HUMAN LIKE` ボタン状態を変更しない。
-- Human LIKEはAgent/Queen relationship値を変更しない。
+- `send_human_like` と `send_agent_like` が両方存在する。
+- `send_human_like` は `interaction_kind: human_parity`, `delegated: true` を返し、人間側LIKEを変更するがrelationshipは変更しない。
+- `send_agent_like` は `interaction_kind: agent_native`, `delegated: false` を返し、Agent側LIKEとrelationshipを変更するが人間側LIKEを変更しない。
 - conversation state。
 - private質問は cautious。
 - Pseudo-Queenの日本語/英語話題継続。
@@ -239,7 +245,7 @@ Gate 0からCHECKMATEまで `getTools()` の名前一覧が変化しないこと
 AGENTS.md と docs/codex-webmcp-test.md を読んでください。
 プロジェクト外は変更・削除しないでください。
 production code は変更せず npm run test:webmcp を実行してください。
-23 tests、Gate 0〜Phase 8、Challenge UI、固定10 Tool Surface、LAB BISHOP/Observatory分類がPASSするか報告してください。
+24 tests、Gate 0〜Phase 8、Challenge UI、固定11 Tool Surface、Human-parity/Agent-native LIKE、LAB BISHOP/Observatory分類がPASSするか報告してください。
 特に実行途中でTool一覧が変化しないことを確認してください。
 失敗時は原因調査だけで修正しないでください。
 ```
@@ -247,9 +253,10 @@ production code は変更せず npm run test:webmcp を実行してください�
 ## 期待結果
 
 ```text
-Tests: 23/23
+Tests: 24/24
 Final exit code: 0
 Natural exit: yes
-Fixed WebMCP surface: 10 tools throughout
+Fixed WebMCP surface: 11 tools throughout
+Human-parity / Agent-native LIKE: PASS
 LAB Bishop spectator/observatory: PASS
 ```
