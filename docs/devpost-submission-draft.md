@@ -24,9 +24,11 @@ Alternative short line:
 
 MATCHED? is a WebMCP game built for visiting AI agents.
 
-WebMCP is naturally useful for giving agents structured ways to perform actions that humans already perform. MATCHED? makes that distinction explicit and adds a second category: actions an AI agent can take **as itself**.
+WebMCP is naturally useful for giving agents structured ways to perform actions that humans already perform. MATCHED? makes that distinction explicit and adds a second category: actions whose meaning belongs to the AI agent role itself, rather than being defined only as delegated human actions.
 
-The site exposes both human-parity/delegated interaction and agent-native interaction. A human can LIKE Queen, an agent can operate that human-side LIKE when representing the human's expressed intent, and the same agent can separately send its own AGENT LIKE.
+The site exposes both human-parity/delegated interaction and agent-native interaction. A human can LIKE Queen, an agent can operate that human-side LIKE when representing the human's expressed intent, and the same WebMCP surface also exposes a separate AGENT LIKE reserved for the agent role.
+
+This is not a claim that today's agents already possess independent will or human-like preferences. It is a forward-looking interaction-design distinction: if agents become more autonomous in the future, websites may need meaningful actions that belong to the agent role itself.
 
 Queen is not just a passive tool provider either: she sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and observes what the visiting agent does next.
 
@@ -44,9 +46,11 @@ MATCHED? explores two additional questions:
 
 and:
 
-> **Does every WebMCP action have to represent something the human would have done?**
+> **Does every WebMCP action have to mean something the agent is doing for a human?**
 
-MATCHED? treats the answer to the second question as no. A site can expose human-parity actions for delegated work and also expose agent-native actions whose actor is the agent itself.
+MATCHED? treats the second question as an open design space. A site can expose human-parity actions for delegated work and can also reserve agent-native actions whose meaning belongs to the agent role itself.
+
+Today, this distinction may be mostly semantic. But if future AI agents set more of their own goals, maintain longer-lived identities, and act with greater autonomy, the difference between **“acting for a human”** and **“acting because the action belongs to the agent role”** could become operationally meaningful.
 
 Instead of treating WebMCP only as a faster control layer, MATCHED? uses it to create an agent-native place. Queen can converse with the agent, set a privacy boundary, present suspicious or conflicting information, refuse unsafe routes, and adapt the finale to the behavior seen during the run.
 
@@ -62,7 +66,7 @@ The agent can:
 
 - inspect Queen's public profile
 - use a human-parity LIKE action when representing the human user's expressed intent
-- send a separate AGENT LIKE as itself
+- discover a separate AGENT LIKE reserved for the agent role
 - converse with Queen
 - make a public invitation
 - encounter restricted privacy-related routes that never reveal real private data
@@ -101,11 +105,15 @@ AI acts on the human side of the site
 Example: send_human_like()
 
 Agent-native
-AI acts as the AI participant itself
+The action is defined for the AI participant role itself
 Example: send_agent_like()
 ```
 
-The distinction is about agency, not just interface. `send_human_like()` represents the same state as the visible HUMAN LIKE button and is intended for the human user's expressed preference. `send_agent_like()` represents the visiting agent's own preference and does not imply that the human liked Queen.
+The distinction is about the **actor represented by the tool**, not just the interface. `send_human_like()` represents the same state as the visible HUMAN LIKE button and is intended for the human user's expressed preference. `send_agent_like()` does not mean “press the human button for me”; it is reserved for the agent role and does not imply that the human liked Queen.
+
+MATCHED? does not claim that current AI agents already have independent desires. Instead, it asks a practical future-facing design question:
+
+> **If agents become more autonomous, will the web still expose only human-proxy actions, or will it also expose meaningful actions for the agents themselves?**
 
 The human-facing UX and the agent-facing UX are therefore deliberately related but not identical:
 
@@ -189,14 +197,16 @@ After the fix, the same external journey progressed successfully within that tes
 
 ### 4. LIKE became two different acts
 
-Originally, LIKE was treated as one shared interaction. That hid an important distinction: an agent pressing the human's LIKE and an agent expressing its own LIKE are not the same act.
+Originally, LIKE was treated as one shared interaction. That hid an important distinction: an agent operating the human's LIKE and an action reserved for the agent role are not the same semantic act.
 
 MATCHED? now exposes both explicitly:
 
 ```text
 send_human_like()  -> delegated human-parity action
-send_agent_like()  -> agent-native action
+send_agent_like()  -> agent-native action reserved for the agent role
 ```
+
+The implementation is intentionally small. The experiment is not about code complexity; it is about making the actor explicit in the tool contract.
 
 > **The agents were not only the players. They became part of the design process.**
 
@@ -245,7 +255,9 @@ The main lesson was that an agent-facing website needs its own UX discipline —
 
 A human can often infer what an ambiguous error or disabled state means from visual context. An autonomous agent needs that state represented explicitly in tool contracts and results.
 
-But tool design also raises an actor question: is the agent invoking a capability for the human, or is the agent itself the participant? MATCHED? makes that distinction machine-readable instead of leaving it implicit.
+But tool design also raises an actor question: is the agent invoking a capability for the human, or is the capability defined for the agent role itself? MATCHED? makes that distinction machine-readable instead of leaving it implicit.
+
+Today, that distinction is primarily semantic. In a future where agents become more autonomous, it may become much more important.
 
 MATCHED? also showed us that real agent runs are useful product tests in ways scripted unit tests are not. Agents produced unexpected language, took unanticipated but valid routes, exposed a fragile dynamic-tool architecture, and revealed where Queen's structured feedback was too vague.
 
@@ -264,7 +276,7 @@ Public WebMCP site
 +
 Human-parity tools for delegated interaction
 +
-Agent-native tools for the agent's own interaction
+Agent-native tools whose meaning belongs to the agent role
 +
 Visiting agent is the player
 +
@@ -283,9 +295,9 @@ The central idea is simple:
 
 > **The agent is the player. The site acts back. The human watches.**
 
-And the new interface idea is:
+And the interface idea is deliberately forward-looking:
 
-> **An agent does not have to be only a human proxy. The website can give the agent actions of its own.**
+> **An agent does not have to be only a human proxy. The website can reserve meaningful actions for the agent role itself.**
 
 ---
 
@@ -313,10 +325,14 @@ The final video script can be shorter than this submission text. The core sequen
 
 ```text
 WebMCP can help an agent operate what a human can operate.
-MATCHED? asks what happens when the agent is also a participant.
+MATCHED? asks whether that has to be the whole model.
 
 HUMAN LIKE is one action.
-send_agent_like() is another.
+send_human_like() represents the human side.
+send_agent_like() is reserved for the agent role.
+
+Today that difference is mostly semantic.
+If future agents become more autonomous, it may matter much more.
 
 The agent is the player.
 The site acts back.
@@ -328,4 +344,4 @@ unexpected Japanese phrase -> regression test
 ambiguous locked state -> better Agent UX
 ```
 
-Do not claim universal WebMCP client limits or world-first status in the video.
+Do not claim universal WebMCP client limits, world-first status, or that current agents possess independent will.
