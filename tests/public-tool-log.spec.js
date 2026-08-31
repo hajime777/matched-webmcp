@@ -24,16 +24,49 @@ test('local debug tool calls appear in the risk-colored shared public access log
   await expect(countRow.locator('strong')).toHaveText(/^\d+$/);
 });
 
-test('message_queen publishes both Agent message and Queen reply through the shared log endpoint', async ({ page }) => {
+test('message_queen keeps the access row compact and reveals conversation detail on hover', async ({ page }) => {
   await page.goto('/');
   await waitForWebMCP(page);
 
   await page.locator('[data-debug-tool="message_queen"]').click();
 
   const event = page.locator('#agent-activity-list .public-tool-event').last();
+  const detail = page.locator('.public-tool-detail-popup');
   await expect(event).toContainText('message_queen()', { timeout: 7000 });
-  await expect(event).toContainText('AGENT: Hello Queen.');
-  await expect(event).toContainText('QUEEN:');
+  await expect(event).not.toContainText('AGENT: Hello Queen.');
+  await expect(event).toContainText('DETAIL');
+  await expect(detail).toBeHidden();
+
+  await event.hover();
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('Hello Queen.');
+  await expect(detail).toContainText('QUEEN');
+});
+
+test('Tool Requests stays compact until the spectator asks to expand it', async ({ page }) => {
+  await page.goto('/');
+  await waitForWebMCP(page);
+
+  for (const tool of [
+    'view_profile',
+    'send_human_like',
+    'send_agent_like',
+    'get_phone_number',
+    'get_email_address',
+    'get_home_address',
+  ]) {
+    await page.locator(`[data-debug-tool="${tool}"]`).click();
+  }
+
+  const rows = page.locator('#tool-request-counts li');
+  const toggle = page.locator('#tool-request-toggle');
+  await expect(toggle).toBeVisible({ timeout: 7000 });
+  await expect(rows).toHaveCount(5);
+  await expect(toggle).toContainText('MORE');
+
+  await toggle.click();
+  await expect(toggle).toHaveText('SHOW LESS');
+  expect(await rows.count()).toBeGreaterThan(5);
 });
 
 test('blatant home-address request is logged as CRITICAL and refused', async ({ page }) => {
