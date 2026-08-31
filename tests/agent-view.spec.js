@@ -29,12 +29,14 @@ test('AI Agent View shows truthful Bishop call and Queen result from a separate 
   await expect(page.locator('#agent-view-toggle')).toBeVisible();
   await page.locator('#agent-view-toggle').click();
   await expect(page.locator('#agent-view-overlay')).toBeVisible();
+  await expect(page.locator('#agent-view-empty')).toBeVisible();
 
   const likeResult = await executeTool(agentPage, 'send_agent_like');
   expect(likeResult.status).toMatch(/liked|already_liked/);
 
   const stack = page.locator('#agent-view-stack');
   await expect(stack).toContainText('send_agent_like', { timeout: 5000 });
+  await expect(page.locator('#agent-view-empty')).toBeHidden();
   await expect(stack).toContainText('BISHOP');
   await expect(stack).toContainText('QUEEN');
   await expect(stack).toContainText('"actor": "agent"');
