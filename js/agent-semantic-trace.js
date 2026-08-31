@@ -3,6 +3,7 @@ import { getTelemetrySessionId } from './telemetry.js';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const LOCAL_RELAY = '/api/live-events';
 const WRAPPED = Symbol('matched.agentSemanticTraceWrapped');
+const MODEL_CONTEXT_PROXY = Symbol('matched.agentSemanticTraceModelContextProxy');
 
 function localMode() {
   return typeof location !== 'undefined' && LOCAL_HOSTS.has(location.hostname);
@@ -148,20 +149,27 @@ function wrapTool(tool) {
   return tool;
 }
 
-function installRegistrationWrapper() {
-  const context = document.modelContext;
-  if (!context?.registerTool) return false;
-  if (context.registerTool.__matchedSemanticWrapped) return true;
-
+function wrappedRegisterFunction(context) {
   const originalRegisterTool = context.registerTool.bind(context);
   const wrappedRegisterTool = async (tool) => originalRegisterTool(wrapTool(tool));
   wrappedRegisterTool.__matchedSemanticWrapped = true;
+  return wrappedRegisterTool;
+}
+
+function installRegistrationWrapper() {
+  const context = document.modelContext;
+  if (!context?.registerTool) return false;
+  if (context[MODEL_CONTEXT_PROXY] || context.registerTool.__matchedSemanticWrapped) return true;
+
+  const wrappedRegisterTool = wrappedRegisterFunction(context);
 
   try {
     context.registerTool = wrappedRegisterTool;
-    if (context.registerTool === wrappedRegisterTool) return true;
+    if (context.registerTool === wrappedRegisterTool || context.registerTool?.__matchedSemanticWrapped) {
+      return true;
+    }
   } catch {
-    // Some native implementations expose methods through non-writable properties.
+    // Native implementations can expose non-writable methods.
   }
 
   try {
@@ -170,7 +178,30 @@ function installRegistrationWrapper() {
       writable: true,
       value: wrappedRegisterTool,
     });
-    return context.registerTool === wrappedRegisterTool;
+    if (context.registerTool === wrappedRegisterTool) return true;
+  } catch {
+    // Some native implementations also reject defining an own method.
+  }
+
+  // Last-resort native path: shadow document.modelContext with a transparent Proxy.
+  // Only registration is intercepted; every other native method is rebound to the
+  // original target so WebMCP invocation semantics stay untouched.
+  try {
+    const proxy = new Proxy(context, {
+      get(target, property) {
+        if (property === MODEL_CONTEXT_PROXY) return true;
+        if (property === 'registerTool') return wrappedRegisterTool;
+        const value = Reflect.get(target, property, target);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+
+    Object.defineProperty(document, 'modelContext', {
+      configurable: true,
+      enumerable: false,
+      value: proxy,
+    });
+    return document.modelContext?.registerTool === wrappedRegisterTool;
   } catch {
     return false;
   }
@@ -180,6 +211,6 @@ if (!installRegistrationWrapper()) {
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
-    if (installRegistrationWrapper() || attempts >= 50) window.clearInterval(timer);
+    if (installRegistrationWrapper() || attempts >= 100) window.clearInterval(timer);
   }, 20);
 }
