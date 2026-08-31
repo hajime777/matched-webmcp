@@ -1,39 +1,107 @@
+.like-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  opacity: 0.62;
+}
+
+.like-counts span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.like-counts strong {
+  color: #f5f5f7;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 1;
+}
+
 .tool-request-summary {
-  margin: 0.8rem 0 1rem;
-  padding: 0.75rem 0.9rem;
+  margin: 0.65rem 0 0.75rem;
+  padding: 0.65rem 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
+  flex: 0 0 auto;
 }
 
 .tool-request-summary h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.78rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
 }
 
 .tool-request-counts {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.22rem;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .tool-request-counts li {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.tool-request-counts li span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-request-counts strong {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-request-toggle {
+  margin-top: 0.4rem;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  opacity: 0.56;
+}
+
+.tool-request-toggle:hover,
+.tool-request-toggle:focus-visible {
+  opacity: 1;
+}
+
+.tool-request-toggle[hidden] {
+  display: none;
 }
 
 .agent-activity-list {
   overflow-x: hidden;
 }
 
-.public-tool-event {
+.agent-activity-item.public-tool-event {
   min-width: 0;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 9px;
   border-left: 3px solid currentColor;
+  border-radius: 11px;
+}
+
+.public-tool-event .agent-activity-marker {
+  width: 21px;
+  height: 21px;
+  font-size: 0.62rem;
 }
 
 .public-tool-event.risk-0 {
@@ -57,29 +125,97 @@
 }
 
 .public-tool-event .agent-activity-copy {
+  position: relative;
   min-width: 0;
   color: inherit;
 }
 
 .public-tool-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  overflow-wrap: anywhere;
+  font-size: 0.78rem !important;
+  line-height: 1.25 !important;
+  font-weight: 700;
 }
 
 .public-tool-event .agent-activity-copy small {
-  overflow-wrap: anywhere;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+  line-height: 1.2;
 }
 
-.public-tool-message,
-.public-tool-reply {
-  margin: 0.45rem 0 0;
-  padding: 0.45rem 0.55rem;
-  border-radius: 0.45rem;
-  background: rgba(0, 0, 0, 0.18);
+.public-tool-event.has-detail {
+  cursor: help;
+}
+
+.public-tool-event.has-detail:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: -2px;
+}
+
+.public-tool-detail-hint {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-left: 8px;
+  background: linear-gradient(90deg, transparent, #1a191e 30%);
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+  opacity: 0.52;
+}
+
+.public-tool-detail-popup {
+  position: fixed;
+  z-index: 1000;
+  max-height: min(46vh, 360px);
+  overflow-y: auto;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(15, 14, 18, 0.97);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.48);
+  color: #f5f5f7;
+  pointer-events: none;
+}
+
+.public-tool-detail-popup[hidden] {
+  display: none;
+}
+
+.public-tool-detail-popup strong {
+  display: block;
+  margin-bottom: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.public-tool-detail-popup small {
+  display: block;
+  margin: 9px 0 3px;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  opacity: 0.5;
+}
+
+.public-tool-detail-popup p {
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
-.public-tool-reply {
-  opacity: 0.88;
+@media (max-width: 760px) {
+  .public-tool-detail-popup {
+    max-height: 42vh;
+  }
 }
