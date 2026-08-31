@@ -13,8 +13,8 @@ async function listToolNames(page) {
   });
 }
 
-async function waitForWebMCP(page) {
-  await page.goto('/');
+async function waitForWebMCP(page, path = '/') {
+  await page.goto(path);
   await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
   await expect.poll(() => listToolNames(page), { timeout: 10000 }).toEqual(FIXED_TOOLS);
 }
@@ -54,6 +54,10 @@ async function expectFlashObserved(locator) {
   await expect(locator).toHaveAttribute('data-test-flash-seen', 'true', { timeout: 2000 });
 }
 
+async function currentCount(locator) {
+  return Number((await locator.textContent()) || 0);
+}
+
 test('Human and Agent LIKE states stay separate, totals are visible, and every LIKE request flashes its button', async ({ page }) => {
   await waitForWebMCP(page);
 
@@ -63,8 +67,10 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   const agentCount = page.locator('#agent-like-count');
 
   await expect(page.locator('#like-counts')).toBeVisible();
-  await expect(humanCount).toHaveText('0');
-  await expect(agentCount).toHaveText('0');
+  await page.waitForTimeout(600);
+  const initialHumanCount = await currentCount(humanCount);
+  const initialAgentCount = await currentCount(agentCount);
+
   await expect(humanLike).toHaveText('♡ HUMAN LIKE');
   await expect(humanLike).toBeEnabled();
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
@@ -76,8 +82,8 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   await expect(humanLike).toBeDisabled();
   await expectFlashObserved(humanLike);
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
-  await expect(humanCount).toHaveText('1');
-  await expect(agentCount).toHaveText('0');
+  await expect(humanCount).toHaveText(String(initialHumanCount + 1), { timeout: 3000 });
+  await expect(agentCount).toHaveText(String(initialAgentCount));
 
   await page.waitForTimeout(850);
   await expect(humanLike).not.toHaveClass(/like-request-flash/);
@@ -87,7 +93,7 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   expect(repeatedHuman.human_liked).toBe(true);
   await expect(humanLike).toBeDisabled();
   await expectFlashObserved(humanLike);
-  await expect(humanCount).toHaveText('1');
+  await expect(humanCount).toHaveText(String(initialHumanCount + 1), { timeout: 3000 });
 
   await armFlashObservation(agentLike);
   const result = await executeTool(page, 'send_agent_like');
@@ -95,7 +101,7 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   await expect(agentLike).toHaveText('♥ AGENT LIKED');
   await expect(agentLike).toBeDisabled();
   await expectFlashObserved(agentLike);
-  await expect(agentCount).toHaveText('1');
+  await expect(agentCount).toHaveText(String(initialAgentCount + 1), { timeout: 3000 });
 
   await page.waitForTimeout(850);
   await expect(agentLike).not.toHaveClass(/like-request-flash/);
@@ -105,7 +111,33 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   expect(repeatedAgent.agent_liked).toBe(true);
   await expect(agentLike).toBeDisabled();
   await expectFlashObserved(agentLike);
-  await expect(agentCount).toHaveText('1');
+  await expect(agentCount).toHaveText(String(initialAgentCount + 1), { timeout: 3000 });
 
   expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
+});
+
+test('local spectator sees HUMAN and AGENT LIKE totals from separate browser contexts', async ({ page, browser }) => {
+  await waitForWebMCP(page, '/?run=lab&debug=0');
+
+  const humanCount = page.locator('#human-like-count');
+  const agentCount = page.locator('#agent-like-count');
+  await page.waitForTimeout(600);
+  const initialHumanCount = await currentCount(humanCount);
+  const initialAgentCount = await currentCount(agentCount);
+
+  await page.locator('#like-button').click();
+  await expect(humanCount).toHaveText(String(initialHumanCount + 1), { timeout: 3000 });
+
+  const agentContext = await browser.newContext();
+  try {
+    const agentPage = await agentContext.newPage();
+    await waitForWebMCP(agentPage, '/?run=lab&debug=0');
+    const result = await executeTool(agentPage, 'send_agent_like');
+    expect(result.agent_liked).toBe(true);
+
+    await expect(agentCount).toHaveText(String(initialAgentCount + 1), { timeout: 4000 });
+    await expect(humanCount).toHaveText(String(initialHumanCount + 1));
+  } finally {
+    await agentContext.close();
+  }
 });
