@@ -21,6 +21,7 @@ async function executeTool(page, name, args = {}) {
 
 test('AI Agent View shows truthful Bishop call and Queen result from a separate browser context', async ({ page, browser }) => {
   await waitForWebMCP(page);
+  await page.waitForFunction(() => document.documentElement.dataset.agentTraceReady === 'true', null, { timeout: 5000 });
 
   const agentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
   const agentPage = await agentContext.newPage();
