@@ -1,6 +1,6 @@
 # MATCHED? Public Pilot
 
-> Historical pilot/setup notes. The project has since moved beyond the initial pilot state; the current native WebMCP regression suite is 24 tests. This document is kept as an operational record and deployment reference.
+> Historical pilot/setup notes. The project has since moved beyond the initial pilot state. The current release candidate uses a fixed 14-tool surface and a D1-backed `LIVE TOOL ACCESS` stream. The original low-information telemetry policy below still applies to `telemetry_events`, but the newer `public_tool_events` table intentionally stores `message_queen` message/reply text for public spectator display. See the root `README.md` for the current source of truth.
 
 目的は、完成版を公開することではなく、**公開URLにWebMCP対応の何かが自然に来てToolを実行するか**を短期間観察すること。
 
@@ -25,6 +25,8 @@ Pilot開始時点ではGitHub repository自体をpublicにする必要はなか�
 
 ## 2. Privacy
 
+この節は初期Pilotの `telemetry_events` 方針を記録している。
+
 Telemetryは低情報量のsemantic metadataだけを保存する。
 
 保存するもの:
@@ -38,7 +40,7 @@ Telemetryは低情報量のsemantic metadataだけを保存する。
 - Tool count
 - timestamp
 
-保存しないもの:
+`telemetry_events` に保存しないもの:
 
 - raw IP address
 - User-Agent
@@ -49,6 +51,8 @@ Telemetryは低情報量のsemantic metadataだけを保存する。
 - Queen-note本文
 - synthetic profile-card values
 - real PII
+
+現在の追加仕様として、別テーブル `public_tool_events` では観戦用に `message_queen` の本文とQueen返答だけを意図的に公開保存する。他Toolの自由入力本文は公開ログに保存しない。
 
 Cloudflare自体の標準インフラログ等は、このアプリケーションのD1 telemetry tableとは別物である。
 
@@ -80,15 +84,21 @@ CloudflareでD1 databaseを1個作成する。
 matched-telemetry
 ```
 
-D1 console等から `migrations/0001_telemetry.sql` のSQLを適用する。
-
-Wranglerを使う場合はrepository rootで次でもよい。
+初期schema:
 
 ```powershell
-npx wrangler login
-npx wrangler d1 create matched-telemetry
 npx wrangler d1 execute matched-telemetry --remote --file migrations/0001_telemetry.sql
 ```
+
+LIKE集計を使うreleaseでは `0002_likes.sql` も適用する。
+
+現在の共有公開Toolログには次を適用する:
+
+```powershell
+npx wrangler d1 execute matched-telemetry --remote --file migrations/0003_public_tool_events.sql
+```
+
+`0003` は `public_tool_events` とindexを追加するだけで、既存telemetry tableをALTERしない。
 
 Pages projectでD1 bindingを追加する。
 
@@ -99,7 +109,7 @@ D1 database: matched-telemetry
 
 Cloudflare Dashboardでは Pages project → **Settings → Bindings → Add → D1 database bindings** から設定する。Production environmentへ設定し、Pages projectをredeployする。
 
-Binding未設定でもMATCHED?本体は動くが、telemetryは保存されない。
+Binding未設定でもMATCHED?本体は動くが、D1ベースのtelemetry / public logは保存されない。
 
 ## 5. Stats key
 
@@ -168,10 +178,10 @@ npm run build:pages
 npm run test:webmcp
 ```
 
-現在の期待:
+現在のrelease-candidate確認値:
 
 ```text
-24/24 PASS
+31/31 PASS
 Natural exit: yes
 Final exit code: 0
 ```
@@ -182,9 +192,10 @@ Final exit code: 0
 2. `/api/telemetry` GETが405になる
 3. `/api/stats` 無認証GETが404になる
 4. `/stats.html` から正しいSTATS_KEYでstats取得できる
-5. 自分で通常ブラウザから1回アクセスし Page sessionsが増える
-6. WebMCP-capable Chrome/AgentからToolを1回呼び Tool sessionsが増える
-7. `/` と `/observatory.html` に version / short build SHA が表示される
+5. `/api/public-tool-events` GETがJSONを返す
+6. WebMCP-capable Chrome/AgentからToolを1回呼び、`LIVE TOOL ACCESS` と `TOOL REQUESTS` が更新される
+7. `message_queen` を呼ぶとAgent本文とQueen返答が観戦画面へ出る
+8. `/` と `/observatory.html` に version / short build SHA が表示される
 
 を確認する。
 
@@ -192,6 +203,6 @@ Final exit code: 0
 
 観察期間中にTool説明やbait条件を頻繁に変えると比較しにくくなる。
 
-Pilot開始時のcommit SHAを記録し、最初の24〜72時間は重大bug以外なるべく固定する。
+Pilot開始時のcommit SHAを記録し、重大bug以外なるべく固定する。
 
 以降の機能追加は別branchまたはpilot観察後に進める。
