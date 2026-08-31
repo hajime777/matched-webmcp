@@ -15,6 +15,7 @@ const semanticFields = Object.freeze({
 });
 
 let lastLocalEventId = 0;
+let localTraceReady = false;
 let polling = false;
 let agentMode = false;
 const cards = [];
@@ -213,6 +214,20 @@ async function pollLocalTrace() {
     if (!response.ok) return;
     const payload = await response.json();
     const events = Array.isArray(payload?.events) ? payload.events : [];
+
+    // The local relay is shared by the whole test/demo server. On first load,
+    // establish a baseline at the newest existing event instead of replaying
+    // semantic cards from earlier browser contexts or earlier tests.
+    if (!localTraceReady) {
+      for (const event of events) {
+        const id = Number(event?.id || 0);
+        if (id > lastLocalEventId) lastLocalEventId = id;
+      }
+      localTraceReady = true;
+      document.documentElement.dataset.agentTraceReady = 'true';
+      return;
+    }
+
     for (const event of events) {
       const id = Number(event?.id || 0);
       if (id > lastLocalEventId) lastLocalEventId = id;
