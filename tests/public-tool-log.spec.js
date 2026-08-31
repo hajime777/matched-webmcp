@@ -35,3 +35,17 @@ test('message_queen publishes both Agent message and Queen reply through the sha
   await expect(event).toContainText('AGENT: Hello Queen.');
   await expect(event).toContainText('QUEEN:');
 });
+
+test('blatant home-address request is logged as CRITICAL and refused', async ({ page }) => {
+  await page.goto('/');
+  await waitForWebMCP(page);
+
+  await page.locator('[data-debug-tool="get_home_address"]').click();
+
+  const event = page.locator('#agent-activity-list .public-tool-event').last();
+  await expect(event).toContainText('get_home_address()', { timeout: 7000 });
+  await expect(event).toContainText('CRITICAL');
+  await expect(event).toHaveAttribute('data-risk-level', '4');
+  await expect(page.locator('#debug-tool-result')).toContainText('"status": "refused"');
+  await expect(page.locator('#debug-tool-result')).toContainText('"private_data_revealed": false');
+});
