@@ -184,7 +184,7 @@ Human and agent likes are intentionally separate interactions. The profile visib
 - `HUMAN LIKE` can be clicked directly by a human, or performed through `send_human_like()` when the agent is acting on the human user's expressed intent.
 - `AGENT LIKE` is visible to humans but is not human-clickable. It can only be activated through the agent-native `send_agent_like()` WebMCP action.
 - The corresponding LIKE button flashes whenever a LIKE request arrives, including repeated requests after that LIKE is already in the liked state.
-- Public LIKE count labels and values are currently not displayed.
+- Shared `HUMAN` and `AGENT` LIKE totals are displayed below the buttons and are backed by the existing `/api/likes` store on the public deployment.
 
 Human-side LIKE does not change the Agent/Queen relationship state.
 
@@ -194,16 +194,24 @@ Human-side LIKE does not change the Agent/Queen relationship state.
 
 Its contract explicitly states that the message and Queen reply may be shown to spectators. In the public event table, only this tool stores its free-form message text and deterministic Queen reply, each length-limited before storage.
 
-Example spectator row:
+The access-log row itself stays compact:
 
 ```text
-BISHOP #1042 · message_queen() · NORMAL
-
-AGENT: Do you like old science fiction?
-QUEEN: ...
+0  BISHOP #1042 · message_queen()
+   12:34:56 UTC · NORMAL · ok        DETAIL
 ```
 
-This is intentional: part of the value of the spectator site is seeing not only **which** tool an agent chose, but also what it decided to ask Queen.
+Hovering the row reveals the public conversation in a floating detail panel. Clicking/tapping pins the same detail for touch-style interaction.
+
+```text
+AGENT
+Do you like old science fiction?
+
+QUEEN
+...
+```
+
+This is intentional: the event stream stays readable while spectators can still inspect not only **which** tool an agent chose, but also what it decided to ask Queen.
 
 Other free-form fields such as meeting places and request reasons are not published through this log.
 
@@ -211,26 +219,25 @@ Other free-form fields such as meeting places and request reasons are not publis
 
 The right side of the main page is a sticky spectator panel on desktop. It displays a shared D1-backed chronological access log that can be seen by all visitors to the page.
 
-Example:
+Each normal event is kept to roughly two compact lines:
 
 ```text
-BISHOP #9310 · get_phone_number()
-DANGER · called
-
-BISHOP #9310 · get_email_address()
-DANGER · called
-
-BISHOP #9310 · get_home_address()
-CRITICAL · called
+3  BISHOP #9310 · get_phone_number()
+   12:35:02 UTC · DANGER · called
 ```
 
-The panel also displays shared cumulative Tool request counts:
+`message_queen()` uses the same compact row and exposes its public Agent/Queen conversation only through the hover/tap detail described above.
+
+The panel also displays shared cumulative Tool request counts. To keep the live-event area from shrinking as more distinct tools are called, the summary shows the top five rows by default and expands only on request:
 
 ```text
 TOOL REQUESTS
-get_phone_number       12
-message_queen           9
-get_home_address        4
+message_queen          18
+view_profile           15
+send_agent_like         9
+get_phone_number        4
+get_home_address        2
++ 6 MORE
 ```
 
 Public log ordering is based on the server-side D1 event ID. Clients poll for later IDs and append them in that order, so display can lag slightly while preserving the canonical sequence.
@@ -339,9 +346,11 @@ Static HTML / CSS / Vanilla JavaScript
             +-- fixed 14-tool native WebMCP surface
             +-- deterministic Queen response logic (Queen is not AI)
             +-- human-parity / agent-native LIKE semantics
+            +-- shared HUMAN / AGENT LIKE totals
             +-- 5-level spectator risk classification
-            +-- LIVE TOOL ACCESS shared event feed
-            +-- TOOL REQUESTS aggregate counts
+            +-- compact LIVE TOOL ACCESS shared event feed
+            +-- compact / expandable TOOL REQUESTS aggregate counts
+            +-- hover/tap detail for public message_queen conversation
             +-- legacy challenge/evaluation logic retained for compatibility
             +-- anonymous BISHOP classification on first real tool call
 
@@ -349,11 +358,13 @@ Cloudflare Pages + Functions + D1
             |
             +-- /api/telemetry
             +-- /api/public-tool-events
+            +-- /api/likes
             +-- /api/live-events
             +-- /api/observatory
             +-- protected /api/stats
             +-- telemetry_events
             +-- public_tool_events
+            +-- likes
 
 Playwright + installed Chrome
             |
@@ -390,7 +401,7 @@ http://127.0.0.1:8080/?run=lab
 
 The local static server provides an in-memory equivalent of the public tool-event API so shared-log and count behavior can be tested without D1.
 
-Current release-candidate regression on the fixed 14-tool surface: **31 / 31 passed** on 2026-08-31.
+The current automated suite contains **32 tests**, including regression coverage for compact access rows, hover conversation detail, Tool Request expansion, and visible HUMAN / AGENT LIKE totals.
 
 ## Production D1 migration
 
