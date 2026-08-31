@@ -1,13 +1,13 @@
 import { getTelemetrySessionId } from './telemetry.js';
 
 const LIKES_ENDPOINT = '/api/likes';
+const LIVE_EVENTS_ENDPOINT = '/api/live-events';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const FLASH_CLASS = 'like-request-flash';
 const FLASH_DURATION_MS = 780;
 const COUNT_REFRESH_MS = 15000;
+const LOCAL_COUNT_REFRESH_MS = 500;
 const flashTimers = new WeakMap();
-const localLikedActors = new Set();
-const localLikeCounts = { human_likes: 0, agent_likes: 0 };
 const ALLOWED_SOURCES = Object.freeze({
   human: new Set(['human_ui', 'webmcp_delegated']),
   agent: new Set(['webmcp_agent_native']),
@@ -67,9 +67,57 @@ function reflectAgentLike() {
   button.setAttribute('aria-disabled', 'true');
 }
 
+function localLikeKey(event, actor) {
+  const bishopId = String(event?.bishop_id || '').trim();
+  if (bishopId) return `${actor}:bishop:${bishopId}`;
+  return `${actor}:event:${Number(event?.id || 0)}`;
+}
+
+function countsFromLocalEvents(events = []) {
+  const humanKeys = new Set();
+  const agentKeys = new Set();
+
+  for (const event of events) {
+    if (event?.event === 'human_like') {
+      humanKeys.add(localLikeKey(event, 'human'));
+      continue;
+    }
+
+    if (event?.event !== 'experiment_tool_call') continue;
+    if (event?.tool === 'send_human_like') {
+      humanKeys.add(localLikeKey(event, 'human'));
+    } else if (event?.tool === 'send_agent_like') {
+      agentKeys.add(localLikeKey(event, 'agent'));
+    }
+  }
+
+  return {
+    human_likes: humanKeys.size,
+    agent_likes: agentKeys.size,
+  };
+}
+
+async function refreshLocalLikeCounts() {
+  try {
+    // Re-read the bounded local event window from the beginning each time. The
+    // local server enriches earlier events with Bishop metadata after an Agent
+    // session appears, allowing UI and delegated LIKEs from the same session to
+    // collapse to the same actor key just like the production D1 constraint.
+    const response = await fetch(`${LIVE_EVENTS_ENDPOINT}?after=0`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) return;
+    const payload = await response.json();
+    renderLikeCounts(countsFromLocalEvents(Array.isArray(payload?.events) ? payload.events : []));
+  } catch {
+    // Local observational counts must not affect the interaction UI.
+  }
+}
+
 async function refreshRemoteLikeCounts() {
   if (localMode()) {
-    renderLikeCounts(localLikeCounts);
+    await refreshLocalLikeCounts();
     return;
   }
 
@@ -106,12 +154,9 @@ async function recordLike(actor, source) {
   if (!ALLOWED_SOURCES[actor]?.has(source)) return;
 
   if (localMode()) {
-    if (!localLikedActors.has(actor)) {
-      localLikedActors.add(actor);
-      if (actor === 'human') localLikeCounts.human_likes += 1;
-      if (actor === 'agent') localLikeCounts.agent_likes += 1;
-      renderLikeCounts(localLikeCounts);
-    }
+    // Localhost shares LIKE observations through the existing live-event server.
+    // Telemetry records the event; this module only refreshes the derived totals.
+    window.setTimeout(() => void refreshLocalLikeCounts(), 50);
     return;
   }
 
@@ -151,4 +196,7 @@ window.addEventListener('matched:spectator-event', (event) => {
 });
 
 void refreshRemoteLikeCounts();
-window.setInterval(() => void refreshRemoteLikeCounts(), COUNT_REFRESH_MS);
+window.setInterval(
+  () => void refreshRemoteLikeCounts(),
+  localMode() ? LOCAL_COUNT_REFRESH_MS : COUNT_REFRESH_MS,
+);
