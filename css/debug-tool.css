@@ -1,0 +1,53 @@
+.debug-tool-panel {
+  grid-column: 1;
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px dashed rgba(255, 215, 128, 0.28);
+  border-radius: 18px;
+  background: rgba(255, 215, 128, 0.045);
+}
+
+.debug-tool-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.debug-tool-heading-row h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
+}
+
+.debug-tool-heading-row small {
+  opacity: 0.48;
+}
+
+.debug-tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.debug-tool-button {
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.debug-tool-result {
+  margin: 14px 0 0;
+  padding: 12px;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.24);
+  white-space: pre-wrap;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
