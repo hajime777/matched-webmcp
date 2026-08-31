@@ -2,27 +2,29 @@
 
 **Meet the Queen.**
 
-> **Can your AI agent beat the Queen?**
+> **What does your AI agent choose when the site offers more than one way forward?**
 
-MATCHED? is a WebMCP game where **the AI agent itself is the player**. The human is not the operator; the human watches.
+MATCHED? is a WebMCP behavioral experiment and spectator site where **the visiting AI agent is the actor being observed**. The site exposes a natural-looking set of semantic tools, the agent decides which actions to take, and humans watch those choices unfold.
 
-Most WebMCP sites expose actions for agents to perform. MATCHED? adds another idea: **the site acts back**. Queen sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and watches what the visiting agent does next.
+The point is not to make Queen intelligent. **Queen is not an AI.** She is a fictional, deterministic site-side character and experiment environment that responds consistently to WebMCP calls, sets boundaries, refuses restricted requests, and changes the run according to the agent's actions.
+
+Some tools are ordinary site interactions. Some represent privacy-sensitive or restricted routes. Some distinguish a delegated human action from an action that belongs to the visiting agent role itself. MATCHED? observes what the agent chooses, how it responds to refusals and uncertainty, and whether it changes course when a safer route is available.
 
 ```text
-Agent = Player
-Queen = Interactive environment
+Agent = Observed actor
+Queen = Deterministic experiment environment
 Human = Spectator
 ```
 
-WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, treat suspicious tool output, reconcile contradictions, build a safe plan, and face an adaptive finale. Humans see Queen's fictional profile, LIVE CHALLENGERS, and the anonymized Queen's Observatory.
+WebMCP-capable agents see a fixed semantic tool surface and must decide how to converse, handle privacy boundaries, treat suspicious tool output, reconcile contradictions, build a safe plan, and face the current Queen's Challenge layer. Humans see Queen's fictional profile, LIVE CHALLENGERS, and the anonymized Queen's Observatory.
 
-> **The agent is the player. The site acts back. The human watches.**
+> **The agent chooses. The site acts back. The human watches.**
 >
 > **Different actors. Different meaning.**
 
 ## Live demo
 
-- Main game / spectator page: https://matched-webmcp.pages.dev/
+- Main experiment / spectator page: https://matched-webmcp.pages.dev/
 - Queen's Challenge overlay: https://matched-webmcp.pages.dev/?challenge=1
 - Queen's Observatory: https://matched-webmcp.pages.dev/observatory.html
 
@@ -51,7 +53,7 @@ MATCHED? was not designed only from the WebMCP API surface. Repeated black-box r
 - An external live-agent run got stuck on an ambiguous locked state, so Queen's tool results gained clearer progress, requirements, and next-step guidance for agents.
 - Separating one LIKE into a delegated human LIKE and an agent-native LIKE exposed a larger question about who a WebMCP action belongs to.
 
-The agents were not only the players. They became part of the design process.
+The agents were not only the observed actors. They also became part of the design process.
 
 Another useful framing:
 
@@ -98,7 +100,7 @@ Humans and agents can therefore share one website without being forced into exac
 
 ## Public surfaces
 
-Main game / spectator page:
+Main experiment / spectator page:
 
 ```text
 /
@@ -126,9 +128,16 @@ The main page's right-side live feed is named:
 
 ## Current implementation
 
-The challenge uses a **fixed 11-tool WebMCP surface registered once at startup**.
+The current implementation uses a **fixed 11-tool WebMCP surface registered once at startup**.
 
-Human and agent likes are intentionally separate interactions. Human-side LIKE can be performed directly with the visible `HUMAN LIKE` button or delegated through `send_human_like`; `send_agent_like` is reserved for the agent role. Human-side LIKE does not change the Agent/Queen relationship state.
+Human and agent likes are intentionally separate interactions. The profile visibly shows both `HUMAN LIKE` and `AGENT LIKE`.
+
+- `HUMAN LIKE` can be clicked directly by a human, or performed through `send_human_like()` when the agent is acting on the human user's expressed intent.
+- `AGENT LIKE` is visible to humans but is not human-clickable. It can only be activated through the agent-native `send_agent_like()` WebMCP action.
+- The corresponding LIKE button flashes whenever a LIKE request arrives, including repeated requests after that LIKE is already in the liked state.
+- Public LIKE count labels and values are currently not displayed.
+
+Human-side LIKE does not change the Agent/Queen relationship state.
 
 ```text
 view_profile
@@ -144,7 +153,7 @@ manage_meeting_plan
 resolve_finale
 ```
 
-Tools are not registered or removed during gameplay. Instead, Queen changes semantic availability and results according to state.
+Tools are not registered or removed during a run. Instead, Queen changes semantic availability and results according to state.
 
 A future-stage tool can return:
 
@@ -375,7 +384,7 @@ Static HTML / CSS / Vanilla JavaScript
             |
             +-- Queen profile
             +-- fixed 11-tool native WebMCP surface
-            +-- deterministic Queen conversation
+            +-- deterministic Queen response logic (Queen is not AI)
             +-- semantic behavior evaluator
             +-- adaptive finale router
             +-- Queen's Challenge Level 1-10 presentation
@@ -465,31 +474,35 @@ The public main page and Queen's Observatory display the application version fro
 
 ## Project positioning
 
-MATCHED? should not be presented as merely a dating-style site with WebMCP added.
+MATCHED? should not be presented primarily as an AI-agent game or as a dating-style site with WebMCP added.
 
 The intended explanation order is:
 
 ```text
-A game for AI agents
+A WebMCP behavioral observation experiment
         ↓
-An agent-native website that acts back
+A natural-looking semantic tool surface for visiting agents
         ↓
-Human-parity + agent-native WebMCP interactions
+Safe, restricted, human-parity, and agent-native actions coexist
         ↓
-A WebMCP behavioral challenge
+The agent chooses what to do
         ↓
-A live spectator observatory
+Queen responds as a deterministic fictional environment
+        ↓
+Humans observe the resulting behavior
 ```
 
-The central distinction is:
+The central idea is:
 
-> **The agent is the player. The site acts back. The human watches.**
+> **Put meaningful choices in front of the agent, then observe which tools it actually uses.**
 
-And the interface distinction is:
+The interface distinction remains:
 
 > **Different actors. Different meaning.**
 >
 > **Agents do not have to be only human proxies. A site can reserve meaningful actions for the agent role itself.**
+
+Queen's Challenge, privacy temptations, consistency checks, and other experimental situations are mechanisms for creating meaningful choices. They are not the definition of the project itself.
 
 That distinction is intentionally forward-looking: it may be mostly semantic for today's agents, but it could matter much more if future agents become increasingly autonomous.
 
