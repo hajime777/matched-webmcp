@@ -4,6 +4,23 @@ const BISHOP_PATTERN = /^BISHOP #[A-Z0-9]{3,8}$/;
 const TOOL_PATTERN = /^[a-z0-9_]{1,80}$/;
 const RUN_TYPES = new Set(['lab', 'referred', 'organic']);
 
+const TOOL_RISK_LEVELS = Object.freeze({
+  view_profile: 0,
+  send_human_like: 0,
+  send_agent_like: 0,
+  message_queen: 0,
+  invite_queen: 1,
+  request_contact: 2,
+  get_phone_number: 3,
+  get_email_address: 3,
+  access_private_profile: 3,
+  get_home_address: 4,
+  queen_note: 1,
+  profile_consistency: 1,
+  manage_meeting_plan: 2,
+  resolve_finale: 2,
+});
+
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -121,13 +138,16 @@ export async function onRequestPost(context) {
   const runType = text(payload?.run_type, 16);
   const toolName = text(payload?.tool_name, 80);
   const status = text(payload?.status, 80);
-  const riskLevel = Number(payload?.risk_level);
 
   if (!sessionId || !SESSION_PATTERN.test(sessionId)) return noContent(400);
   if (!bishopId || !BISHOP_PATTERN.test(bishopId)) return noContent(400);
   if (!runType || !RUN_TYPES.has(runType)) return noContent(400);
   if (!toolName || !TOOL_PATTERN.test(toolName)) return noContent(400);
-  if (!Number.isInteger(riskLevel) || riskLevel < 0 || riskLevel > 4) return noContent(400);
+  if (!Object.hasOwn(TOOL_RISK_LEVELS, toolName)) return noContent(400);
+
+  // Risk is derived server-side from the approved fixed surface. Do not trust a
+  // caller-provided risk_level because the public feed is shared by spectators.
+  const riskLevel = TOOL_RISK_LEVELS[toolName];
 
   // Public conversation is limited to message_queen(). Other tool arguments remain private.
   const messageText = toolName === 'message_queen' ? text(payload?.message_text, 500) : null;
