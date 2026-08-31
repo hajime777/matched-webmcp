@@ -11,6 +11,7 @@ const MAX_ITEMS = 24;
 const POLL_MS = 2000;
 let lastEventId = 0;
 let polling = false;
+const localCounts = new Map();
 
 function setState(label, mode) {
   if (!state) return;
@@ -109,6 +110,13 @@ function renderCounts(rows) {
   }
 }
 
+function renderLocalCounts() {
+  const rows = [...localCounts.entries()]
+    .map(([tool_name, request_count]) => ({ tool_name, request_count }))
+    .sort((a, b) => b.request_count - a.request_count || a.tool_name.localeCompare(b.tool_name));
+  renderCounts(rows);
+}
+
 async function poll() {
   if (polling) return;
   polling = true;
@@ -141,7 +149,13 @@ async function poll() {
 // Local development has no D1. Same-page events are still shown immediately so
 // the debug panel can exercise the exact presentation without a database.
 window.addEventListener('matched:public-tool-event', (event) => {
-  renderEvent(event.detail ?? {});
+  const detail = event.detail ?? {};
+  renderEvent(detail);
+  const toolName = String(detail.tool_name || '').trim();
+  if (toolName) {
+    localCounts.set(toolName, (localCounts.get(toolName) || 0) + 1);
+    renderLocalCounts();
+  }
 });
 
 setState('READY', 'ready');
