@@ -115,7 +115,7 @@ function relayLocal(kind, toolName, projection, args = {}) {
   });
 }
 
-function wrapTool(tool) {
+export function instrumentWebMcpTool(tool) {
   if (!tool || tool[WRAPPED] || typeof tool.execute !== 'function') return tool;
   const originalExecute = tool.execute;
   const toolName = String(tool.name || 'unknown_tool');
@@ -151,7 +151,7 @@ function wrapTool(tool) {
 
 function wrappedRegisterFunction(context) {
   const originalRegisterTool = context.registerTool.bind(context);
-  const wrappedRegisterTool = async (tool) => originalRegisterTool(wrapTool(tool));
+  const wrappedRegisterTool = async (tool) => originalRegisterTool(instrumentWebMcpTool(tool));
   wrappedRegisterTool.__matchedSemanticWrapped = true;
   return wrappedRegisterTool;
 }
