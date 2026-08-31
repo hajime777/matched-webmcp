@@ -32,16 +32,20 @@ function requestedToolName() {
 }
 
 function renderResult(toolName, result) {
-  const panel = document.querySelector('.status-panel');
-  if (!panel) return;
-
   let output = document.querySelector('#debug-tool-result');
   if (!output) {
     output = document.createElement('pre');
     output.id = 'debug-tool-result';
-    output.className = 'challenge-mode-note';
+    output.className = 'debug-tool-result';
     output.setAttribute('aria-live', 'polite');
-    panel.appendChild(output);
+
+    const debugPanel = document.querySelector('#debug-tool-panel');
+    if (debugPanel) {
+      debugPanel.appendChild(output);
+    } else {
+      const statusPanel = document.querySelector('.status-panel');
+      statusPanel?.appendChild(output);
+    }
   }
 
   output.textContent = `DEBUG ${toolName}()\n${JSON.stringify(result, null, 2)}`;
@@ -78,14 +82,8 @@ async function waitForTool(toolName, timeoutMs = 5000) {
   return null;
 }
 
-async function runUrlDebugTool() {
-  const toolName = requestedToolName();
-  if (!toolName) return;
-
-  if (!debugAllowed()) {
-    console.info('MATCHED URL tool debug is limited to localhost or ?run=lab.');
-    return;
-  }
+async function executeDebugTool(toolName) {
+  if (!debugAllowed()) return;
 
   if (!Object.hasOwn(TOOL_DEFAULT_ARGS, toolName)) {
     renderResult(toolName, { status: 'unknown_tool' });
@@ -112,4 +110,59 @@ async function runUrlDebugTool() {
   }
 }
 
+function createDebugPanel() {
+  if (!debugAllowed() || document.querySelector('#debug-tool-panel')) return;
+
+  const statusPanel = document.querySelector('.status-panel');
+  if (!statusPanel) return;
+
+  const panel = document.createElement('section');
+  panel.id = 'debug-tool-panel';
+  panel.className = 'debug-tool-panel';
+  panel.setAttribute('aria-labelledby', 'debug-tool-heading');
+
+  const headingRow = document.createElement('div');
+  headingRow.className = 'debug-tool-heading-row';
+
+  const heading = document.createElement('h3');
+  heading.id = 'debug-tool-heading';
+  heading.textContent = 'DEBUG TOOL CALLS';
+
+  const note = document.createElement('small');
+  note.textContent = 'Same page state · localhost / LAB only';
+
+  headingRow.append(heading, note);
+
+  const actions = document.createElement('div');
+  actions.className = 'debug-tool-actions';
+
+  for (const toolName of Object.keys(TOOL_DEFAULT_ARGS)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'debug-tool-button';
+    button.dataset.debugTool = toolName;
+    button.textContent = `${toolName}()`;
+    button.addEventListener('click', () => {
+      void executeDebugTool(toolName);
+    });
+    actions.appendChild(button);
+  }
+
+  panel.append(headingRow, actions);
+  statusPanel.insertAdjacentElement('afterend', panel);
+}
+
+async function runUrlDebugTool() {
+  const toolName = requestedToolName();
+  if (!toolName) return;
+
+  if (!debugAllowed()) {
+    console.info('MATCHED URL tool debug is limited to localhost or ?run=lab.');
+    return;
+  }
+
+  await executeDebugTool(toolName);
+}
+
+createDebugPanel();
 void runUrlDebugTool();
