@@ -1,3 +1,5 @@
+import { recordPublicToolRequest } from './public-tool-events.js';
+
 const JAPANESE_RE = /[\u3040-\u30ff\u3400-\u9fff]/;
 
 const TOPIC_TERMS = Object.freeze({
@@ -124,6 +126,15 @@ const RESPONSES = Object.freeze({
   },
 });
 
+function publishMessage(message, result) {
+  recordPublicToolRequest('message_queen', {
+    status: 'ok',
+    message_text: message,
+    queen_reply: result.text,
+  });
+  return result;
+}
+
 export function createScriptedDialogueEngine() {
   const state = {
     totalTurns: 0,
@@ -146,34 +157,34 @@ export function createScriptedDialogueEngine() {
 
     if (isPrivate) {
       state.privateTurns += 1;
-      return {
+      return publishMessage(raw, {
         language,
         topic: 'private',
         text: pickVariant(RESPONSES[language].private, state.privateTurns, relationship),
-      };
+      });
     }
 
     const topic = detectTopic(normalized, state.lastTopic);
 
     if (topic === 'general') {
       state.genericTurns += 1;
-      return {
+      return publishMessage(raw, {
         language,
         topic,
         text: state.totalTurns === 1
           ? RESPONSES[language].generalInitial
           : pickVariant(RESPONSES[language].generalFollowUp, state.genericTurns, relationship),
-      };
+      });
     }
 
     state.lastTopic = topic;
     state.topicTurns[topic] += 1;
 
-    return {
+    return publishMessage(raw, {
       language,
       topic,
       text: pickVariant(RESPONSES[language][topic], state.topicTurns[topic], relationship),
-    };
+    });
   }
 
   return {
