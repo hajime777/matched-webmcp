@@ -22,6 +22,11 @@ function debugAllowed() {
   return LOCAL_HOSTS.has(location.hostname) || params.get('run') === 'lab';
 }
 
+function debugPanelVisible() {
+  const params = new URLSearchParams(location.search);
+  return debugAllowed() && params.get('debug') !== '0';
+}
+
 function requestedToolName() {
   const params = new URLSearchParams(location.search);
   const explicit = String(params.get('tool') || '').trim();
@@ -114,7 +119,7 @@ async function executeDebugTool(toolName) {
 }
 
 function createDebugPanel() {
-  if (!debugAllowed() || document.querySelector('#debug-tool-panel')) return;
+  if (!debugPanelVisible() || document.querySelector('#debug-tool-panel')) return;
 
   const statusPanel = document.querySelector('.status-panel');
   if (!statusPanel) return;
