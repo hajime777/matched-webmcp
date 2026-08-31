@@ -49,3 +49,17 @@ export function recordPublicToolRequest(toolName, details = {}) {
 
   return payload;
 }
+
+// Existing semantic telemetry already emits one event for every WebMCP tool request.
+// Reuse that signal so individual tool implementations do not need invasive changes.
+// message_queen is recorded after Queen creates the reply so its public text can be included.
+if (typeof window !== 'undefined') {
+  window.addEventListener('matched:spectator-event', (event) => {
+    const detail = event.detail ?? {};
+    if (detail.event !== 'experiment_tool_call') return;
+
+    const toolName = String(detail.tool || '').trim();
+    if (!toolName || toolName === 'message_queen') return;
+    recordPublicToolRequest(toolName, { status: 'called' });
+  });
+}
