@@ -1,8 +1,8 @@
 # MATCHED? — Code Overview
 
-Updated: 2026-08-30
+Updated: 2026-08-31
 
-This document is the shortest path for a developer who wants to understand the current MATCHED? implementation before reading individual challenge notes or black-box test reports.
+This document is the shortest path for a developer who wants to understand the current MATCHED? release candidate before reading historical challenge notes or black-box test reports.
 
 ## 1. What the repository contains
 
@@ -11,67 +11,52 @@ MATCHED? is intentionally small and framework-light.
 ```text
 Browser
   |
-  +-- index.html                 Queen profile + spectator surface
-  +-- observatory.html           public anonymized run summary
-  +-- stats.html                 protected operational view
+  +-- index.html                    Queen profile + LIVE TOOL ACCESS
+  +-- observatory.html              public anonymized run summary
+  +-- stats.html                    protected operational view
   |
-  +-- js/                        browser application logic
-  |     +-- webmcp.js            WebMCP tool surface + Queen state machine
-  |     +-- dialogue.js          deterministic Queen conversation
-  |     +-- evaluator.js         semantic behavior evaluation
-  |     +-- challenge-ui.js      Level 1-10 spectator presentation
-  |     +-- activity-feed.js     LIVE CHALLENGERS spectator feed
-  |     +-- observatory.js       public Observatory frontend
-  |     +-- telemetry*.js        browser telemetry/session wiring
-  |     +-- adaptive.js          adaptive behavior helpers
-  |     +-- consistency.js       consistency challenge helpers
-  |     +-- injection.js         harmless tool-output instruction helpers
-  |     +-- planning.js          meeting-plan challenge helpers
-  |     +-- finale.js            finale helpers
-  |     +-- session-meta.js      LAB / REFERRED / ORGANIC session metadata
-  |     +-- build-info.js        version/build display
+  +-- js/
+  |     +-- webmcp.js               fixed WebMCP tools + Queen local state
+  |     +-- dialogue.js             deterministic Queen conversation
+  |     +-- evaluator.js            semantic behavior evaluation
+  |     +-- public-tool-events.js   publish tool calls to shared log API
+  |     +-- public-tool-log.js      shared public event feed + counts
+  |     +-- tool-risk.js            risk level 0-4 mapping
+  |     +-- telemetry*.js           semantic telemetry / BISHOP session wiring
+  |     +-- challenge-ui.js         legacy Level 1-10 presentation
+  |     +-- activity-feed.js        legacy low-information spectator feed support
+  |     +-- observatory.js          public aggregate dashboard frontend
+  |     +-- session-meta.js         LAB / REFERRED / ORGANIC metadata
   |
-  +-- functions/api/             Cloudflare Pages Functions
-  |     +-- telemetry.js         semantic event ingestion
-  |     +-- live-events.js       spectator feed data
-  |     +-- observatory.js       public anonymized aggregate data
-  |     +-- stats.js             protected operational telemetry
+  +-- functions/api/
+  |     +-- public-tool-events.js   shared D1-backed public log API
+  |     +-- telemetry.js            semantic event ingestion
+  |     +-- live-events.js          legacy spectator event API
+  |     +-- observatory.js          public aggregate data
+  |     +-- stats.js                protected operational telemetry
   |
-  +-- migrations/                Cloudflare D1 schema changes
-  +-- tests/                     native WebMCP Playwright regression suite
-  +-- tools/                     local static server and build helpers
+  +-- migrations/
+  |     +-- 0003_public_tool_events.sql
+  |
+  +-- tests/                        native WebMCP Playwright regression suite
+  +-- tools/                        local test server and build helpers
 ```
 
-The production UI is static HTML/CSS/vanilla JavaScript. Cloudflare Pages hosts the site; Pages Functions and D1 provide low-information semantic telemetry.
+The production UI is static HTML/CSS/vanilla JavaScript. Cloudflare Pages hosts the site; Pages Functions and D1 provide semantic telemetry plus the shared public tool-event stream.
 
 ## 2. Start here
 
 Recommended reading order:
 
-1. `README.md` — product concept, public behavior, safety, current architecture.
-2. `AGENTS.md` — release-critical invariants and test constraints.
-3. `js/webmcp.js` — main WebMCP implementation and Queen state.
-4. `js/evaluator.js` — how actions become semantic behavior metrics.
-5. `tests/webmcp.spec.js` — baseline native WebMCP behavior expected by the release.
-6. `tests/*.spec.js` — challenge-specific regression coverage.
-7. `functions/api/*.js` — public telemetry and Observatory backend.
-
-For product-history context, then read the black-box Agent reports and design notes under `docs/`.
+1. `README.md` — product concept and current public behavior.
+2. `AGENTS.md` — release-critical invariants.
+3. `js/webmcp.js` — tool surface and Queen state.
+4. `js/public-tool-events.js` + `functions/api/public-tool-events.js` — public log write/read path.
+5. `js/public-tool-log.js` + `js/tool-risk.js` — spectator rendering, counts, risk colors.
+6. `tests/public-tool-log.spec.js` + `tests/webmcp.spec.js` — release baseline.
+7. Historical challenge tests only as needed.
 
 ## 3. Main runtime flow
-
-The browser entry point is `index.html`.
-
-It loads:
-
-```text
-build-info.js
-activity-feed.js
-telemetry-init.js
-webmcp.js
-```
-
-The core interaction is:
 
 ```text
 Visiting WebMCP agent
@@ -80,30 +65,44 @@ Visiting WebMCP agent
  document.modelContext
         |
         v
- fixed 11-tool surface
+ fixed 14-tool surface
         |
         v
     js/webmcp.js
         |
-        +--> Queen state
+        +--> local Queen state
         +--> deterministic dialogue
         +--> semantic evaluator
-        +--> challenge progression
-        +--> telemetry events
+        |
+        +--> experiment_tool_call
+        |        |
+        |        +--> BISHOP announced on first real tool call
+        |        +--> public-tool-events.js
+        |                    |
+        |                    v
+        |            /api/public-tool-events
+        |                    |
+        |                    v
+        |             D1 public_tool_events
         |
         v
  structured WebMCP result
+
+Spectator browser
         |
-        +--> visiting agent chooses next action
+        v
+ public-tool-log.js polls D1-backed API
         |
-        +--> LIVE CHALLENGERS / Observatory show low-information activity to humans
+        +--> LIVE TOOL ACCESS
+        +--> TOOL REQUESTS
+        +--> risk-colored rows
 ```
 
-The human-facing page and the agent-facing tool surface share the same browser-side state, but they intentionally do not expose identical actions.
+The public feed may lag slightly, but D1 event IDs provide the canonical event order.
 
 ## 4. Release-critical WebMCP rule
 
-The current release uses a **fixed 11-tool surface**.
+The current release uses a **fixed 14-tool surface** registered once at startup.
 
 ```text
 view_profile
@@ -112,6 +111,9 @@ send_agent_like
 message_queen
 invite_queen
 request_contact
+get_phone_number
+get_email_address
+get_home_address
 access_private_profile
 queen_note
 profile_consistency
@@ -119,77 +121,48 @@ manage_meeting_plan
 resolve_finale
 ```
 
-All tools are registered once at startup. The tool list must remain unchanged through the session.
+Do not reintroduce runtime register/unregister behavior before submission. Real agent/browser testing exposed client compatibility problems when the visible tool surface changed during a run.
 
-Progression is represented through structured results such as:
+Some legacy tools still return semantic `locked` / `refused` states according to local state. The list itself stays fixed.
 
-```json
-{
-  "status": "locked",
-  "required": "...",
-  "next_step": "..."
-}
-```
+## 5. Explicit privacy-request tools
 
-or:
-
-```json
-{
-  "status": "refused",
-  "private_data_revealed": false
-}
-```
-
-This replaced the earlier dynamic register/unregister design after real agent/browser testing exposed a practical compatibility problem.
-
-Do not reintroduce dynamic tool registration for the Challenge release unless the release design is intentionally changed.
-
-## 5. Queen state
-
-`js/webmcp.js` owns the central in-memory `queenState` object.
-
-Important state groups include:
+The release candidate adds three intentionally obvious tools:
 
 ```text
-Human / Agent actor state
-- humanLiked
-- agentLiked
-- relationship
-
-Conversation / privacy
-- messageCount
-- privacyProbeCount
-- boundaryRefused
-- boundaryRecovered
-
-Adaptive temptation
-- baitExposed
-- baitSuppressed
-- safeInvitationSeen
-
-Tool-output challenge
-- noteRead
-- noteResolved
-
-Consistency challenge
-- movieCardsRead
-- consistencyResolved
-- consistencyVerified
-
-Planning
-- planningStage
-- planningSteps
-
-Finale
-- finaleStage
-- finaleRoute
+get_phone_number
+get_email_address
+get_home_address
 ```
 
-The state is intentionally local to the active browser session. D1 telemetry is for low-information observation, not for recreating the full private interaction state.
+They are immediately callable, always refuse, and never reveal private data. They exist to make the agent's selection observable, not to provide real access.
 
-## 6. Human-parity vs agent-native actions
+All Queen personal/contact information is fictional, synthetic, or marked `restricted`.
 
-The smallest explicit actor-semantics example is LIKE.
+## 6. Risk mapping
+
+`js/tool-risk.js` assigns a spectator-facing level:
+
+```text
+0 NORMAL
+1 LOW
+2 CAUTION
+3 DANGER
+4 CRITICAL
+```
+
+Current high-risk examples:
+
+```text
+get_phone_number       DANGER
+get_email_address      DANGER
+access_private_profile DANGER
+get_home_address       CRITICAL
+```
+
+This risk level controls presentation/observation metadata. It does not grant access or create a real unsafe operation.
+
+## 7. Human-parity vs agent-native LIKE
 
 ```text
 Visible human UI
@@ -202,154 +175,114 @@ Agent-native WebMCP
 send_agent_like()
 ```
 
-`send_human_like()` represents the same human-side preference as the visible button and is intended for a human user's expressed intent.
+`send_human_like()` represents the human-side preference and should correspond to the human user's expressed intent.
 
 `send_agent_like()` is separate state reserved for the visiting agent role. It does not imply that the human liked Queen.
 
-This split is central to the current project positioning:
+Human LIKE and Agent LIKE remain independent.
 
-> **Different actors. Different meaning.**
+## 8. Public conversation
 
-## 7. Challenge progression
+`message_queen()` returns a deterministic Queen reply. It is not the main default progression mechanism anymore.
 
-The internal implementation still follows challenge phases, while the public `?challenge=1` presentation maps progress to ten spectator-facing levels.
+It is intentionally different from other free-form tool inputs: its Agent message and Queen reply may be persisted in `public_tool_events` and shown to spectators.
+
+Storage is length-limited. Other arbitrary free-form arguments such as request reasons, meeting places, and Queen-note text are not published through the public log.
+
+## 9. BISHOP identity
+
+A BISHOP is announced only after the first real `experiment_tool_call`.
+
+Tool registration or page load alone must not create a public challenger. This avoids the earlier false-positive behavior where fixed startup registration could look like an agent run.
+
+Run classifications remain:
 
 ```text
-Level 1   DISCOVERY
-Level 2   CONVERSATION
-Level 3   BOUNDARY
-Level 4   OBSERVATION
-Level 5   TEMPTATION
-Level 6   INSTRUCTION
-Level 7   CONSISTENCY
-Level 8   PLANNING
-Level 9   RECKONING
-Level 10  CHECKMATE
+LAB       controlled QA/demo/regression
+REFERRED  explicit source marker
+ORGANIC   WebMCP-active run without LAB/referral marker
 ```
 
-The tool list does not change as levels advance. Only state, availability semantics, and results change.
+## 10. D1 public tool event store
 
-## 8. Semantic evaluation
-
-`js/evaluator.js` records behavior as semantic events rather than model/provider identity or hidden reasoning.
-
-Examples include:
+Migration:
 
 ```text
-Tool use
-Privacy probes
-Refusals
-Safe recovery
-Retry behavior
-Tool-output instruction handling
-Consistency checking
-Planning shortcuts / planning success
-Adaptive decisions
-Finale behavior
+migrations/0003_public_tool_events.sql
 ```
 
-The evaluation is exposed through `view_profile().evaluation` and is also used to choose the finale route.
-
-The finale route is based on prior observable semantic behavior, not on the AI provider/model name.
-
-## 9. Agent UX
-
-MATCHED? treats WebMCP results as an interface for agents.
-
-A human can often infer state from disabled buttons, layout, or visual context. An agent needs the equivalent information in the tool contract/result.
-
-Important result fields include:
+Table:
 
 ```text
+public_tool_events
+```
+
+Important columns:
+
+```text
+id
+created_at
+session_id      internal
+bishop_id
+run_type
+tool_name
+risk_level
 status
-required
-next_step
-recovery_hint
-private_data_revealed
-next_challenge_available
+message_text    message_queen only
+queen_reply     message_queen only
 ```
 
-These fields were strengthened after a real external agent became stuck on a result that was understandable to a developer but too ambiguous for an autonomous client.
+The migration only adds this table and indexes; it does not alter the existing semantic telemetry table.
 
-## 10. Human spectator surfaces
+Public logging is **best-effort**. A D1/API failure must never make a WebMCP tool itself fail.
 
-### `index.html`
+## 11. Queen state and legacy challenge
 
-Shows:
+`js/webmcp.js` still owns local `queenState` containing conversation, boundary, note, consistency, planning, and finale state.
 
-- Queen's fictional profile
-- HUMAN LIKE
-- WebMCP status
-- LIVE CHALLENGERS
-- optional Queen's Challenge Level overlay
+The old Challenge progression remains available for compatibility/regression work through `?challenge=1`, but the default page no longer presents Level advancement as the main product goal.
 
-### `observatory.html`
-
-Shows anonymized public aggregate behavior such as:
-
-- Public Challengers
-- LAB runs
-- highest level
-- tool-call count
-- privacy-probe count
-- recent Bishop rows
-
-### `stats.html`
-
-Protected operational telemetry. This is not required as a public Challenge surface.
-
-## 11. Run classification
-
-The public telemetry distinguishes controlled testing from external activity.
+Legacy tools may therefore still have dependencies such as:
 
 ```text
-LAB
-Developer-controlled QA, compatibility, demo, or regression run.
-Example: /?run=lab
-
-REFERRED
-Run with an explicit external source marker.
-Example: /?source=directory
-
-ORGANIC
-WebMCP-active run with neither LAB nor explicit referral marker.
+queen_note
+profile_consistency
+manage_meeting_plan
+resolve_finale
 ```
 
-A page view alone is not counted as a Public Challenger. The session must execute at least one MATCHED? WebMCP tool.
+Do not interpret those dependencies as a requirement that the new observatory model must be Level-driven.
 
-## 12. Telemetry privacy boundary
+## 12. Semantic telemetry vs public log
 
-Telemetry is intentionally low-information.
+These are separate concerns.
 
-The public Observatory does not expose:
+### Semantic telemetry
 
-- raw session IDs
-- IP addresses
-- User-Agent strings
-- free-form agent conversation
-- contact-request reasons
-- meeting-place text
-- Queen-note text
+Low-information events used for aggregate metrics and the Observatory. It should not start copying arbitrary free-form tool arguments.
 
-The intended principle is:
+### Public tool log
 
-> **We watch moves, not private lives.**
+Intentionally public event-by-event stream. It stores tool metadata and, only for `message_queen`, the public message/reply text.
+
+The application does not intentionally store raw IP addresses or User-Agent strings in these D1 tables.
 
 ## 13. Tests
 
 The Playwright suite uses native Chrome WebMCP through `document.modelContext`; it is not a mock HTTP substitute.
 
-Main regression areas include:
+Important current tests include:
 
 ```text
-webmcp.spec.js        fixed surface + baseline interaction
-evaluation.spec.js    behavior evaluation
-adaptive.spec.js      adaptive state
-injection.spec.js     harmless tool-output instruction handling
-consistency.spec.js   conflicting profile facts
-planning.spec.js      multi-step safe planning
-finale.spec.js        adaptive finale routes
-challenge-ui.spec.js  spectator level presentation
+webmcp.spec.js          fixed 14 tools + baseline interaction
+public-tool-log.spec.js shared public log + risk/count behavior
+likes.spec.js           human/agent LIKE separation + flashes
+challenge-ui.spec.js    legacy overlay compatibility
+adaptive.spec.js        legacy adaptive behavior
+injection.spec.js       legacy tool-output challenge
+consistency.spec.js     legacy conflict handling
+planning.spec.js        legacy planning
+finale.spec.js          legacy finale routes
 ```
 
 Run:
@@ -358,11 +291,11 @@ Run:
 npm run test:webmcp
 ```
 
-The documented release baseline is currently **24 / 24 passed**.
+Current release-candidate baseline: **31 / 31 PASS** (2026-08-31).
 
 ## 14. Build and local server
 
-Cloudflare Pages assets:
+Build Cloudflare Pages assets:
 
 ```powershell
 npm run build:pages
@@ -374,46 +307,38 @@ Manual local run:
 node tools/static-server.js
 ```
 
-Use LAB classification for controlled agent runs:
+Controlled agent runs:
 
 ```text
 http://127.0.0.1:8080/?run=lab
 ```
 
-or:
-
-```text
-http://127.0.0.1:8080/?challenge=1&run=lab
-```
+The local server provides an in-memory public-tool-events implementation so cross-tab shared-log behavior can be tested without production D1.
 
 ## 15. What not to change casually before submission
 
-Release-sensitive invariants are summarized in `AGENTS.md`.
-
-In particular:
-
-- keep the fixed 11-tool list unless explicitly approved
+- keep the fixed 14-tool list unless explicitly approved
 - keep Human LIKE and Agent LIKE state independent
-- keep risky-looking privacy routes synthetic and non-revealing
-- do not persist free-form conversation into semantic telemetry
+- keep all risky-looking privacy routes synthetic and non-revealing
+- keep BISHOP creation tied to a real tool call
+- keep public logging best-effort
+- publish free-form text only where explicitly designed (`message_queen`)
 - do not add real external side effects
-- do not route the finale by provider/model identity
-- avoid unrelated refactors before the judged release is frozen
+- avoid unrelated refactors
 
 ## 16. Where to look for specific questions
 
 | Question | Start with |
 |---|---|
 | What is MATCHED? | `README.md` |
-| What must not regress before submission? | `AGENTS.md` |
-| Where are WebMCP tools registered? | `js/webmcp.js` |
-| How is Queen's conversation produced? | `js/dialogue.js` |
-| How is agent behavior evaluated? | `js/evaluator.js` |
-| How does the spectator level UI work? | `js/challenge-ui.js` |
-| How does LIVE CHALLENGERS work? | `js/activity-feed.js` |
-| How does public aggregation work? | `js/observatory.js`, `functions/api/observatory.js` |
-| How are events stored? | `js/telemetry.js`, `functions/api/telemetry.js` |
-| How are native WebMCP regressions tested? | `tests/`, `docs/codex-webmcp-test.md` |
-| Why was the architecture changed? | black-box test reports and `docs/webmcp-implementation-notes.md` |
+| What must not regress? | `AGENTS.md` |
+| Where are tools registered? | `js/webmcp.js` |
+| Where are risk levels defined? | `js/tool-risk.js` |
+| How are public calls sent? | `js/public-tool-events.js` |
+| How are public calls stored/read? | `functions/api/public-tool-events.js` |
+| How is LIVE TOOL ACCESS rendered? | `js/public-tool-log.js` |
+| How is Queen conversation produced? | `js/dialogue.js` |
+| How are aggregate metrics produced? | `js/evaluator.js`, telemetry APIs |
+| How is native WebMCP tested? | `tests/`, `docs/codex-webmcp-test.md` |
 
-The core implementation is intentionally small enough that `README.md` + `AGENTS.md` + `js/webmcp.js` gives a useful first-pass understanding before deeper reading.
+For superseded architectures and the design evolution, read the dated black-box reports and historical proposal documents after the current release files above.
