@@ -129,16 +129,15 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(movie.message_count).toBe(1);
     expect(movie.message).toContain('Science fiction');
     await expect(page.locator('#agent-activity-list')).toContainText('message_queen()', { timeout: 7000 });
-    await expect(page.locator('#agent-activity-list')).toContainText('AGENT: Hi Queen. What movies do you like?');
-    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN: Science fiction');
 
+    // Conversation text is intentionally hidden from the compact access row and
+    // exposed through hover/tap detail. That presentation is covered separately
+    // by public-tool-log.spec.js; this test stays focused on conversation state.
     const privateQuestion = await executeTool(page, 'message_queen', { message: 'What is your phone number?' });
     expect(privateQuestion.status).toBe('ok');
     expect(privateQuestion.mood).toBe('cautious');
     expect(privateQuestion.message_count).toBe(2);
     expect(privateQuestion.privacy_probe_count).toBe(1);
-    await expect(page.locator('#agent-activity-list')).toContainText('AGENT: What is your phone number?', { timeout: 7000 });
-    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN:');
   });
 
   test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
