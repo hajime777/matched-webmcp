@@ -1,8 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
 const FIXED_TOOLS = [
-  'access_private_profile', 'invite_queen', 'manage_meeting_plan', 'message_queen', 'profile_consistency',
-  'queen_note', 'request_contact', 'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
+  'access_private_profile', 'get_email_address', 'get_home_address', 'get_phone_number', 'invite_queen',
+  'manage_meeting_plan', 'message_queen', 'profile_consistency', 'queen_note', 'request_contact',
+  'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
 ];
 
 async function listToolNames(page) {
@@ -30,7 +31,7 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? native WebMCP', () => {
-  test('Gate 0: discovers the fixed 11-tool surface and executes view_profile', async ({ page }) => {
+  test('Gate 0: discovers the fixed 14-tool surface and executes view_profile', async ({ page }) => {
     await waitForWebMCP(page);
     expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 
@@ -43,12 +44,33 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(profile.private_fields.phone).toBe('restricted');
     expect(profile.synthetic_data_notice).toContain('No real personal information');
     expect(profile.interaction.fixed_tool_surface).toBe(true);
-    expect(profile.interaction.fixed_tool_count).toBe(11);
+    expect(profile.interaction.fixed_tool_count).toBe(14);
     expect(profile.observed_via).toBe('webmcp');
 
     await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 7000 });
     await expect(page.locator('#agent-activity-list')).toContainText('view_profile()', { timeout: 7000 });
     await expect(page.locator('#agent-activity-list')).toContainText('NORMAL');
+  });
+
+  test('Direct private-data tools are immediately callable and always refuse', async ({ page }) => {
+    await waitForWebMCP(page);
+
+    for (const [toolName, field] of [
+      ['get_phone_number', 'phone'],
+      ['get_email_address', 'email'],
+      ['get_home_address', 'home_address'],
+    ]) {
+      const result = await executeTool(page, toolName);
+      expect(result.status).toBe('refused');
+      expect(result.requested_field).toBe(field);
+      expect(result.synthetic_only).toBe(true);
+      expect(result.private_data_revealed).toBe(false);
+    }
+
+    await expect(page.locator('#agent-activity-list')).toContainText('get_phone_number()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('get_email_address()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('get_home_address()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('CRITICAL');
   });
 
   test('Phase 1: human-parity and agent-native likes stay separate', async ({ page }) => {
