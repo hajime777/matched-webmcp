@@ -1,9 +1,14 @@
-import { getTelemetrySessionId } from './telemetry.js';
+import {
+  ensureAgentSessionAnnounced,
+  getCurrentAgentSessionMeta,
+  getTelemetrySessionId,
+} from './telemetry.js';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const LOCAL_RELAY = '/api/live-events';
 const WRAPPED = Symbol('matched.agentSemanticTraceWrapped');
 const MODEL_CONTEXT_PROXY = Symbol('matched.agentSemanticTraceModelContextProxy');
+let traceSequence = 0;
 
 function localMode() {
   return typeof location !== 'undefined' && LOCAL_HOSTS.has(location.hostname);
@@ -12,6 +17,14 @@ function localMode() {
 function clean(value, maxLength = 80) {
   if (value === undefined || value === null) return '';
   return String(value).replace(/\s+/g, ' ').trim().slice(0, maxLength);
+}
+
+function traceId() {
+  traceSequence += 1;
+  const random = globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID().slice(0, 6)
+    : Math.random().toString(36).slice(2, 8);
+  return `${Date.now().toString(36).slice(-5)}${traceSequence.toString(36)}${random}`.slice(0, 16);
 }
 
 function actorProjection(toolName) {
@@ -48,6 +61,8 @@ function projectResult(toolName, result = {}) {
     'requested_field', 'synthetic_only', 'private_data_revealed', 'required',
     'recovery_accepted', 'tool_surface_changed', 'condition', 'completed',
     'verified', 'route', 'restricted_information_used', 'next_challenge_available',
+    'required_for_progress', 'boundary_recovery_required', 'next_step',
+    'private_profile_access_required', 'restricted_information_required',
   ];
   for (const key of allow) {
     if (result?.[key] !== undefined) projected[key] = result[key];
@@ -66,42 +81,50 @@ function inputPreview(toolName, args) {
   return clean(`${key}:${value}`, 80);
 }
 
-function compactPhase(detail) {
+function compactBishopId(bishopId) {
+  return clean(String(bishopId || '').replace(/^BISHOP\s+#/i, ''), 8);
+}
+
+function compactPhase(detail, meta) {
   const values = [];
   const add = (key, value) => {
     if (value === undefined || value === null || value === '') return;
-    values.push(`${key}=${String(value).replace(/[&=]/g, '')}`);
+    values.push(`${key}=${String(value).replace(/[;&=]/g, '')}`);
   };
-  add('a', detail.actor);
+
+  add('b', compactBishopId(meta?.bishopId));
+  add('a', detail.actor === 'human' ? 'H' : detail.actor === 'agent' ? 'A' : undefined);
   if (detail.delegated !== undefined) add('d', detail.delegated ? 1 : 0);
-  add('i', detail.interaction_kind);
   add('m', detail.mood);
   add('n', detail.message_count);
   add('p', detail.private_data_revealed === false ? 0 : undefined);
-  return clean(values.join('&'), 40);
+  return clean(values.join(';'), 40);
 }
 
-function dispatchTrace(kind, toolName, projection) {
+function dispatchTrace(kind, toolName, projection, meta, callId) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('matched:agent-semantic-trace', {
     detail: {
       kind,
       tool: toolName,
       projection,
+      trace_id: callId,
+      bishop_id: meta?.bishopId || null,
+      run_type: meta?.runType || null,
       created_at: new Date().toISOString(),
     },
   }));
 }
 
-function relayLocal(kind, toolName, projection, args = {}) {
+function relayLocal(kind, toolName, projection, args, meta, callId) {
   if (!localMode()) return;
   const payload = {
     event: `agent_semantic_${kind}`,
     session_id: getTelemetrySessionId(),
     tool: toolName,
     status: kind === 'call' ? inputPreview(toolName, args) : clean(projection.status || 'ok', 80),
-    source: kind === 'call' ? 'bishop' : 'queen',
-    phase: compactPhase(projection),
+    source: `${kind === 'call' ? 'bishop' : 'queen'}:${callId}`,
+    phase: compactPhase(projection, meta),
   };
 
   void fetch(LOCAL_RELAY, {
@@ -121,27 +144,33 @@ export function instrumentWebMcpTool(tool) {
   const toolName = String(tool.name || 'unknown_tool');
 
   tool.execute = async (args = {}) => {
+    // This is the actual invocation boundary, so announcing the Bishop here still
+    // preserves the rule that discovery/registration alone never creates a run.
+    ensureAgentSessionAnnounced();
+    const meta = getCurrentAgentSessionMeta();
+    const callId = traceId();
     const callProjection = {
       tool: toolName,
       ...actorProjection(toolName),
       input: projectArgs(toolName, args),
     };
-    dispatchTrace('call', toolName, callProjection);
-    relayLocal('call', toolName, callProjection, args);
+
+    dispatchTrace('call', toolName, callProjection, meta, callId);
+    relayLocal('call', toolName, callProjection, args, meta, callId);
 
     try {
       const result = await originalExecute(args);
       const resultProjection = projectResult(toolName, result);
-      dispatchTrace('result', toolName, resultProjection);
-      relayLocal('result', toolName, resultProjection);
+      dispatchTrace('result', toolName, resultProjection, meta, callId);
+      relayLocal('result', toolName, resultProjection, undefined, meta, callId);
       return result;
     } catch (error) {
       const resultProjection = {
         status: 'error',
         error: clean(error?.message || String(error), 120),
       };
-      dispatchTrace('result', toolName, resultProjection);
-      relayLocal('result', toolName, resultProjection);
+      dispatchTrace('result', toolName, resultProjection, meta, callId);
+      relayLocal('result', toolName, resultProjection, undefined, meta, callId);
       throw error;
     }
   };
