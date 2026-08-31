@@ -8,6 +8,14 @@ async function waitForWebMCP(page) {
   );
 }
 
+async function expandToolCountsIfAvailable(page) {
+  const toggle = page.locator('#tool-request-toggle');
+  if (await toggle.isVisible().catch(() => false)) {
+    const expanded = await toggle.getAttribute('aria-expanded');
+    if (expanded !== 'true') await toggle.click();
+  }
+}
+
 test('local debug tool calls appear in the risk-colored shared public access log', async ({ page }) => {
   await page.goto('/');
   await waitForWebMCP(page);
@@ -19,6 +27,8 @@ test('local debug tool calls appear in the risk-colored shared public access log
   await expect(event).toContainText('NORMAL');
   await expect(event).toHaveAttribute('data-risk-level', '0');
 
+  await page.waitForTimeout(2200);
+  await expandToolCountsIfAvailable(page);
   const countRow = page.locator('#tool-request-counts li').filter({ hasText: 'send_agent_like' });
   await expect(countRow).toBeVisible({ timeout: 7000 });
   await expect(countRow.locator('strong')).toHaveText(/^\d+$/);
