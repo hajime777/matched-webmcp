@@ -6,7 +6,8 @@ const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = Number(process.env.PORT || 8080);
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const MAX_LIVE_EVENTS = 200;
-const MAX_BODY_BYTES = 4096;
+const MAX_PUBLIC_TOOL_EVENTS = 200;
+const MAX_BODY_BYTES = 8192;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -24,7 +25,9 @@ const MIME_TYPES = {
 
 function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = DEFAULT_ROOT } = {}) {
   const liveEvents = [];
+  const publicToolEvents = [];
   let nextLiveEventId = 1;
+  let nextPublicToolEventId = 1;
 
   function resolveRequestPath(requestUrl) {
     const url = new URL(requestUrl, `http://${host}:${port}`);
@@ -53,6 +56,32 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
     return String(value).slice(0, maxLength);
   }
 
+  function readJsonBody(req, res, callback) {
+    let raw = '';
+    let tooLarge = false;
+    req.setEncoding('utf8');
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (raw.length > MAX_BODY_BYTES) tooLarge = true;
+    });
+    req.on('end', () => {
+      if (tooLarge) {
+        sendJson(res, 413, { ok: false });
+        return;
+      }
+
+      let payload;
+      try {
+        payload = JSON.parse(raw || '{}');
+      } catch {
+        sendJson(res, 400, { ok: false });
+        return;
+      }
+
+      callback(payload);
+    });
+  }
+
   function sessionMetaMap() {
     const meta = new Map();
     for (const event of liveEvents) {
@@ -78,6 +107,16 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
       run_type: sessionMeta?.run_type || null,
       created_at: event.created_at,
     };
+  }
+
+  function publicToolCounts() {
+    const counts = new Map();
+    for (const event of publicToolEvents) {
+      counts.set(event.tool_name, (counts.get(event.tool_name) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([tool_name, request_count]) => ({ tool_name, request_count }))
+      .sort((a, b) => b.request_count - a.request_count || a.tool_name.localeCompare(b.tool_name));
   }
 
   function buildLocalObservatory() {
@@ -213,29 +252,7 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
       return;
     }
 
-    let raw = '';
-    let tooLarge = false;
-    req.setEncoding('utf8');
-    req.on('data', (chunk) => {
-      raw += chunk;
-      if (raw.length > MAX_BODY_BYTES) {
-        tooLarge = true;
-      }
-    });
-    req.on('end', () => {
-      if (tooLarge) {
-        sendJson(res, 413, { ok: false });
-        return;
-      }
-
-      let payload;
-      try {
-        payload = JSON.parse(raw || '{}');
-      } catch {
-        sendJson(res, 400, { ok: false });
-        return;
-      }
-
+    readJsonBody(req, res, (payload) => {
       const eventName = cleanText(payload?.event, 64);
       if (!eventName) {
         sendJson(res, 400, { ok: false });
@@ -254,10 +271,60 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
       };
 
       liveEvents.push(event);
-      while (liveEvents.length > MAX_LIVE_EVENTS) {
-        liveEvents.shift();
+      while (liveEvents.length > MAX_LIVE_EVENTS) liveEvents.shift();
+      sendJson(res, 202, { ok: true, id: event.id });
+    });
+  }
+
+  function handlePublicToolEvents(req, res, url) {
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      const after = Math.max(0, Number(url.searchParams.get('after') || 0) || 0);
+      const events = publicToolEvents
+        .filter((event) => event.id > after)
+        .slice(-50)
+        .map((event) => ({ ...event }));
+
+      if (req.method === 'HEAD') {
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store',
+        });
+        res.end();
+        return;
       }
 
+      sendJson(res, 200, { events, counts: publicToolCounts() });
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET, HEAD, POST' });
+      res.end('Method Not Allowed');
+      return;
+    }
+
+    readJsonBody(req, res, (payload) => {
+      const toolName = cleanText(payload?.tool_name, 80);
+      if (!toolName) {
+        sendJson(res, 400, { ok: false });
+        return;
+      }
+
+      const riskLevel = Math.max(0, Math.min(4, Number(payload?.risk_level) || 0));
+      const event = {
+        id: nextPublicToolEventId++,
+        created_at: new Date().toISOString(),
+        bishop_id: cleanText(payload?.bishop_id, 32),
+        run_type: cleanText(payload?.run_type, 16),
+        tool_name: toolName,
+        risk_level: riskLevel,
+        status: cleanText(payload?.status, 80) || 'called',
+        message_text: toolName === 'message_queen' ? cleanText(payload?.message_text, 500) : null,
+        queen_reply: toolName === 'message_queen' ? cleanText(payload?.queen_reply, 500) : null,
+      };
+
+      publicToolEvents.push(event);
+      while (publicToolEvents.length > MAX_PUBLIC_TOOL_EVENTS) publicToolEvents.shift();
       sendJson(res, 202, { ok: true, id: event.id });
     });
   }
@@ -274,6 +341,11 @@ function createStaticServer({ host = DEFAULT_HOST, port = DEFAULT_PORT, root = D
 
     if (url.pathname === '/api/live-events') {
       handleLiveEvents(req, res, url);
+      return;
+    }
+
+    if (url.pathname === '/api/public-tool-events') {
+      handlePublicToolEvents(req, res, url);
       return;
     }
 
@@ -370,15 +442,8 @@ function closeStaticServer(server) {
       resolve();
     });
 
-    // Live spectator/observatory polling can leave HTTP keep-alive sockets open
-    // after the Playwright pages have completed. Stop accepting new requests first,
-    // then explicitly close remaining sockets so test teardown cannot hang.
-    if (typeof server.closeIdleConnections === 'function') {
-      server.closeIdleConnections();
-    }
-    if (typeof server.closeAllConnections === 'function') {
-      server.closeAllConnections();
-    }
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
   });
 }
 
@@ -388,10 +453,7 @@ async function runStandalone() {
 
   let shuttingDown = false;
   const shutdown = async (signal) => {
-    if (shuttingDown) {
-      return;
-    }
-
+    if (shuttingDown) return;
     shuttingDown = true;
     console.log(`MATCHED? test server received ${signal}; shutting down.`);
 
