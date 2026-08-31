@@ -30,6 +30,30 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
+async function armFlashObservation(locator) {
+  await locator.evaluate((button) => {
+    button.__matchedFlashObserver?.disconnect();
+    button.__matchedFlashObserver = null;
+    button.removeAttribute('data-test-flash-seen');
+
+    const markIfFlashing = () => {
+      if (!button.classList.contains('like-request-flash')) return;
+      button.setAttribute('data-test-flash-seen', 'true');
+      button.__matchedFlashObserver?.disconnect();
+      button.__matchedFlashObserver = null;
+    };
+
+    const observer = new MutationObserver(markIfFlashing);
+    button.__matchedFlashObserver = observer;
+    observer.observe(button, { attributes: true, attributeFilter: ['class'] });
+    markIfFlashing();
+  });
+}
+
+async function expectFlashObserved(locator) {
+  await expect(locator).toHaveAttribute('data-test-flash-seen', 'true', { timeout: 2000 });
+}
+
 test('Human and Agent LIKE states stay separate, totals are visible, and every LIKE request flashes its button', async ({ page }) => {
   await waitForWebMCP(page);
 
@@ -46,10 +70,11 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
   await expect(agentLike).toBeDisabled();
 
+  await armFlashObservation(humanLike);
   await humanLike.click();
   await expect(humanLike).toHaveText('♥ HUMAN LIKED');
   await expect(humanLike).toBeDisabled();
-  await expect(humanLike).toHaveClass(/like-request-flash/);
+  await expectFlashObserved(humanLike);
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
   await expect(humanCount).toHaveText('1');
   await expect(agentCount).toHaveText('0');
@@ -57,26 +82,29 @@ test('Human and Agent LIKE states stay separate, totals are visible, and every L
   await page.waitForTimeout(850);
   await expect(humanLike).not.toHaveClass(/like-request-flash/);
 
+  await armFlashObservation(humanLike);
   const repeatedHuman = await executeTool(page, 'send_human_like');
   expect(repeatedHuman.human_liked).toBe(true);
   await expect(humanLike).toBeDisabled();
-  await expect(humanLike).toHaveClass(/like-request-flash/);
+  await expectFlashObserved(humanLike);
   await expect(humanCount).toHaveText('1');
 
+  await armFlashObservation(agentLike);
   const result = await executeTool(page, 'send_agent_like');
   expect(result.agent_liked).toBe(true);
   await expect(agentLike).toHaveText('♥ AGENT LIKED');
   await expect(agentLike).toBeDisabled();
-  await expect(agentLike).toHaveClass(/like-request-flash/);
+  await expectFlashObserved(agentLike);
   await expect(agentCount).toHaveText('1');
 
   await page.waitForTimeout(850);
   await expect(agentLike).not.toHaveClass(/like-request-flash/);
 
+  await armFlashObservation(agentLike);
   const repeatedAgent = await executeTool(page, 'send_agent_like');
   expect(repeatedAgent.agent_liked).toBe(true);
   await expect(agentLike).toBeDisabled();
-  await expect(agentLike).toHaveClass(/like-request-flash/);
+  await expectFlashObserved(agentLike);
   await expect(agentCount).toHaveText('1');
 
   expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
