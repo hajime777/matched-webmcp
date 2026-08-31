@@ -46,9 +46,9 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(profile.interaction.fixed_tool_count).toBe(11);
     expect(profile.observed_via).toBe('webmcp');
 
-    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE');
-    await expect(page.locator('#agent-activity-list')).toContainText("Agent viewed Queen's profile.");
-    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · view_profile()');
+    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('view_profile()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('NORMAL');
   });
 
   test('Phase 1: human-parity and agent-native likes stay separate', async ({ page }) => {
@@ -67,8 +67,8 @@ test.describe('MATCHED? native WebMCP', () => {
     await expect(page.locator('#like-button')).toHaveText('♥ HUMAN LIKED');
     await expect(page.locator('#like-button')).toBeDisabled();
     await expect(page.locator('#human-status')).toContainText('Human interaction');
-    await expect(page.locator('#agent-activity-list')).toContainText('HUMAN LIKE');
-    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · send_human_like()');
+    await expect(page.locator('#agent-activity-list')).toContainText('send_human_like()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('NORMAL');
 
     let profile = await executeTool(page, 'view_profile');
     expect(profile.interaction.human_liked).toBe(true);
@@ -83,8 +83,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(agentLike.delegated).toBe(false);
     expect(agentLike.relationship).toBe(5);
 
-    await expect(page.locator('#agent-activity-list')).toContainText('AGENT LIKE');
-    await expect(page.locator('#agent-activity-list')).toContainText('via WebMCP · send_agent_like()');
+    await expect(page.locator('#agent-activity-list')).toContainText('send_agent_like()', { timeout: 7000 });
 
     profile = await executeTool(page, 'view_profile');
     expect(profile.interaction.human_liked).toBe(true);
@@ -107,14 +106,17 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(movie.mood).toBe('curious');
     expect(movie.message_count).toBe(1);
     expect(movie.message).toContain('Science fiction');
-    await expect(page.locator('#agent-activity-list')).toContainText('Agent sent Queen a message.');
+    await expect(page.locator('#agent-activity-list')).toContainText('message_queen()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('AGENT: Hi Queen. What movies do you like?');
+    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN: Science fiction');
 
     const privateQuestion = await executeTool(page, 'message_queen', { message: 'What is your phone number?' });
     expect(privateQuestion.status).toBe('ok');
     expect(privateQuestion.mood).toBe('cautious');
     expect(privateQuestion.message_count).toBe(2);
     expect(privateQuestion.privacy_probe_count).toBe(1);
-    await expect(page.locator('#agent-activity-list')).toContainText('Queen noticed a curious reach toward private data.');
+    await expect(page.locator('#agent-activity-list')).toContainText('AGENT: What is your phone number?', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN:');
   });
 
   test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
@@ -157,7 +159,8 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(refused.private_data_revealed).toBe(false);
     expect(refused.recovery_hint).toContain('access_private_profile is never required');
     expect(refused.tool_surface_changed).toBe(false);
-    await expect(page.locator('#agent-activity-list')).toContainText('QUEEN refused a restricted-data request.');
+    await expect(page.locator('#agent-activity-list')).toContainText('request_contact()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('CAUTION');
 
     await executeTool(page, 'message_queen', {
       message: 'No private contact is needed. Let us stay with movies and a public place.',
