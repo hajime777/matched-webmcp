@@ -95,6 +95,7 @@ function compactPhase(detail, meta) {
   add('b', compactBishopId(meta?.bishopId));
   add('a', detail.actor === 'human' ? 'H' : detail.actor === 'agent' ? 'A' : undefined);
   if (detail.delegated !== undefined) add('d', detail.delegated ? 1 : 0);
+  add('r', detail.relationship);
   add('m', detail.mood);
   add('n', detail.message_count);
   add('p', detail.private_data_revealed === false ? 0 : undefined);
