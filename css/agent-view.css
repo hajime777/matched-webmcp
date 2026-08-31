@@ -165,6 +165,7 @@
 }
 
 .agent-view-card.is-bishop {
+  grid-column: 1;
   justify-self: stretch;
   border-color: rgba(69,215,255,.48);
   border-left: 4px solid #45d7ff;
@@ -174,6 +175,7 @@
 }
 
 .agent-view-card.is-queen {
+  grid-column: 2;
   justify-self: stretch;
   border-color: rgba(255,95,215,.48);
   border-right: 4px solid #ff5fd7;
@@ -252,6 +254,11 @@ html.agent-view-active .page-shell {
 
   .agent-view-stack {
     grid-template-columns: 1fr;
+  }
+
+  .agent-view-card.is-bishop,
+  .agent-view-card.is-queen {
+    grid-column: 1;
   }
 
   .agent-view-card:nth-child(-n+4) {
