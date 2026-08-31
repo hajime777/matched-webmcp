@@ -124,7 +124,11 @@ export function observeWebMcpStatus(text) {
 
   // Keep the legacy ?challenge=1 presentation usable while the default UI moves
   // to the public observatory model. Registration wording changed in Phase 3.
-  if (status.includes('Phases 2-8 armed') || status.includes('WebMCP observatory ready')) {
+  if (
+    status.includes('Phases 2-8 armed') ||
+    status.includes('WebMCP observatory ready') ||
+    status.includes('WebMCP ready: fixed')
+  ) {
     render(1, { detail: 'Native WebMCP tools are registered. Queen is waiting for the first move.' });
     return;
   }
