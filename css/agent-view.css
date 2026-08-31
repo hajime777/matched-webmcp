@@ -127,6 +127,10 @@
   border-color: rgba(255,127,226,.45);
 }
 
+.agent-view-empty[hidden] {
+  display: none;
+}
+
 .agent-view-empty {
   display: flex;
   align-items: baseline;
