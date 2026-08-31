@@ -8,6 +8,11 @@ async function waitForWebMCP(page, path = '/?run=lab&debug=0') {
   await expect.poll(async () => page.evaluate(async () => (await document.modelContext.getTools()).length), { timeout: 10000 }).toBe(FIXED_TOOL_COUNT);
 }
 
+async function waitForSpectatorSurface(page) {
+  await page.waitForFunction(() => document.documentElement.dataset.agentTraceReady === 'true', null, { timeout: 5000 });
+  await page.waitForFunction(() => document.documentElement.dataset.webmcpViewSurfaceReady === 'true', null, { timeout: 5000 });
+}
+
 async function executeTool(page, name, args = {}) {
   return page.evaluate(async ({ toolName, toolArgs }) => {
     const tools = await document.modelContext.getTools();
@@ -19,40 +24,82 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-test('AI Agent View shows truthful Bishop call and Queen result from a separate browser context', async ({ page, browser }) => {
+test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen semantic wire', async ({ page, browser }) => {
   await waitForWebMCP(page);
-  await page.waitForFunction(() => document.documentElement.dataset.agentTraceReady === 'true', null, { timeout: 5000 });
+  await waitForSpectatorSurface(page);
 
   const agentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
   const agentPage = await agentContext.newPage();
   await waitForWebMCP(agentPage);
 
-  await expect(page.locator('#agent-view-toggle')).toBeVisible();
-  await page.locator('#agent-view-toggle').click();
+  const toggle = page.locator('#agent-view-toggle');
+  await expect(toggle).toHaveText('WEBMCP VIEW');
+  await toggle.click();
   await expect(page.locator('#agent-view-overlay')).toBeVisible();
+  await expect(page.locator('#webmcp-view-title')).toHaveText('WEBMCP VIEW');
   await expect(page.locator('#agent-view-empty')).toBeVisible();
+  await expect(page.locator('#webmcp-tool-count')).toHaveText(`${FIXED_TOOL_COUNT} TOOLS`);
 
   const likeResult = await executeTool(agentPage, 'send_agent_like');
-  expect(likeResult.status).toMatch(/liked|already_liked/);
+  expect(likeResult.status).toBe('liked');
 
-  const stack = page.locator('#agent-view-stack');
-  await expect(stack).toContainText('send_agent_like', { timeout: 5000 });
+  await expect(page.locator('#wire-tool-name')).toHaveText('send_agent_like()', { timeout: 5000 });
   await expect(page.locator('#agent-view-empty')).toBeHidden();
-  await expect(stack).toContainText('BISHOP');
-  await expect(stack).toContainText('QUEEN');
-  await expect(stack).toContainText('"actor": "agent"');
-  await expect(stack).toContainText('"delegated": false');
-  await expect(stack).toContainText('"status": "liked"');
+  await expect(page.locator('#wire-tool-meaning')).toHaveText('Agent-role LIKE');
+  await expect(page.locator('#wire-call-facts')).toContainText('Visiting Agent');
+  await expect(page.locator('#wire-call-facts')).toContainText('NO');
+  await expect(page.locator('#wire-result-status')).toHaveText('LIKED');
+  await expect(page.locator('.bishop-chip')).toHaveCount(1);
+  await expect(page.locator('.bishop-chip.is-selected')).toContainText('BISHOP #L');
+  await expect(page.locator('.semantic-tool-chip[data-tool="send_agent_like"]')).toHaveClass(/is-live/);
 
   await executeTool(agentPage, 'message_queen', { message: 'Arrival is my pick.' });
-  await expect(stack).toContainText('message_queen', { timeout: 5000 });
-  await expect(stack).toContainText('"mood": "curious"');
+  await expect(page.locator('#wire-tool-name')).toHaveText('message_queen()', { timeout: 5000 });
+  await expect(page.locator('#wire-tool-meaning')).toHaveText('Public conversation');
+  await expect(page.locator('#wire-result-status')).toHaveText('OK');
+  await expect(page.locator('#state-mood')).toHaveText('CURIOUS');
+  await expect(page.locator('.wire-history-item')).toHaveCount(2);
+  await expect(page.locator('#wire-trace-json')).toContainText('trace_id');
 
-  for (let i = 0; i < 4; i += 1) await executeTool(agentPage, 'view_profile');
-  await expect.poll(async () => stack.locator('.agent-view-card').count(), { timeout: 5000 }).toBe(10);
-
-  await page.locator('#agent-view-overlay').click({ position: { x: 5, y: 5 } });
+  await page.locator('#webmcp-return').click();
   await expect(page.locator('#agent-view-overlay')).toBeHidden();
 
   await agentContext.close();
+});
+
+test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator choose which wire to follow', async ({ page, browser }) => {
+  await waitForWebMCP(page);
+  await waitForSpectatorSurface(page);
+  await page.locator('#agent-view-toggle').click();
+
+  const contextA = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const contextB = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const agentA = await contextA.newPage();
+  const agentB = await contextB.newPage();
+  await waitForWebMCP(agentA);
+  await waitForWebMCP(agentB);
+
+  await executeTool(agentA, 'view_profile');
+  await expect(page.locator('.bishop-chip')).toHaveCount(1, { timeout: 5000 });
+  await expect(page.locator('#wire-tool-name')).toHaveText('view_profile()');
+
+  await executeTool(agentB, 'send_agent_like');
+  await expect(page.locator('.bishop-chip')).toHaveCount(2, { timeout: 5000 });
+  await expect(page.locator('#wire-tool-name')).toHaveText('send_agent_like()');
+
+  const firstOtherBishop = page.locator('.bishop-chip:not(.is-selected)').first();
+  await firstOtherBishop.click();
+  await expect(page.locator('#bishop-follow')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#wire-tool-name')).toHaveText('view_profile()');
+
+  await executeTool(agentB, 'message_queen', { message: 'Contact is my pick.' });
+  await page.waitForTimeout(500);
+  await expect(page.locator('#wire-tool-name')).toHaveText('view_profile()');
+
+  await page.locator('#bishop-follow').click();
+  await expect(page.locator('#bishop-follow')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#wire-tool-name')).toHaveText('message_queen()', { timeout: 5000 });
+
+  await contextA.close();
+  await contextB.close();
 });
