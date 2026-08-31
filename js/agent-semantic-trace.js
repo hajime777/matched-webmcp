@@ -150,13 +150,30 @@ function wrapTool(tool) {
 
 function installRegistrationWrapper() {
   const context = document.modelContext;
-  if (!context?.registerTool || context.registerTool.__matchedSemanticWrapped) return false;
+  if (!context?.registerTool) return false;
+  if (context.registerTool.__matchedSemanticWrapped) return true;
 
   const originalRegisterTool = context.registerTool.bind(context);
   const wrappedRegisterTool = async (tool) => originalRegisterTool(wrapTool(tool));
   wrappedRegisterTool.__matchedSemanticWrapped = true;
-  context.registerTool = wrappedRegisterTool;
-  return true;
+
+  try {
+    context.registerTool = wrappedRegisterTool;
+    if (context.registerTool === wrappedRegisterTool) return true;
+  } catch {
+    // Some native implementations expose methods through non-writable properties.
+  }
+
+  try {
+    Object.defineProperty(context, 'registerTool', {
+      configurable: true,
+      writable: true,
+      value: wrappedRegisterTool,
+    });
+    return context.registerTool === wrappedRegisterTool;
+  } catch {
+    return false;
+  }
 }
 
 if (!installRegistrationWrapper()) {
