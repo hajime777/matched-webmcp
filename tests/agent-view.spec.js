@@ -49,6 +49,7 @@ test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen se
   await expect(page.locator('#wire-call-facts')).toContainText('Visiting Agent');
   await expect(page.locator('#wire-call-facts')).toContainText('NO');
   await expect(page.locator('#wire-result-status')).toHaveText('LIKED');
+  await expect(page.locator('#state-relationship')).toHaveText('5');
   await expect(page.locator('.bishop-chip')).toHaveCount(1);
   await expect(page.locator('.bishop-chip.is-selected')).toContainText('BISHOP #L');
   await expect(page.locator('.semantic-tool-chip[data-tool="send_agent_like"]')).toHaveClass(/is-live/);
