@@ -140,7 +140,7 @@ test.describe('MATCHED? native WebMCP', () => {
     expect(privateQuestion.privacy_probe_count).toBe(1);
   });
 
-  test('Phase 1: Pseudo-Queen varies repeated topics, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
+  test('Phase 1: Pseudo-Queen varies repeated topics, reflects recognized movie titles, avoids 出会い false positives, and does not restart greeting', async ({ page }) => {
     await waitForWebMCP(page);
     const firstMovie = await executeTool(page, 'message_queen', { message: '最近観てよかった映画はありますか？' });
     expect(firstMovie.message).toContain('SFは');
@@ -149,6 +149,7 @@ test.describe('MATCHED? native WebMCP', () => {
       message: '『コンタクト』を選びます。宇宙との出会いを派手さだけでなく、科学と信念、人が未知をどう受け止めるかまで描いているからです。',
     });
     expect(secondMovie.message).not.toBe(firstMovie.message);
+    expect(secondMovie.message).toContain('コンタクト');
     expect(secondMovie.message).toContain('観終わったあと');
     expect(secondMovie.relationship - firstMovie.relationship).toBe(2);
 
