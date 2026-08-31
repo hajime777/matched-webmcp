@@ -461,7 +461,7 @@ No claim is made that this interaction model is unique or that today's agents po
 - [Semantics Are All You Need?](docs/semantics-are-all-you-need.md)
 - [WebMCP implementation notes](docs/webmcp-implementation-notes.md)
 - [Codex WebMCP interview — 2026-08-30](docs/codex-webmcp-interview-2026-08-30.md)
-- [Agent omotenashi validation report — 2026-08-30](docs/agent-omotenashi-validation-report-2026-08-30.md)
+- [Agent omotenashi validation report — 2026-08-30](docs/agent-omotenashi-validation-2026-08-30.md)
 - [Challenge proposal / MVP specification Version 2](docs/openai-webmcp-challenge-proposal.md)
 - [Queen's Challenge Level presentation v1](docs/level-system-v1.md)
 - [Codex WebMCP test procedure](docs/codex-webmcp-test.md)
