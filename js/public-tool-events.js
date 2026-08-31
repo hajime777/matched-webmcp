@@ -2,7 +2,6 @@ import { getCurrentAgentSessionMeta, getTelemetrySessionId } from './telemetry.j
 import { riskLevelForTool } from './tool-risk.js';
 
 const ENDPOINT = '/api/public-tool-events';
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
 function clean(value, maxLength) {
   if (value === undefined || value === null) return undefined;
@@ -28,14 +27,8 @@ function buildEvent(toolName, details = {}) {
   return payload;
 }
 
-function localPreview(payload) {
-  if (typeof window === 'undefined' || !LOCAL_HOSTS.has(location.hostname)) return;
-  window.dispatchEvent(new CustomEvent('matched:public-tool-event', { detail: payload }));
-}
-
 export function recordPublicToolRequest(toolName, details = {}) {
   const payload = buildEvent(toolName, details);
-  localPreview(payload);
 
   void fetch(ENDPOINT, {
     method: 'POST',
