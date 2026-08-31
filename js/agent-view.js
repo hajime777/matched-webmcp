@@ -65,6 +65,7 @@ function parsePhase(raw) {
     b: 'bishop_short',
     a: 'actor',
     d: 'delegated',
+    r: 'relationship',
     m: 'mood',
     n: 'message_count',
     p: 'private_data_revealed',
@@ -77,7 +78,7 @@ function parsePhase(raw) {
     if (key === 'actor') parsed[key] = value === 'H' ? 'human' : value === 'A' ? 'agent' : value;
     else if (key === 'delegated') parsed[key] = value === '1';
     else if (key === 'private_data_revealed') parsed[key] = value !== '0';
-    else if (key === 'message_count') parsed[key] = Number(value) || 0;
+    else if (key === 'relationship' || key === 'message_count') parsed[key] = Number(value) || 0;
     else parsed[key] = value;
   }
   return parsed;
@@ -560,19 +561,6 @@ function renderHistory() {
     status.textContent = exchange.result ? displayStatus(exchange.result.status) : 'PENDING';
     status.dataset.status = exchange.result?.status || 'pending';
     item.append(number, tool, meaning, status);
-    item.addEventListener('click', () => {
-      const current = selectedBishop();
-      if (!current) return;
-      const found = current.exchanges.find((candidate) => candidate.traceId === exchange.traceId);
-      if (!found) return;
-      const position = current.exchanges.indexOf(found);
-      if (position !== current.exchanges.length - 1) {
-        current.exchanges.splice(position, 1);
-        current.exchanges.push(found);
-      }
-      renderLatestExchange();
-      renderHistory();
-    });
     list.appendChild(item);
   });
 }
