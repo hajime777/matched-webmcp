@@ -122,7 +122,9 @@ export function reportChallengeMilestone(milestone, detail) {
 export function observeWebMcpStatus(text) {
   const status = String(text ?? '');
 
-  if (status.includes('Phases 2-8 armed')) {
+  // Keep the legacy ?challenge=1 presentation usable while the default UI moves
+  // to the public observatory model. Registration wording changed in Phase 3.
+  if (status.includes('Phases 2-8 armed') || status.includes('WebMCP observatory ready')) {
     render(1, { detail: 'Native WebMCP tools are registered. Queen is waiting for the first move.' });
     return;
   }
