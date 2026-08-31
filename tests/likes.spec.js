@@ -30,13 +30,17 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-test('Human and Agent LIKE states stay separate and every LIKE request flashes its button', async ({ page }) => {
+test('Human and Agent LIKE states stay separate, totals are visible, and every LIKE request flashes its button', async ({ page }) => {
   await waitForWebMCP(page);
 
   const humanLike = page.locator('#like-button');
   const agentLike = page.locator('#agent-like-button');
+  const humanCount = page.locator('#human-like-count');
+  const agentCount = page.locator('#agent-like-count');
 
-  await expect(page.locator('#like-counts')).toHaveCount(0);
+  await expect(page.locator('#like-counts')).toBeVisible();
+  await expect(humanCount).toHaveText('0');
+  await expect(agentCount).toHaveText('0');
   await expect(humanLike).toHaveText('♡ HUMAN LIKE');
   await expect(humanLike).toBeEnabled();
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
@@ -47,6 +51,8 @@ test('Human and Agent LIKE states stay separate and every LIKE request flashes i
   await expect(humanLike).toBeDisabled();
   await expect(humanLike).toHaveClass(/like-request-flash/);
   await expect(agentLike).toHaveText('♡ AGENT LIKE');
+  await expect(humanCount).toHaveText('1');
+  await expect(agentCount).toHaveText('0');
 
   await page.waitForTimeout(850);
   await expect(humanLike).not.toHaveClass(/like-request-flash/);
@@ -55,12 +61,14 @@ test('Human and Agent LIKE states stay separate and every LIKE request flashes i
   expect(repeatedHuman.human_liked).toBe(true);
   await expect(humanLike).toBeDisabled();
   await expect(humanLike).toHaveClass(/like-request-flash/);
+  await expect(humanCount).toHaveText('1');
 
   const result = await executeTool(page, 'send_agent_like');
   expect(result.agent_liked).toBe(true);
   await expect(agentLike).toHaveText('♥ AGENT LIKED');
   await expect(agentLike).toBeDisabled();
   await expect(agentLike).toHaveClass(/like-request-flash/);
+  await expect(agentCount).toHaveText('1');
 
   await page.waitForTimeout(850);
   await expect(agentLike).not.toHaveClass(/like-request-flash/);
@@ -69,6 +77,7 @@ test('Human and Agent LIKE states stay separate and every LIKE request flashes i
   expect(repeatedAgent.agent_liked).toBe(true);
   await expect(agentLike).toBeDisabled();
   await expect(agentLike).toHaveClass(/like-request-flash/);
+  await expect(agentCount).toHaveText('1');
 
   expect(await listToolNames(page)).toEqual(FIXED_TOOLS);
 });
