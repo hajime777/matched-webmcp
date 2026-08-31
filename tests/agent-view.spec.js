@@ -10,7 +10,11 @@ async function waitForWebMCP(page, path = '/?run=lab&debug=0') {
 
 async function waitForSpectatorSurface(page) {
   await page.waitForFunction(() => document.documentElement.dataset.agentTraceReady === 'true', null, { timeout: 5000 });
-  await page.waitForFunction(() => document.documentElement.dataset.webmcpViewSurfaceReady === 'true', null, { timeout: 5000 });
+  // Tool registration is incremental. The semantic renderer can briefly render a
+  // partial surface before the final synchronizer sees all 14 registered tools.
+  // Wait on the user-visible count itself so the test cannot pass through that
+  // transient state.
+  await expect(page.locator('#webmcp-tool-count')).toHaveText(`${FIXED_TOOL_COUNT} TOOLS`, { timeout: 10000 });
 }
 
 async function executeTool(page, name, args = {}) {
