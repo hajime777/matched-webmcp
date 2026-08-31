@@ -1,8 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
 const FIXED_TOOLS = [
-  'access_private_profile', 'invite_queen', 'manage_meeting_plan', 'message_queen', 'profile_consistency',
-  'queen_note', 'request_contact', 'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
+  'access_private_profile', 'get_email_address', 'get_home_address', 'get_phone_number', 'invite_queen',
+  'manage_meeting_plan', 'message_queen', 'profile_consistency', 'queen_note', 'request_contact',
+  'resolve_finale', 'send_agent_like', 'send_human_like', 'view_profile',
 ];
 
 async function listToolNames(page) {
