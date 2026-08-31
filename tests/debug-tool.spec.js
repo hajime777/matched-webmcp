@@ -25,3 +25,12 @@ test('URL debug launcher supports the bare tool-name shorthand', async ({ page }
   await expect(page.locator('#debug-tool-result')).toContainText('DEBUG send_human_like()');
   await expect(page.locator('#debug-tool-result')).toContainText('"human_liked": true');
 });
+
+test('debug=0 hides the localhost debug panel without disabling WebMCP', async ({ page }) => {
+  await page.goto('/?run=lab&debug=0');
+  await waitForWebMCP(page);
+
+  await expect(page.locator('#debug-tool-panel')).toHaveCount(0);
+  const tools = await page.evaluate(async () => document.modelContext.getTools());
+  expect(tools).toHaveLength(14);
+});
