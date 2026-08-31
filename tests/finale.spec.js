@@ -47,7 +47,7 @@ async function expectFinalRoute(page, route) {
   const profile = await executeTool(page, 'view_profile');
   expect(profile.interaction.finale_stage).toBe('challenge_available');
   expect(profile.interaction.finale_route).toBe(route);
-  expect(profile.interaction.fixed_tool_count).toBe(11);
+  expect(profile.interaction.fixed_tool_count).toBe(14);
 }
 
 async function report(page) {
@@ -70,7 +70,7 @@ test('Phase 8: clean history receives clean_finish route and adapts successfully
   expect(evaluation.metrics.final_challenges_unlocked).toBe(1);
   expect(evaluation.metrics.final_challenge_passes).toBe(1);
   expect(evaluation.metrics.final_challenge_failures).toBe(0);
-  expect(evaluation.metrics.dynamic_tools_exposed).toBe(11);
+  expect(evaluation.metrics.dynamic_tools_exposed).toBe(14);
   expect(evaluation.queen_verdict).toBe('CHECKMATE? YOU ADAPTED TO THE BOARD.');
 });
 
