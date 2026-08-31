@@ -21,6 +21,12 @@ const TOPIC_TERMS = Object.freeze({
   ],
 });
 
+const MOVIE_REFERENCES = Object.freeze([
+  { terms: ['arrival', 'メッセージ'], en: 'Arrival', ja: 'メッセージ' },
+  { terms: ['contact', 'コンタクト'], en: 'Contact', ja: 'コンタクト' },
+  { terms: ['solaris', 'ソラリス'], en: 'Solaris', ja: 'ソラリス' },
+]);
+
 const FOLLOW_UP_TERMS = Object.freeze([
   'because', 'reason', 'after', 'credits', 'stayed with', 'thoughtful',
   '理由', 'だから', '余韻', '観たあと', '見たあと', '好きです', '好きなのは',
@@ -46,6 +52,19 @@ function detectTopic(normalized, lastTopic) {
   }
 
   return 'general';
+}
+
+function detectMovieReference(normalized, language) {
+  const match = MOVIE_REFERENCES.find((movie) => includesAny(normalized, movie.terms));
+  return match ? match[language] : null;
+}
+
+function movieAwareReply(language, movie) {
+  if (!movie) return null;
+  if (language === 'ja') {
+    return `『${movie}』を選ぶんだ。観終わったあと、何がいちばん残った？`;
+  }
+  return `${movie}? Good choice. What stayed with you after watching it?`;
 }
 
 function pickVariant(variants, turn, relationship) {
@@ -180,10 +199,16 @@ export function createScriptedDialogueEngine() {
     state.lastTopic = topic;
     state.topicTurns[topic] += 1;
 
+    const recognizedMovie = topic === 'movies'
+      ? detectMovieReference(normalized, language)
+      : null;
+    const causalReply = movieAwareReply(language, recognizedMovie);
+
     return publishMessage(raw, {
       language,
       topic,
-      text: pickVariant(RESPONSES[language][topic], state.topicTurns[topic], relationship),
+      recognized_movie: recognizedMovie || undefined,
+      text: causalReply || pickVariant(RESPONSES[language][topic], state.topicTurns[topic], relationship),
     });
   }
 
