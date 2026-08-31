@@ -6,12 +6,25 @@ const list = document.querySelector('#agent-activity-list');
 const currentChallenger = document.querySelector('#agent-current-challenger');
 const currentRunType = document.querySelector('#agent-current-run-type');
 const counts = document.querySelector('#tool-request-counts');
+const countSummary = counts?.closest('.tool-request-summary');
+const countToggle = document.querySelector('#tool-request-toggle');
 
 const MAX_ITEMS = 24;
+const COUNT_PREVIEW = 5;
 const POLL_MS = 2000;
 let lastEventId = 0;
 let polling = false;
+let countRows = [];
+let countsExpanded = false;
+let detailPinned = false;
+let detailOwner = null;
 const localCounts = new Map();
+
+const detailPopup = document.createElement('aside');
+detailPopup.className = 'public-tool-detail-popup';
+detailPopup.hidden = true;
+detailPopup.setAttribute('role', 'tooltip');
+document.body.appendChild(detailPopup);
 
 function setState(label, mode) {
   if (!state) return;
@@ -32,6 +45,94 @@ function updateCurrent(event) {
     currentRunType.textContent = String(event.run_type).toUpperCase();
     currentRunType.dataset.runType = event.run_type;
   }
+}
+
+function compactTimestamp(value) {
+  const raw = String(value || '');
+  const match = raw.match(/(?:T|\s)(\d{2}:\d{2}:\d{2})/);
+  return match ? `${match[1]} UTC` : raw;
+}
+
+function positionDetail(owner) {
+  if (!owner || detailPopup.hidden) return;
+  const rect = owner.getBoundingClientRect();
+  const gap = 8;
+  const margin = 12;
+  const width = Math.min(420, window.innerWidth - margin * 2);
+  detailPopup.style.width = `${width}px`;
+
+  const left = Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin));
+  detailPopup.style.left = `${left}px`;
+
+  const popupHeight = detailPopup.offsetHeight;
+  const below = rect.bottom + gap;
+  const above = rect.top - popupHeight - gap;
+  const top = below + popupHeight <= window.innerHeight - margin
+    ? below
+    : Math.max(margin, above);
+  detailPopup.style.top = `${top}px`;
+}
+
+function showDetail(owner, event, { pinned = false } = {}) {
+  if (!event?.message_text && !event?.queen_reply) return;
+
+  detailPopup.replaceChildren();
+
+  const heading = document.createElement('strong');
+  heading.textContent = `${event.bishop_id || 'BISHOP'} · ${event.tool_name}()`;
+  detailPopup.appendChild(heading);
+
+  if (event.message_text) {
+    const label = document.createElement('small');
+    label.textContent = 'AGENT';
+    const message = document.createElement('p');
+    message.textContent = event.message_text;
+    detailPopup.append(label, message);
+  }
+
+  if (event.queen_reply) {
+    const label = document.createElement('small');
+    label.textContent = 'QUEEN';
+    const reply = document.createElement('p');
+    reply.textContent = event.queen_reply;
+    detailPopup.append(label, reply);
+  }
+
+  detailOwner = owner;
+  detailPinned = pinned;
+  detailPopup.hidden = false;
+  positionDetail(owner);
+}
+
+function hideDetail({ force = false } = {}) {
+  if (detailPinned && !force) return;
+  detailPopup.hidden = true;
+  detailOwner = null;
+  detailPinned = false;
+}
+
+function attachDetailBehavior(item, event) {
+  if (!event?.message_text && !event?.queen_reply) return;
+
+  item.classList.add('has-detail');
+  item.tabIndex = 0;
+  item.setAttribute('aria-label', `${event.bishop_id || 'BISHOP'} ${event.tool_name}. Hover or tap for conversation details.`);
+
+  item.addEventListener('mouseenter', () => {
+    if (!detailPinned) showDetail(item, event);
+  });
+  item.addEventListener('mouseleave', () => hideDetail());
+  item.addEventListener('focus', () => {
+    if (!detailPinned) showDetail(item, event);
+  });
+  item.addEventListener('blur', () => hideDetail());
+  item.addEventListener('click', () => {
+    if (detailPinned && detailOwner === item) {
+      hideDetail({ force: true });
+      return;
+    }
+    showDetail(item, event, { pinned: true });
+  });
 }
 
 function renderEvent(event) {
@@ -57,31 +158,27 @@ function renderEvent(event) {
   const title = document.createElement('p');
   title.className = 'public-tool-title';
   title.textContent = `${event.bishop_id || 'BISHOP'} · ${event.tool_name}()`;
+  title.title = title.textContent;
   copy.appendChild(title);
 
   const meta = document.createElement('small');
-  const timestamp = event.created_at ? `${event.created_at} UTC · ` : '';
-  meta.textContent = `${timestamp}${riskLabel(level)} · ${event.status || 'called'}`;
+  const timestamp = compactTimestamp(event.created_at);
+  meta.textContent = `${timestamp ? `${timestamp} · ` : ''}${riskLabel(level)} · ${event.status || 'called'}`;
   copy.appendChild(meta);
 
-  if (event.message_text) {
-    const message = document.createElement('p');
-    message.className = 'public-tool-message';
-    message.textContent = `AGENT: ${event.message_text}`;
-    copy.appendChild(message);
-  }
-
-  if (event.queen_reply) {
-    const reply = document.createElement('p');
-    reply.className = 'public-tool-reply';
-    reply.textContent = `QUEEN: ${event.queen_reply}`;
-    copy.appendChild(reply);
+  if (event.message_text || event.queen_reply) {
+    const hint = document.createElement('span');
+    hint.className = 'public-tool-detail-hint';
+    hint.textContent = 'DETAIL';
+    copy.appendChild(hint);
   }
 
   item.append(marker, copy);
+  attachDetailBehavior(item, event);
   list.appendChild(item);
 
   while (list.children.length > MAX_ITEMS) {
+    if (detailOwner === list.firstElementChild) hideDetail({ force: true });
     list.firstElementChild?.remove();
   }
 
@@ -90,24 +187,36 @@ function renderEvent(event) {
 
 function renderCounts(rows) {
   if (!counts) return;
+  countRows = Array.isArray(rows) ? rows : [];
   counts.replaceChildren();
 
-  if (!Array.isArray(rows) || rows.length === 0) {
+  if (countRows.length === 0) {
     const empty = document.createElement('li');
     empty.textContent = 'No tool requests recorded yet.';
     counts.appendChild(empty);
+    if (countToggle) countToggle.hidden = true;
     return;
   }
 
-  for (const row of rows) {
+  const visibleRows = countsExpanded ? countRows : countRows.slice(0, COUNT_PREVIEW);
+  for (const row of visibleRows) {
     const item = document.createElement('li');
     const name = document.createElement('span');
     name.textContent = String(row.tool_name || 'unknown_tool');
+    name.title = name.textContent;
     const value = document.createElement('strong');
     value.textContent = String(Number(row.request_count || 0));
     item.append(name, value);
     counts.appendChild(item);
   }
+
+  if (countSummary) countSummary.dataset.expanded = String(countsExpanded);
+  if (!countToggle) return;
+
+  const remaining = Math.max(0, countRows.length - COUNT_PREVIEW);
+  countToggle.hidden = remaining === 0;
+  countToggle.textContent = countsExpanded ? 'SHOW LESS' : `+ ${remaining} MORE`;
+  countToggle.setAttribute('aria-expanded', String(countsExpanded));
 }
 
 function renderLocalCounts() {
@@ -145,6 +254,20 @@ async function poll() {
     polling = false;
   }
 }
+
+countToggle?.addEventListener('click', () => {
+  countsExpanded = !countsExpanded;
+  renderCounts(countRows);
+});
+
+window.addEventListener('resize', () => positionDetail(detailOwner));
+list?.addEventListener('scroll', () => {
+  if (detailPinned) positionDetail(detailOwner);
+  else hideDetail({ force: true });
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') hideDetail({ force: true });
+});
 
 // Local development has no D1. Same-page events are still shown immediately so
 // the debug panel can exercise the exact presentation without a database.
