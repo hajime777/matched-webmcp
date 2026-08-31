@@ -27,7 +27,12 @@
   gap: 1rem;
 }
 
+.agent-activity-list {
+  overflow-x: hidden;
+}
+
 .public-tool-event {
+  min-width: 0;
   border-left: 3px solid currentColor;
 }
 
@@ -52,11 +57,17 @@
 }
 
 .public-tool-event .agent-activity-copy {
+  min-width: 0;
   color: inherit;
 }
 
 .public-tool-title {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.public-tool-event .agent-activity-copy small {
+  overflow-wrap: anywhere;
 }
 
 .public-tool-message,
