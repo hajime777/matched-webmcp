@@ -182,6 +182,10 @@ function announceAgentSession() {
   });
 }
 
+export function ensureAgentSessionAnnounced() {
+  announceAgentSession();
+}
+
 export function trackEvent(event, details = {}) {
   // A Bishop represents an Agent run that actually invoked at least one tool.
   // Tool registration / capability discovery alone must not create a challenger.
