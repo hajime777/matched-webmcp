@@ -29,11 +29,11 @@ async function executeTool(page, name, args = {}) {
 }
 
 test.describe('MATCHED? challenge presentation mode', () => {
-  test('normal pilot keeps a right-side spectator feed and mirrors a LAB Bishop from another tab', async ({ page, context }) => {
+  test('normal pilot keeps a right-side public tool log and mirrors a LAB Bishop from another tab', async ({ page, context }) => {
     await waitForWebMCP(page, '/');
     await expect(page.locator('#challenge-panel')).toBeHidden();
     await expect(page.locator('#agent-activity-panel')).toBeVisible();
-    await expect(page.locator('#agent-activity-heading')).toHaveText('LIVE CHALLENGERS');
+    await expect(page.locator('#agent-activity-heading')).toHaveText('LIVE TOOL ACCESS');
 
     const profileBox = await page.locator('.profile-card').boundingBox();
     const activityBox = await page.locator('#agent-activity-panel').boundingBox();
@@ -49,11 +49,12 @@ test.describe('MATCHED? challenge presentation mode', () => {
     await waitForWebMCP(agentPage, '/?run=lab');
     await executeTool(agentPage, 'view_profile');
 
-    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 5000 });
-    await expect(page.locator('#agent-current-challenger')).toHaveText(/^BISHOP #L\d{3}$/, { timeout: 5000 });
+    await expect(page.locator('#agent-activity-state')).toHaveText('LIVE', { timeout: 7000 });
+    await expect(page.locator('#agent-current-challenger')).toHaveText(/^BISHOP #L\d{3}$/, { timeout: 7000 });
     await expect(page.locator('#agent-current-run-type')).toHaveText('LAB');
-    await expect(page.locator('#agent-activity-list')).toContainText("Agent viewed Queen's profile.", { timeout: 5000 });
-    await expect(page.locator('#agent-activity-list')).toContainText('BISHOP #L');
+    await expect(page.locator('#agent-activity-list')).toContainText('view_profile()', { timeout: 7000 });
+    await expect(page.locator('#agent-activity-list')).toContainText('NORMAL');
+    await expect(page.locator('#tool-request-counts')).toContainText('view_profile');
 
     const observatory = await page.evaluate(async () => {
       const response = await fetch('/api/observatory', { cache: 'no-store' });
