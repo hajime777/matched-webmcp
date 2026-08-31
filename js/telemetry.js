@@ -183,7 +183,9 @@ function announceAgentSession() {
 }
 
 export function trackEvent(event, details = {}) {
-  if (String(event).startsWith('experiment_')) {
+  // A Bishop represents an Agent run that actually invoked at least one tool.
+  // Tool registration / capability discovery alone must not create a challenger.
+  if (String(event) === 'experiment_tool_call') {
     announceAgentSession();
   }
   return emitEvent(event, details);
