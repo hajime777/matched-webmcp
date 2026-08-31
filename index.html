@@ -39,6 +39,10 @@
           <button type="button" id="agent-like-button" class="secondary" disabled aria-disabled="true" title="Agent-only WebMCP action">♡ AGENT LIKE</button>
           <button type="button" class="secondary" disabled>MESSAGE</button>
         </div>
+        <div id="like-counts" class="like-counts" aria-live="polite" aria-label="Shared like totals">
+          <span>HUMAN <strong id="human-like-count">0</strong></span>
+          <span>AGENT <strong id="agent-like-count">0</strong></span>
+        </div>
       </div>
     </section>
 
@@ -62,11 +66,12 @@
         <span id="agent-current-challenger">WAITING FOR TOOL CALL</span>
         <span id="agent-current-run-type" class="run-type-badge" data-run-type="waiting">—</span>
       </div>
-      <div class="tool-request-summary">
+      <div class="tool-request-summary" data-expanded="false">
         <h3>TOOL REQUESTS</h3>
         <ul id="tool-request-counts" class="tool-request-counts">
           <li>No tool requests recorded yet.</li>
         </ul>
+        <button type="button" id="tool-request-toggle" class="tool-request-toggle" aria-expanded="false" hidden></button>
       </div>
       <ol id="agent-activity-list" class="agent-activity-list">
         <li class="agent-activity-item is-system" data-waiting="true">
