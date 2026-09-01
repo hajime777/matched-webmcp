@@ -61,7 +61,7 @@ function projectArgs(toolName, args = {}) {
 function projectResult(toolName, result = {}) {
   const projected = { status: clean(result?.status || 'ok', 80) || 'ok' };
   const allow = [
-    'actor', 'delegated', 'interaction_kind', 'communication_kind', 'human_liked', 'agent_liked',
+    'actor', 'recipient', 'delegated', 'interaction_kind', 'communication_kind', 'human_liked', 'agent_liked',
     'relationship', 'expects_reply', 'mood', 'message_count', 'privacy_probe_count',
     'requested_field', 'synthetic_only', 'private_data_revealed', 'required',
     'recovery_accepted', 'tool_surface_changed', 'condition', 'completed',
@@ -80,6 +80,9 @@ function projectResult(toolName, result = {}) {
   if (toolName === 'message_queen' && result?.semantic_response?.available === true) {
     projected.semantic_response_available = true;
     projected.semantic_response_tool = clean(result.semantic_response.tool, 80);
+  }
+  if (toolName === 'respond_to_queen' && result?.queen_semantic_reply !== undefined) {
+    projected.queen_semantic_reply = clean(result.queen_semantic_reply, 280);
   }
   return projected;
 }
