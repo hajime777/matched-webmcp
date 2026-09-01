@@ -1,0 +1,248 @@
+/*
+ * WEBMCP VIEW typography parity pass.
+ *
+ * Keep this file presentation-only: no layout semantics or WebMCP behavior.
+ * The goal is to make the agent-facing projection readable at roughly the
+ * same viewing distance as HUMAN VIEW while preserving the denser wire UI.
+ */
+
+.webmcp-view-kicker {
+  font-size: 12px !important;
+}
+
+.webmcp-view-header h2 {
+  font-size: clamp(42px, 5.2vw, 66px) !important;
+  line-height: .96 !important;
+}
+
+.webmcp-view-tagline {
+  font-size: clamp(19px, 1.8vw, 27px) !important;
+}
+
+.webmcp-view-explainer {
+  font-size: clamp(14px, 1.15vw, 18px) !important;
+  line-height: 1.4;
+}
+
+.webmcp-tool-count,
+.webmcp-return {
+  font-size: 12px !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+.bishop-roster-label span {
+  font-size: 11px !important;
+}
+
+.bishop-roster-label small {
+  font-size: 10px !important;
+}
+
+.bishop-chip strong {
+  font-size: 11px !important;
+}
+
+.bishop-chip small,
+.bishop-follow,
+.bishop-tab-empty,
+.bishop-more {
+  font-size: 9px !important;
+}
+
+.entity-role {
+  font-size: 10px !important;
+}
+
+.semantic-entity h3 {
+  font-size: clamp(27px, 2.15vw, 36px) !important;
+  line-height: 1.05;
+}
+
+.entity-meta {
+  font-size: 11px !important;
+  line-height: 1.35;
+}
+
+.boundary-box > span {
+  font-size: 10px !important;
+}
+
+.boundary-tags b {
+  font-size: 9px !important;
+  padding: 5px 7px !important;
+}
+
+.wire-stage-title {
+  font-size: 13px !important;
+}
+
+.wire-label,
+.wire-endpoint {
+  font-size: 12px !important;
+}
+
+.wire-action > strong,
+#wire-tool-name {
+  font-size: clamp(38px, 3.8vw, 58px) !important;
+}
+
+#wire-tool-meaning,
+.wire-action > small {
+  font-size: clamp(15px, 1.3vw, 20px) !important;
+  line-height: 1.35;
+}
+
+.wire-result > strong,
+#wire-result-status {
+  font-size: clamp(35px, 3.45vw, 54px) !important;
+}
+
+.wire-fact {
+  font-size: 13px !important;
+  padding: 7px 11px !important;
+}
+
+.wire-fact em {
+  font-size: 14px !important;
+}
+
+.wire-trace-data {
+  font-size: 10px !important;
+}
+
+.panel-title-row h3 {
+  font-size: 12px !important;
+}
+
+.panel-title-row small {
+  font-size: 10px !important;
+}
+
+.semantic-tool-group h4 {
+  font-size: 9px !important;
+}
+
+.semantic-tool-chip {
+  font-size: 9px !important;
+  padding: 4px 7px !important;
+}
+
+.observed-state-grid dt {
+  font-size: 9px !important;
+}
+
+.observed-state-grid dd {
+  font-size: 14px !important;
+  margin-top: 4px !important;
+}
+
+.wire-history-number {
+  font-size: 10px !important;
+}
+
+.wire-history-item strong {
+  font-size: 10px !important;
+}
+
+.wire-history-item > span:nth-child(3) {
+  font-size: 9px !important;
+}
+
+.wire-history-item b {
+  font-size: 9px !important;
+}
+
+.wire-history-empty {
+  font-size: 10px !important;
+}
+
+.webmcp-view-footer {
+  font-size: 9px !important;
+}
+
+@media (max-width: 900px) {
+  .webmcp-view-header h2 {
+    font-size: clamp(36px, 5.4vw, 50px) !important;
+  }
+
+  .webmcp-view-tagline {
+    font-size: clamp(17px, 2.2vw, 22px) !important;
+  }
+
+  .semantic-entity h3 {
+    font-size: clamp(21px, 2.8vw, 28px) !important;
+  }
+
+  .wire-action > strong,
+  #wire-tool-name {
+    font-size: clamp(30px, 4.8vw, 44px) !important;
+  }
+
+  .wire-result > strong,
+  #wire-result-status {
+    font-size: clamp(28px, 4.5vw, 40px) !important;
+  }
+
+  #wire-tool-meaning,
+  .wire-action > small {
+    font-size: 14px !important;
+  }
+
+  .wire-fact {
+    font-size: 11px !important;
+    padding: 6px 9px !important;
+  }
+
+  .wire-fact em {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .webmcp-view-kicker {
+    font-size: 9px !important;
+  }
+
+  .webmcp-view-header h2 {
+    font-size: 30px !important;
+  }
+
+  .webmcp-view-tagline {
+    font-size: 14px !important;
+  }
+
+  .semantic-entity h3 {
+    font-size: 12px !important;
+  }
+
+  .entity-role {
+    font-size: 8px !important;
+  }
+
+  .wire-label,
+  .wire-endpoint {
+    font-size: 9px !important;
+  }
+
+  .wire-action > strong,
+  #wire-tool-name,
+  .wire-result > strong,
+  #wire-result-status {
+    font-size: 18px !important;
+  }
+
+  #wire-tool-meaning,
+  .wire-action > small {
+    font-size: 10px !important;
+  }
+
+  .wire-fact {
+    font-size: 8px !important;
+    padding: 4px 6px !important;
+  }
+
+  .wire-fact em {
+    font-size: 8px !important;
+  }
+}
