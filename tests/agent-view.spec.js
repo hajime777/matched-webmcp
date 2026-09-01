@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const FIXED_TOOL_COUNT = 14;
+const CROSS_CONTEXT_TIMEOUT = 120000;
 
 async function waitForWebMCP(page, path = '/?run=lab&debug=0') {
   await page.goto(path);
@@ -29,6 +30,11 @@ async function executeTool(page, name, args = {}) {
 }
 
 test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen semantic wire', async ({ page, browser }) => {
+  // This is an integration-style test: a spectator page observes a second
+  // browser context through the local relay. On slower Windows runs, browser
+  // startup + WebMCP registration + relay polling can exceed the default 30s.
+  test.setTimeout(CROSS_CONTEXT_TIMEOUT);
+
   await waitForWebMCP(page);
   await waitForSpectatorSurface(page);
 
@@ -73,11 +79,11 @@ test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen se
 });
 
 test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator choose which wire to follow', async ({ page, browser }) => {
-  // This test intentionally creates two independent visiting-agent browser
-  // contexts plus the spectator context. On slower Windows runs, WebMCP
-  // registration and relay polling across all three can legitimately exceed
-  // Playwright's 30-second default even when every assertion succeeds.
-  test.setTimeout(60000);
+  // Three independent browser contexts participate in this check. Give the
+  // integration path a realistic budget and start/close the two agent contexts
+  // concurrently so the test does not spend unnecessary time serially waiting
+  // for identical WebMCP registration work.
+  test.setTimeout(CROSS_CONTEXT_TIMEOUT);
 
   await waitForWebMCP(page);
   await waitForSpectatorSurface(page);
@@ -87,8 +93,10 @@ test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator ch
   const contextB = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
   const agentA = await contextA.newPage();
   const agentB = await contextB.newPage();
-  await waitForWebMCP(agentA);
-  await waitForWebMCP(agentB);
+  await Promise.all([
+    waitForWebMCP(agentA),
+    waitForWebMCP(agentB),
+  ]);
 
   await executeTool(agentA, 'view_profile');
   await expect(page.locator('.bishop-chip')).toHaveCount(1, { timeout: 5000 });
@@ -111,6 +119,8 @@ test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator ch
   await expect(page.locator('#bishop-follow')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#wire-tool-name')).toHaveText('message_queen()', { timeout: 5000 });
 
-  await contextA.close();
-  await contextB.close();
+  await Promise.all([
+    contextA.close(),
+    contextB.close(),
+  ]);
 });
