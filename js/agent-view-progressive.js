@@ -84,6 +84,14 @@ function setTextIfChanged(element, text) {
   if (element && element.textContent !== text) element.textContent = text;
 }
 
+function improveLiveToolMeaning() {
+  if (currentTool() !== 'respond_to_queen') return;
+  setTextIfChanged(
+    document.querySelector('#wire-tool-meaning'),
+    'Semantic response to Queen',
+  );
+}
+
 function improveLabels() {
   const stage = document.querySelector('#webmcp-wire-stage');
   if (stage && !stage.querySelector('.wire-stage-title')) {
@@ -113,6 +121,7 @@ function improveLabels() {
     document.querySelector('.webmcp-view-footer'),
     'Human-readable projection of actual WebMCP tools and observed exchanges. No chain-of-thought is shown.',
   );
+  improveLiveToolMeaning();
 }
 
 function installObserver() {
@@ -156,10 +165,6 @@ function boot() {
     installObserver();
   });
   observer.observe(document.body, { childList: true, subtree: true });
-}
-
-if (new URLSearchParams(location.search).get('dialogue') === '1') {
-  void import('./respond-to-queen-experiment.js');
 }
 
 boot();
