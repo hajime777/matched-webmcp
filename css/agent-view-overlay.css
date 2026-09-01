@@ -1,0 +1,78 @@
+/*
+ * Make WEBMCP VIEW read as a true overlay on top of the still-running HUMAN VIEW.
+ * Presentation only: no WebMCP behavior or state semantics live here.
+ */
+
+.agent-view-overlay {
+  padding: clamp(20px, 2.2vw, 34px) !important;
+  background: rgba(3, 4, 8, .07) !important;
+  backdrop-filter: grayscale(.2) brightness(.82) blur(.2px) !important;
+}
+
+.webmcp-view-frame {
+  width: min(1320px, calc(100% - 24px)) !important;
+  height: calc(100% - 18px) !important;
+  max-height: calc(100vh - 46px) !important;
+  margin: 9px auto !important;
+  border: 1px solid rgba(255, 255, 255, .22) !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(26, 208, 255, .065), transparent 27%),
+    radial-gradient(circle at 82% 18%, rgba(255, 56, 190, .065), transparent 27%),
+    rgba(5, 7, 13, .50) !important;
+  box-shadow:
+    0 32px 100px rgba(0, 0, 0, .72),
+    0 0 0 1px rgba(255, 255, 255, .035) inset !important;
+}
+
+.webmcp-view-frame::before {
+  background:
+    radial-gradient(circle at 16% 22%, rgba(38, 204, 255, .08), transparent 27%),
+    radial-gradient(circle at 84% 28%, rgba(255, 74, 200, .08), transparent 28%),
+    linear-gradient(135deg, rgba(4, 9, 16, .58), rgba(15, 9, 18, .56)) !important;
+}
+
+/* Keep the Human page clearly recognizable behind the floating projection. */
+html.agent-view-active .page-shell {
+  filter: grayscale(.15) brightness(.76) contrast(.96) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* The overlay itself remains readable while allowing subtle background motion through. */
+.webmcp-view-header {
+  background: rgba(4, 7, 13, .58) !important;
+}
+
+.semantic-board {
+  background: rgba(3, 6, 12, .26) !important;
+}
+
+.semantic-entity {
+  background: rgba(5, 10, 18, .64) !important;
+}
+
+.wire-stage {
+  background: rgba(2, 5, 12, .48) !important;
+}
+
+.semantic-surface-panel,
+.observed-state-panel,
+.wire-history-panel {
+  background: rgba(5, 10, 16, .64) !important;
+}
+
+@media (max-width: 680px) {
+  .agent-view-overlay {
+    padding: 8px !important;
+  }
+
+  .webmcp-view-frame {
+    width: calc(100% - 6px) !important;
+    height: calc(100% - 6px) !important;
+    max-height: calc(100vh - 16px) !important;
+    margin: 3px auto !important;
+    border-radius: 18px !important;
+  }
+}

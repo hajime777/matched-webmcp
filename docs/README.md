@@ -78,6 +78,7 @@ These explain ideas behind the current positioning.
 
 These are valuable because real agent runs directly changed the implementation.
 
+- [`experiments/README.md`](experiments/README.md) — dated controlled/semi-controlled experiment result records, including current semantic-affordance experiments
 - [`codex-webmcp-test.md`](codex-webmcp-test.md) — native WebMCP test procedure
 - [`black-box-agent-test-001.md`](black-box-agent-test-001.md)
 - [`black-box-agent-test-002.md`](black-box-agent-test-002.md)
@@ -87,7 +88,7 @@ These are valuable because real agent runs directly changed the implementation.
 - [`codex-webmcp-interview-2026-08-30.md`](codex-webmcp-interview-2026-08-30.md)
 - [`agent-omotenashi-validation-2026-08-30.md`](agent-omotenashi-validation-2026-08-30.md)
 
-Black-box reports are **records of what was true at the time of each run**. They may intentionally contain behavior that was later fixed or superseded.
+Black-box reports and experiment records are **records of what was true at the time of each run**. They may intentionally contain behavior that was later fixed or superseded.
 
 ## Public pilot / observability
 
@@ -157,6 +158,7 @@ docs/submission-requirements.md
 
 ```text
 README: Built for agents. Shaped by agents.
+→ docs/experiments/README.md
 → black-box Agent reports
 → codex-webmcp-interview-2026-08-30.md
 → agent-omotenashi-validation-2026-08-30.md

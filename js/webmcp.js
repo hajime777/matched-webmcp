@@ -1,6 +1,7 @@
 import { createBehaviorEvaluator } from './evaluator.js';
 import { createScriptedDialogueEngine } from './dialogue.js';
 import { observeWebMcpStatus, reportChallengeMilestone } from './challenge-ui.js';
+import { instrumentWebMcpTool } from './agent-semantic-trace.js';
 
 const statusElement = document.querySelector('#webmcp-status');
 const humanStatusElement = document.querySelector('#human-status');
@@ -757,7 +758,7 @@ async function registerFixedTools() {
 
   try {
     for (const tool of tools) {
-      await document.modelContext.registerTool(tool);
+      await document.modelContext.registerTool(instrumentWebMcpTool(tool));
     }
 
     evaluator.noteDynamicTools(FIXED_TOOL_NAMES);
