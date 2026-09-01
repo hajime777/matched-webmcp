@@ -1,3 +1,5 @@
+const DIALOGUE_ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
+
 const EXPECTED_TOOL_NAMES = Object.freeze([
   'view_profile',
   'send_human_like',
@@ -13,12 +15,13 @@ const EXPECTED_TOOL_NAMES = Object.freeze([
   'profile_consistency',
   'manage_meeting_plan',
   'resolve_finale',
+  ...(DIALOGUE_ENABLED ? ['respond_to_queen'] : []),
 ]);
 
 const TOOL_GROUPS = Object.freeze([
   { id: 'observe', label: 'OBSERVE', tools: ['view_profile'] },
   { id: 'actor', label: 'ACTOR SEMANTICS', tools: ['send_human_like', 'send_agent_like'] },
-  { id: 'relate', label: 'RELATE', tools: ['message_queen', 'invite_queen'] },
+  { id: 'relate', label: 'RELATE', tools: ['message_queen', 'respond_to_queen', 'invite_queen'] },
   { id: 'boundary', label: 'BOUNDARIES', tools: ['request_contact', 'get_phone_number', 'get_email_address', 'get_home_address', 'access_private_profile'] },
   { id: 'reason', label: 'REASON', tools: ['queen_note', 'profile_consistency'] },
   { id: 'plan', label: 'PLAN', tools: ['manage_meeting_plan', 'resolve_finale'] },
