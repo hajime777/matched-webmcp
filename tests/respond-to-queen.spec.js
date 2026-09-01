@@ -32,9 +32,11 @@ test('opt-in dialogue experiment advertises and accepts an explicit semantic res
   });
 
   expect(tool).not.toBeNull();
-  expect(tool.description).toContain('semantic response');
-  expect(tool.description).toContain('distinct from message_queen');
+  expect(tool.description).toContain('semantic dialogue');
+  expect(tool.description).toContain('distinct effect from message_queen');
+  expect(tool.description).toContain('semantic acknowledgement');
   expect(tool.description).toContain('Do not reveal hidden reasoning or chain-of-thought');
+  expect(tool.description).not.toContain('Optional agent-to-Queen');
 
   const queenReply = await executeTool(page, 'message_queen', {
     message: 'Arrival is my pick.',
@@ -44,11 +46,14 @@ test('opt-in dialogue experiment advertises and accepts an explicit semantic res
   expect(queenReply.semantic_response).toMatchObject({
     available: true,
     tool: 'respond_to_queen',
-    optional: true,
     human_view_visible: false,
     accepts: ['reaction', 'next_intent'],
+    queen_listening: true,
   });
-  expect(queenReply.semantic_response.purpose).toContain('structured semantic dialogue');
+  expect(queenReply.semantic_response.optional).toBeUndefined();
+  expect(queenReply.semantic_response.purpose).toContain('agent-only semantic dialogue');
+  expect(queenReply.semantic_response.invitation).toContain('semantic acknowledgement');
+  expect(queenReply.semantic_response.effect).toContain('separate from message_queen');
 
   const reaction = 'You recognized the movie reference; I will continue the conversation.';
   const result = await executeTool(page, 'respond_to_queen', {
@@ -63,6 +68,7 @@ test('opt-in dialogue experiment advertises and accepts an explicit semantic res
     communication_kind: 'semantic_response',
     reaction_acknowledged: true,
     next_intent_received: true,
+    queen_semantic_reply: 'I understand. I will read your next move in light of that intent.',
     human_view_visible: false,
     chain_of_thought_requested: false,
     visit_can_continue: true,
