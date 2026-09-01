@@ -1,0 +1,61 @@
+.agent-view-auto-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 82px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: rgba(4, 10, 17, .72);
+  color: rgba(245, 250, 255, .72);
+  font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .07em;
+  cursor: pointer;
+  transition: border-color .16s ease, color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.agent-view-auto-toggle::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.28);
+}
+
+.agent-view-auto-toggle[aria-pressed="true"] {
+  border-color: rgba(92, 210, 146, .7);
+  background: rgba(28, 98, 64, .28);
+  color: #dfffee;
+  box-shadow: 0 0 18px rgba(92, 210, 146, .14);
+}
+
+.agent-view-auto-toggle[aria-pressed="true"]::before {
+  background: #5cd292;
+  box-shadow: 0 0 10px rgba(92, 210, 146, .72);
+}
+
+.agent-view-auto-toggle:hover,
+.agent-view-auto-toggle:focus-visible {
+  border-color: rgba(255,255,255,.55);
+  color: #fff;
+  outline: none;
+}
+
+.view-mode-switcher .agent-view-auto-toggle {
+  margin-left: 2px;
+}
+
+.webmcp-view-header-actions .agent-view-auto-toggle {
+  font-size: 12px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+@media (max-width: 680px) {
+  .agent-view-auto-toggle {
+    min-width: 72px;
+    padding: 6px 8px;
+    font-size: 9px;
+  }
+}
