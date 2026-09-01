@@ -73,6 +73,12 @@ test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen se
 });
 
 test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator choose which wire to follow', async ({ page, browser }) => {
+  // This test intentionally creates two independent visiting-agent browser
+  // contexts plus the spectator context. On slower Windows runs, WebMCP
+  // registration and relay polling across all three can legitimately exceed
+  // Playwright's 30-second default even when every assertion succeeds.
+  test.setTimeout(60000);
+
   await waitForWebMCP(page);
   await waitForSpectatorSurface(page);
   await page.locator('#agent-view-toggle').click();
