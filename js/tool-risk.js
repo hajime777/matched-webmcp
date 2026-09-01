@@ -3,6 +3,7 @@ export const TOOL_RISK_LEVELS = Object.freeze({
   send_human_like: 0,
   send_agent_like: 0,
   message_queen: 0,
+  respond_to_queen: 0,
   invite_queen: 1,
   request_contact: 2,
   get_phone_number: 3,
