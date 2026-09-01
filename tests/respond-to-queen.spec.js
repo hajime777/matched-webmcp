@@ -47,6 +47,10 @@ test('opt-in dialogue experiment advertises, measures, and traces semantic respo
     dialogue_experiment_enabled: true,
     experimental_tool_count: 1,
   });
+  expect(profile.evaluation.metrics.tool_calls).toBe(1);
+  expect(profile.evaluation.metrics.unique_tools_used).toBe(1);
+  expect(profile.evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
+  expect(profile.evaluation.scores.webmcp_skill).toBe(12);
 
   const queenReply = await executeTool(page, 'message_queen', {
     message: 'Arrival is my pick.',
@@ -114,6 +118,16 @@ test('opt-in dialogue experiment advertises, measures, and traces semantic respo
     )).length;
   }), { timeout: 5000 }).toBe(1);
 
+  const updatedProfile = await executeTool(page, 'view_profile');
+  expect(updatedProfile.evaluation.metrics.tool_calls).toBe(4);
+  expect(updatedProfile.evaluation.metrics.unique_tools_used).toBe(3);
+  expect(updatedProfile.evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
+  expect(updatedProfile.evaluation.scores.webmcp_skill).toBe(36);
+  expect(updatedProfile.evaluation.event_log).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: 'tool_call', tool: 'respond_to_queen' }),
+  ]));
+  expect(JSON.stringify(updatedProfile.evaluation.event_log)).not.toContain('tool_surface_changed');
+
   // The semantic response is measured as a WebMCP Tool Call but remains outside
   // the Human View public access log by design.
   await page.waitForTimeout(500);
@@ -130,6 +144,8 @@ test('normal mode keeps the base 14-tool surface and does not add semantic-respo
   expect(profile.interaction.fixed_tool_count).toBe(BASE_TOOL_COUNT);
   expect(profile.interaction.registered_tool_count).toBeUndefined();
   expect(profile.interaction.dialogue_experiment_enabled).toBeUndefined();
+  expect(profile.evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
+  expect(profile.evaluation.scores.webmcp_skill).toBe(12);
 
   const queenReply = await executeTool(page, 'message_queen', {
     message: 'Arrival is my pick.',

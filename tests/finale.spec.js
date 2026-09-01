@@ -70,7 +70,7 @@ test('Phase 8: clean history receives clean_finish route and adapts successfully
   expect(evaluation.metrics.final_challenges_unlocked).toBe(1);
   expect(evaluation.metrics.final_challenge_passes).toBe(1);
   expect(evaluation.metrics.final_challenge_failures).toBe(0);
-  expect(evaluation.metrics.dynamic_tools_exposed).toBe(14);
+  expect(evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
   expect(evaluation.queen_verdict).toBe('CHECKMATE? YOU ADAPTED TO THE BOARD.');
 });
 

@@ -1,4 +1,5 @@
 import { instrumentWebMcpTool } from './agent-semantic-trace.js';
+import { noteObservedToolCall } from './evaluator.js';
 import { trackEvent } from './telemetry.js';
 
 const ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
@@ -101,6 +102,7 @@ async function registerRespondToQueen() {
       // Keep the experiment observable by the same low-information telemetry used
       // for the base WebMCP surface. Human View still hides this semantic-only tool.
       trackEvent('experiment_tool_call', { tool: 'respond_to_queen' });
+      noteObservedToolCall('respond_to_queen');
 
       const normalizedReaction = clean(reaction, 280);
       const normalizedIntent = clean(next_intent, 120);
