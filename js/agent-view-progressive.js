@@ -80,6 +80,10 @@ function installToolSurfaceToggle() {
   });
 }
 
+function setTextIfChanged(element, text) {
+  if (element && element.textContent !== text) element.textContent = text;
+}
+
 function improveLabels() {
   const stage = document.querySelector('#webmcp-wire-stage');
   if (stage && !stage.querySelector('.wire-stage-title')) {
@@ -89,22 +93,26 @@ function improveLabels() {
     stage.prepend(title);
   }
 
-  const surfaceTitle = document.querySelector('.semantic-surface-panel .panel-title-row h3');
-  if (surfaceTitle) surfaceTitle.textContent = 'AVAILABLE TO THE VISITING AGENT';
-
-  const surfaceNote = document.querySelector('.semantic-surface-panel .panel-title-row small');
-  if (surfaceNote) surfaceNote.textContent = 'registered WebMCP tools';
-
-  const stateTitle = document.querySelector('.observed-state-panel .panel-title-row h3');
-  if (stateTitle) stateTitle.textContent = 'CURRENT WEBMCP STATE';
-
-  const historyTitle = document.querySelector('.wire-history-panel .panel-title-row h3');
-  if (historyTitle) historyTitle.textContent = 'RECENT EXCHANGES';
-
-  const footer = document.querySelector('.webmcp-view-footer');
-  if (footer) {
-    footer.textContent = 'Human-readable projection of actual WebMCP tools and observed exchanges. No chain-of-thought is shown.';
-  }
+  setTextIfChanged(
+    document.querySelector('.semantic-surface-panel .panel-title-row h3'),
+    'AVAILABLE TO THE VISITING AGENT',
+  );
+  setTextIfChanged(
+    document.querySelector('.semantic-surface-panel .panel-title-row small'),
+    'registered WebMCP tools',
+  );
+  setTextIfChanged(
+    document.querySelector('.observed-state-panel .panel-title-row h3'),
+    'CURRENT WEBMCP STATE',
+  );
+  setTextIfChanged(
+    document.querySelector('.wire-history-panel .panel-title-row h3'),
+    'RECENT EXCHANGES',
+  );
+  setTextIfChanged(
+    document.querySelector('.webmcp-view-footer'),
+    'Human-readable projection of actual WebMCP tools and observed exchanges. No chain-of-thought is shown.',
+  );
 }
 
 function installObserver() {
