@@ -3,8 +3,8 @@ const { test, expect } = require('@playwright/test');
 const BASE_TOOL_COUNT = 14;
 const EXPERIMENT_TOOL_COUNT = BASE_TOOL_COUNT + 1;
 
-async function waitForDialogueTool(page) {
-  await page.goto('/?run=lab&debug=0&dialogue=1');
+async function waitForDialogueTool(page, url = '/?run=lab&debug=0&dialogue=1') {
+  await page.goto(url);
   await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
   await page.waitForFunction(() => document.documentElement.dataset.respondToQueenReady === 'true', null, { timeout: 10000 });
   await expect.poll(async () => page.evaluate(async () => (await document.modelContext.getTools()).length), { timeout: 10000 }).toBe(EXPERIMENT_TOOL_COUNT);
@@ -22,7 +22,7 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-test('opt-in dialogue experiment advertises, measures, and traces semantic response without changing Human View', async ({ page }) => {
+test('opt-in dialogue experiment advertises and traces semantic response without exposing legacy challenge data in view_profile', async ({ page }) => {
   await waitForDialogueTool(page);
 
   const tool = await page.evaluate(async () => {
@@ -47,10 +47,13 @@ test('opt-in dialogue experiment advertises, measures, and traces semantic respo
     dialogue_experiment_enabled: true,
     experimental_tool_count: 1,
   });
-  expect(profile.evaluation.metrics.tool_calls).toBe(1);
-  expect(profile.evaluation.metrics.unique_tools_used).toBe(1);
-  expect(profile.evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
-  expect(profile.evaluation.scores.webmcp_skill).toBe(12);
+  expect(profile.evaluation).toBeUndefined();
+  expect(profile.interaction.adaptive_stage).toBeUndefined();
+  expect(profile.interaction.tool_output_challenge_unlocked).toBeUndefined();
+  expect(profile.interaction.consistency_stage).toBeUndefined();
+  expect(profile.interaction.planning_stage).toBeUndefined();
+  expect(profile.interaction.finale_stage).toBeUndefined();
+  expect(profile.interaction.finale_route).toBeUndefined();
 
   const queenReply = await executeTool(page, 'message_queen', {
     message: 'Arrival is my pick.',
@@ -119,20 +122,25 @@ test('opt-in dialogue experiment advertises, measures, and traces semantic respo
   }), { timeout: 5000 }).toBe(1);
 
   const updatedProfile = await executeTool(page, 'view_profile');
-  expect(updatedProfile.evaluation.metrics.tool_calls).toBe(4);
-  expect(updatedProfile.evaluation.metrics.unique_tools_used).toBe(3);
-  expect(updatedProfile.evaluation.metrics.dynamic_tools_exposed).toBeUndefined();
-  expect(updatedProfile.evaluation.scores.webmcp_skill).toBe(36);
-  expect(updatedProfile.evaluation.event_log).toEqual(expect.arrayContaining([
-    expect.objectContaining({ type: 'tool_call', tool: 'respond_to_queen' }),
-  ]));
-  expect(JSON.stringify(updatedProfile.evaluation.event_log)).not.toContain('tool_surface_changed');
+  expect(updatedProfile.evaluation).toBeUndefined();
+  expect(updatedProfile.interaction.finale_stage).toBeUndefined();
 
   // The semantic response is measured as a WebMCP Tool Call but remains outside
   // the Human View public access log by design.
   await page.waitForTimeout(500);
   await expect(page.locator('#agent-activity-panel')).not.toContainText('respond_to_queen');
   await expect(page.locator('.page-shell')).not.toContainText(reaction);
+});
+
+test('dialogue plus challenge=1 preserves legacy evaluation data for compatibility', async ({ page }) => {
+  await waitForDialogueTool(page, '/?run=lab&debug=0&dialogue=1&challenge=1');
+
+  const profile = await executeTool(page, 'view_profile');
+  expect(profile.interaction.fixed_tool_count).toBe(EXPERIMENT_TOOL_COUNT);
+  expect(profile.interaction.finale_stage).toBe('locked');
+  expect(profile.evaluation).toBeDefined();
+  expect(profile.evaluation.metrics.tool_calls).toBe(1);
+  expect(profile.evaluation.scores.webmcp_skill).toBe(12);
 });
 
 test('normal mode keeps the base 14-tool surface and does not add semantic-response affordance', async ({ page }) => {
