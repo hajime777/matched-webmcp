@@ -2,14 +2,60 @@ import { instrumentWebMcpTool } from './agent-semantic-trace.js';
 import { noteObservedToolCall } from './evaluator.js';
 import { trackEvent } from './telemetry.js';
 
-const ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
+const query = new URLSearchParams(location.search);
+const ENABLED = query.get('dialogue') === '1';
+const LEGACY_CHALLENGE_ENABLED = query.get('challenge') === '1';
 const BASE_TOOL_COUNT = 14;
 const EXPERIMENT_TOOL_COUNT = BASE_TOOL_COUNT + 1;
 const REGISTERED_FLAG = '__matchedRespondToQueenRegistered';
 const RESULT_DECORATOR = '__matchedWebMcpResultDecorator';
+const LEGACY_PROFILE_KEYS = Object.freeze([
+  'adaptive_stage',
+  'tool_output_challenge_unlocked',
+  'consistency_stage',
+  'planning_stage',
+  'finale_stage',
+  'finale_route',
+]);
 
 function clean(value, maxLength) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+}
+
+function installDialogueDefaultSurface() {
+  if (!ENABLED || LEGACY_CHALLENGE_ENABLED || window.__matchedDialogueDefaultSurfaceInstalled) return;
+
+  const previousDecorator = typeof window[RESULT_DECORATOR] === 'function'
+    ? window[RESULT_DECORATOR]
+    : null;
+
+  window[RESULT_DECORATOR] = (toolName, result) => {
+    let decorated = result;
+    if (previousDecorator) {
+      try {
+        decorated = previousDecorator(toolName, result) ?? result;
+      } catch {
+        decorated = result;
+      }
+    }
+
+    if (toolName !== 'view_profile' || !decorated || typeof decorated !== 'object') {
+      return decorated;
+    }
+
+    const interaction = { ...(decorated.interaction || {}) };
+    for (const key of LEGACY_PROFILE_KEYS) {
+      delete interaction[key];
+    }
+
+    const { evaluation: _legacyEvaluation, ...rest } = decorated;
+    return {
+      ...rest,
+      interaction,
+    };
+  };
+
+  window.__matchedDialogueDefaultSurfaceInstalled = true;
 }
 
 function installSemanticResponseAffordance() {
@@ -142,5 +188,6 @@ async function registerRespondToQueen() {
   }
 }
 
+installDialogueDefaultSurface();
 installSemanticResponseAffordance();
 void registerRespondToQueen();
