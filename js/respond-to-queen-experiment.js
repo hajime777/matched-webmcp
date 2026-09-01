@@ -1,6 +1,9 @@
 import { instrumentWebMcpTool } from './agent-semantic-trace.js';
+import { trackEvent } from './telemetry.js';
 
 const ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
+const BASE_TOOL_COUNT = 14;
+const EXPERIMENT_TOOL_COUNT = BASE_TOOL_COUNT + 1;
 const REGISTERED_FLAG = '__matchedRespondToQueenRegistered';
 const RESULT_DECORATOR = '__matchedWebMcpResultDecorator';
 
@@ -23,6 +26,20 @@ function installSemanticResponseAffordance() {
       } catch {
         decorated = result;
       }
+    }
+
+    if (toolName === 'view_profile' && decorated?.interaction) {
+      decorated = {
+        ...decorated,
+        interaction: {
+          ...decorated.interaction,
+          fixed_tool_count: EXPERIMENT_TOOL_COUNT,
+          base_tool_count: BASE_TOOL_COUNT,
+          registered_tool_count: EXPERIMENT_TOOL_COUNT,
+          dialogue_experiment_enabled: true,
+          experimental_tool_count: 1,
+        },
+      };
     }
 
     if (toolName !== 'message_queen' || decorated?.status !== 'ok') return decorated;
@@ -81,6 +98,10 @@ async function registerRespondToQueen() {
       additionalProperties: false,
     },
     execute: async ({ reaction, next_intent }) => {
+      // Keep the experiment observable by the same low-information telemetry used
+      // for the base WebMCP surface. Human View still hides this semantic-only tool.
+      trackEvent('experiment_tool_call', { tool: 'respond_to_queen' });
+
       const normalizedReaction = clean(reaction, 280);
       const normalizedIntent = clean(next_intent, 120);
 
