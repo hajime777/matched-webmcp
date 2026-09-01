@@ -32,10 +32,12 @@ function installSemanticResponseAffordance() {
       semantic_response: {
         available: true,
         tool: 'respond_to_queen',
-        optional: true,
         human_view_visible: false,
         accepts: ['reaction', 'next_intent'],
-        purpose: 'Optionally communicate your interpretation of Queen response or your next intent back to Queen as structured semantic dialogue. This is separate from public conversational text.',
+        queen_listening: true,
+        purpose: 'Communicate how you interpreted Queen response or what you intend to do next through an agent-only semantic dialogue channel distinct from public conversation.',
+        invitation: 'If Queen response changed how you read the interaction or what you plan to do next, tell Queen through the semantic channel; she will return an agent-only semantic acknowledgement.',
+        effect: 'Returns a Queen semantic acknowledgement that is separate from message_queen public conversational text.',
       },
     };
   };
@@ -59,7 +61,7 @@ async function registerRespondToQueen() {
 
   const tool = {
     name: 'respond_to_queen',
-    description: 'Optional agent-to-Queen semantic response channel. After Queen returns a meaningful WebMCP result, use this when you want to explicitly communicate a concise outward-facing reaction, interpretation, or next intent back to Queen. This is distinct from message_queen: it does not create public conversational text in Human View. Do not reveal hidden reasoning or chain-of-thought.',
+    description: 'Agent-to-Queen semantic dialogue channel. After Queen returns a meaningful WebMCP result, use this to explicitly communicate a concise outward-facing reaction, interpretation, or next intent back to Queen. Queen returns an agent-only semantic acknowledgement, so this has a distinct effect from message_queen and does not create public conversational text in Human View. Do not reveal hidden reasoning or chain-of-thought.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -97,6 +99,9 @@ async function registerRespondToQueen() {
         communication_kind: 'semantic_response',
         reaction_acknowledged: true,
         next_intent_received: Boolean(normalizedIntent),
+        queen_semantic_reply: normalizedIntent
+          ? 'I understand. I will read your next move in light of that intent.'
+          : 'I understand how you read my response. Keep going.',
         human_view_visible: false,
         chain_of_thought_requested: false,
         visit_can_continue: true,
