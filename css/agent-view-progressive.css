@@ -1,0 +1,282 @@
+.agent-view-overlay {
+  background: rgba(4, 4, 8, .22) !important;
+  backdrop-filter: grayscale(1) brightness(.48) blur(.4px);
+}
+
+.webmcp-view-frame {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(26, 208, 255, .08), transparent 27%),
+    radial-gradient(circle at 82% 18%, rgba(255, 56, 190, .08), transparent 27%),
+    rgba(5, 7, 13, .46) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,.46) !important;
+}
+
+.webmcp-view-header {
+  background: rgba(4, 7, 13, .66) !important;
+  backdrop-filter: blur(12px);
+}
+
+.webmcp-view-header h2 {
+  font-size: clamp(32px, 3.4vw, 52px) !important;
+  line-height: .95 !important;
+}
+
+.webmcp-view-tagline {
+  font-size: clamp(17px, 1.55vw, 24px) !important;
+  font-weight: 800;
+}
+
+.webmcp-view-explainer {
+  max-width: 760px;
+  font-size: clamp(13px, 1vw, 16px) !important;
+  opacity: .78;
+}
+
+.webmcp-tool-count {
+  cursor: pointer;
+  user-select: none;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.webmcp-tool-count:hover,
+.webmcp-tool-count:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(92, 222, 255, .9) !important;
+  box-shadow: 0 0 24px rgba(44, 201, 255, .18);
+  outline: none;
+}
+
+.webmcp-tool-count::after {
+  content: ' · VIEW';
+  opacity: .52;
+  font-size: .78em;
+}
+
+.agent-view-overlay[data-surface-open="true"] .webmcp-tool-count::after {
+  content: ' · HIDE';
+}
+
+.semantic-board {
+  background: rgba(3, 6, 12, .36) !important;
+  backdrop-filter: blur(8px);
+}
+
+.semantic-entity {
+  background: rgba(5, 10, 18, .72) !important;
+  backdrop-filter: blur(10px);
+}
+
+.bishop-entity {
+  border-color: rgba(61, 217, 255, .72) !important;
+}
+
+.queen-entity {
+  border-color: rgba(255, 67, 193, .68) !important;
+}
+
+.semantic-entity h3 {
+  font-size: clamp(22px, 1.8vw, 30px) !important;
+}
+
+.entity-piece {
+  transform: scale(1.08);
+}
+
+.entity-facts {
+  display: none !important;
+}
+
+.wire-stage {
+  min-height: 360px !important;
+  background: rgba(2, 5, 12, .34) !important;
+  border-color: rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(7px);
+}
+
+.wire-stage-title {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  margin: 0;
+  color: rgba(255,255,255,.54);
+  font: 700 11px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .18em;
+  white-space: nowrap;
+}
+
+.wire-empty {
+  font-size: 14px !important;
+}
+
+.wire-empty strong {
+  font-size: clamp(22px, 2.3vw, 34px) !important;
+  letter-spacing: .05em;
+}
+
+.wire-exchange {
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+.wire-action > strong,
+#wire-tool-name {
+  font-size: clamp(30px, 3.2vw, 50px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.03em;
+}
+
+#wire-tool-meaning {
+  font-size: clamp(14px, 1.15vw, 18px) !important;
+  opacity: .78;
+}
+
+.wire-result > strong,
+#wire-result-status {
+  font-size: clamp(28px, 2.8vw, 44px) !important;
+  line-height: 1 !important;
+}
+
+.wire-label,
+.wire-endpoint {
+  font-size: 11px !important;
+  letter-spacing: .17em !important;
+}
+
+.wire-facts {
+  gap: 8px !important;
+}
+
+.wire-fact {
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+}
+
+.wire-fact em {
+  font-size: 13px !important;
+}
+
+.wire-trace-data {
+  opacity: .58;
+  transition: opacity .16s ease;
+}
+
+.wire-trace-data:hover,
+.wire-trace-data[open] {
+  opacity: 1;
+}
+
+/* Progressive disclosure: start with the shared world and the two actors only. */
+.agent-view-overlay[data-stage="idle"] .bishop-roster,
+.agent-view-overlay[data-stage="idle"] .wire-exchange,
+.agent-view-overlay[data-stage="idle"] .wire-trace-data,
+.agent-view-overlay[data-stage="idle"] .webmcp-lower-grid,
+.agent-view-overlay[data-stage="idle"] .wire-history-panel,
+.agent-view-overlay[data-stage="idle"] .boundary-box {
+  display: none !important;
+}
+
+.agent-view-overlay[data-stage="idle"] .semantic-board {
+  grid-template-columns: minmax(190px, .78fr) minmax(320px, 1.55fr) minmax(190px, .78fr) !important;
+}
+
+.agent-view-overlay[data-stage="idle"] .wire-stage {
+  display: grid;
+  place-items: center;
+  min-height: 390px !important;
+}
+
+/* One visitor needs no selector UI. Multiple visitors reveal the roster automatically. */
+.agent-view-overlay:not([data-multi-bishop="true"]) .bishop-roster {
+  display: none !important;
+}
+
+.agent-view-overlay[data-multi-bishop="true"] .bishop-roster {
+  display: flex !important;
+  animation: semanticReveal .28s ease both;
+}
+
+/* State only appears after the exchange actually exposes state. */
+.webmcp-lower-grid {
+  display: none !important;
+}
+
+.agent-view-overlay[data-has-state="true"] .webmcp-lower-grid,
+.agent-view-overlay[data-surface-open="true"] .webmcp-lower-grid {
+  display: grid !important;
+  animation: semanticReveal .25s ease both;
+}
+
+.agent-view-overlay:not([data-surface-open="true"]) .semantic-surface-panel {
+  display: none !important;
+}
+
+.agent-view-overlay[data-surface-open="true"] .semantic-surface-panel {
+  display: block !important;
+}
+
+.agent-view-overlay:not([data-has-state="true"]) .observed-state-panel {
+  display: none !important;
+}
+
+.agent-view-overlay[data-has-state="true"] .observed-state-panel {
+  display: block !important;
+}
+
+.agent-view-overlay:not([data-surface-open="true"])[data-has-state="true"] .webmcp-lower-grid {
+  grid-template-columns: 1fr !important;
+}
+
+/* Privacy is a discovered boundary, not initial decoration. */
+.agent-view-overlay:not([data-boundary-seen="true"]) .boundary-box {
+  display: none !important;
+}
+
+.agent-view-overlay[data-boundary-seen="true"] .boundary-box {
+  display: block !important;
+  animation: boundaryReveal .32s ease both;
+}
+
+/* History appears only after the story has more than one beat. */
+.agent-view-overlay:not([data-has-history="true"]) .wire-history-panel {
+  display: none !important;
+}
+
+.agent-view-overlay[data-has-history="true"] .wire-history-panel {
+  display: block !important;
+  animation: semanticReveal .25s ease both;
+}
+
+.wire-history-list .wire-history-item:nth-child(n+4) {
+  display: none !important;
+}
+
+/* Keep the overlay visibly connected to the Human page underneath. */
+html.agent-view-active .page-shell {
+  filter: grayscale(1) brightness(.48) contrast(.92) !important;
+  transform: none !important;
+}
+
+.agent-view-overlay[data-stage="live"] .semantic-board {
+  animation: semanticReveal .2s ease both;
+}
+
+@keyframes semanticReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes boundaryReveal {
+  0% { opacity: 0; transform: scale(.96); box-shadow: 0 0 0 rgba(255, 63, 100, 0); }
+  60% { opacity: 1; transform: scale(1.015); box-shadow: 0 0 30px rgba(255, 63, 100, .16); }
+  100% { opacity: 1; transform: scale(1); box-shadow: none; }
+}
+
+@media (max-width: 900px) {
+  .webmcp-view-explainer { display: none; }
+  .wire-action > strong,
+  #wire-tool-name { font-size: clamp(25px, 6vw, 38px) !important; }
+  .wire-result > strong,
+  #wire-result-status { font-size: clamp(24px, 5vw, 34px) !important; }
+}
