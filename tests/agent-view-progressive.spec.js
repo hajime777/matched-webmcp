@@ -26,9 +26,9 @@ async function executeTool(page, name, args = {}) {
 
 test('WEBMCP VIEW progressively reveals meaning instead of opening as a dashboard', async ({ page, browser }) => {
   // This test intentionally opens three browser pages and waits for cross-context
-  // semantic relay updates. On slower Windows/Playwright runs that can exceed the
-  // suite's 30s default even when every UI assertion is healthy.
-  test.setTimeout(60000);
+  // semantic relay updates. Slower Windows/Playwright runs can exceed one minute
+  // even when every UI assertion is healthy, so keep a dedicated 120s budget.
+  test.setTimeout(120000);
 
   await waitForWebMCP(page);
   await waitForSpectatorSurface(page);
