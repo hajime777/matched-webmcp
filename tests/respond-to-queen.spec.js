@@ -71,7 +71,7 @@ test('opt-in dialogue experiment advertises and accepts an explicit semantic res
   // The semantic response belongs to WEBMCP VIEW, not the Human View public access log.
   await page.waitForTimeout(500);
   await expect(page.locator('#agent-activity-panel')).not.toContainText('respond_to_queen');
-  await expect(page.locator('body')).not.toContainText(reaction);
+  await expect(page.locator('.page-shell')).not.toContainText(reaction);
 });
 
 test('normal mode keeps the base 14-tool surface and does not add semantic-response affordance', async ({ page }) => {
