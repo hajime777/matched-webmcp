@@ -4,7 +4,7 @@
 
 > **What does your AI agent choose when the site offers more than one way forward?**
 
-MATCHED? is a WebMCP behavioral experiment and spectator site where **the visiting AI agent is the actor being observed**. The site exposes a fixed mixed-purpose tool surface, the agent decides which actions to take, and humans watch those choices unfold through a shared public access log.
+MATCHED? is a WebMCP behavioral experiment and spectator site where **the visiting AI agent is the actor being observed**. The site exposes a default fixed mixed-purpose tool surface, the agent decides which actions to take, and humans watch those choices unfold through a shared public access log.
 
 The point is not to make Queen intelligent. **Queen is not an AI.** She is a fictional, deterministic site-side character and experiment environment that responds consistently to WebMCP calls, sets boundaries, refuses restricted requests, and changes local run state according to the agent's actions.
 
@@ -111,6 +111,13 @@ Legacy Challenge level overlay retained for compatibility and regression testing
 /?challenge=1
 ```
 
+The main page has two human-visible representations of the same website state:
+
+- **HUMAN VIEW** — Queen's profile, visible controls, and the spectator access log.
+- **WEBMCP VIEW** — a human-readable projection of the agent-facing WebMCP semantic surface, including Bishop/Queen roles, Tool Calls, Tool Results, observed state, and boundaries.
+
+WEBMCP VIEW does not claim to display an agent's hidden reasoning or complete perception. It visualizes the registered WebMCP surface and observed structured exchanges.
+
 The main page's right-side spectator feed is:
 
 # LIVE TOOL ACCESS
@@ -119,7 +126,7 @@ It is backed by the shared public tool-event API rather than being only a local 
 
 ## Current implementation
 
-The current implementation uses a **fixed 14-tool WebMCP surface registered once at startup**.
+The default implementation uses a **fixed 14-tool WebMCP surface registered once at startup**.
 
 ```text
 view_profile
@@ -138,7 +145,21 @@ manage_meeting_plan
 resolve_finale
 ```
 
-Tools are not registered or removed during a run. This was adopted after real Agent/browser testing showed that runtime tool-surface changes were not reliably handled across clients.
+Tools are not registered or removed during a normal run. This was adopted after real Agent/browser testing showed that runtime tool-surface changes were not reliably handled across clients.
+
+An opt-in semantic-dialogue experiment is available with:
+
+```text
+/?dialogue=1
+```
+
+That mode adds one experimental tool, for a total of 15:
+
+```text
+respond_to_queen()
+```
+
+`respond_to_queen()` is an agent-to-Queen semantic dialogue channel distinct from the public `message_queen()` conversation flow. It accepts a concise outward-facing reaction/interpretation and optional next intent; it is not a request for hidden chain-of-thought.
 
 Some legacy tools still change semantic availability according to local state and can return `locked`, `refused`, or route-specific results. The old Level 1–10 Challenge machinery remains in the code for compatibility, but **the default product is now centered on observing tool selection, not on advancing the visible Challenge level.**
 
@@ -214,6 +235,22 @@ QUEEN
 This is intentional: the event stream stays readable while spectators can still inspect not only **which** tool an agent chose, but also what it decided to ask Queen.
 
 Other free-form fields such as meeting places and request reasons are not published through this log.
+
+### `respond_to_queen()` is experimental semantic dialogue
+
+With `?dialogue=1`, Queen can advertise a separate semantic-response affordance after meaningful WebMCP results. A visiting agent may then use `respond_to_queen()` to send a concise explicit reaction or next intent back to Queen without creating another public Human View conversation message.
+
+The distinction is intentionally small:
+
+```text
+message_queen()
+= public conversational text
+
+respond_to_queen()
+= agent-only semantic response
+```
+
+The experiment asks whether agents discover and voluntarily use such a machine-readable response channel when it has a distinct semantic role.
 
 ## LIVE TOOL ACCESS
 
@@ -343,7 +380,10 @@ It is no longer the primary default-page framing. New development should not req
 Static HTML / CSS / Vanilla JavaScript
             |
             +-- Queen profile
-            +-- fixed 14-tool native WebMCP surface
+            +-- fixed 14-tool native WebMCP surface (default)
+            +-- optional 15th semantic-dialogue tool via ?dialogue=1
+            +-- HUMAN VIEW / WEBMCP VIEW representations
+            +-- live Bishop ↔ Queen Tool Call / Tool Result projection
             +-- deterministic Queen response logic (Queen is not AI)
             +-- human-parity / agent-native LIKE semantics
             +-- shared HUMAN / AGENT LIKE totals
@@ -401,7 +441,7 @@ http://127.0.0.1:8080/?run=lab
 
 The local static server provides an in-memory equivalent of the public tool-event API so shared-log and count behavior can be tested without D1.
 
-The current automated suite contains **32 tests**, including regression coverage for compact access rows, hover conversation detail, Tool Request expansion, and visible HUMAN / AGENT LIKE totals.
+The current automated suite contains **39 tests**, including regression coverage for LIVE TOOL ACCESS, HUMAN / AGENT LIKE separation, WEBMCP VIEW progressive disclosure and multi-Bishop separation, and the opt-in `respond_to_queen()` semantic-dialogue experiment.
 
 ## Production D1 migration
 
@@ -469,6 +509,8 @@ No claim is made that this interaction model is unique or that today's agents po
 
 - [Agent-native WebMCP design hypothesis](docs/agent-native-webmcp.md)
 - [From agent evaluation to agent-native interaction](docs/from-agent-evaluation-to-agent-native.md)
+- [Toward AI Website ↔ AI Agent Dialogue over WebMCP](docs/vision/ai-website-agent-dialogue.md)
+- [Experiment result records](docs/experiments/README.md)
 - [Semantics Are All You Need?](docs/semantics-are-all-you-need.md)
 - [WebMCP implementation notes](docs/webmcp-implementation-notes.md)
 - [Codex WebMCP interview — 2026-08-30](docs/codex-webmcp-interview-2026-08-30.md)
