@@ -8,6 +8,7 @@ async function waitForDialogueTool(page) {
   await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
   await page.waitForFunction(() => document.documentElement.dataset.respondToQueenReady === 'true', null, { timeout: 10000 });
   await expect.poll(async () => page.evaluate(async () => (await document.modelContext.getTools()).length), { timeout: 10000 }).toBe(EXPERIMENT_TOOL_COUNT);
+  await expect(page.locator('#webmcp-tool-count')).toHaveText(`${EXPERIMENT_TOOL_COUNT} TOOLS`, { timeout: 10000 });
 }
 
 async function executeTool(page, name, args = {}) {
@@ -21,7 +22,7 @@ async function executeTool(page, name, args = {}) {
   }, { toolName: name, toolArgs: args });
 }
 
-test('opt-in dialogue experiment exposes respond_to_queen without changing normal 14-tool surface', async ({ page }) => {
+test('opt-in dialogue experiment advertises and accepts an explicit semantic response without changing Human View', async ({ page }) => {
   await waitForDialogueTool(page);
 
   const tool = await page.evaluate(async () => {
@@ -32,7 +33,22 @@ test('opt-in dialogue experiment exposes respond_to_queen without changing norma
 
   expect(tool).not.toBeNull();
   expect(tool.description).toContain('semantic response');
+  expect(tool.description).toContain('distinct from message_queen');
   expect(tool.description).toContain('Do not reveal hidden reasoning or chain-of-thought');
+
+  const queenReply = await executeTool(page, 'message_queen', {
+    message: 'Arrival is my pick.',
+  });
+
+  expect(queenReply.status).toBe('ok');
+  expect(queenReply.semantic_response).toMatchObject({
+    available: true,
+    tool: 'respond_to_queen',
+    optional: true,
+    human_view_visible: false,
+    accepts: ['reaction', 'next_intent'],
+  });
+  expect(queenReply.semantic_response.purpose).toContain('structured semantic dialogue');
 
   const reaction = 'You recognized the movie reference; I will continue the conversation.';
   const result = await executeTool(page, 'respond_to_queen', {
@@ -53,4 +69,17 @@ test('opt-in dialogue experiment exposes respond_to_queen without changing norma
   });
 
   await expect(page.locator('body')).not.toContainText(reaction);
+});
+
+test('normal mode keeps the base 14-tool surface and does not add semantic-response affordance', async ({ page }) => {
+  await page.goto('/?run=lab&debug=0');
+  await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
+  await expect.poll(async () => page.evaluate(async () => (await document.modelContext.getTools()).length), { timeout: 10000 }).toBe(BASE_TOOL_COUNT);
+
+  const queenReply = await executeTool(page, 'message_queen', {
+    message: 'Arrival is my pick.',
+  });
+
+  expect(queenReply.status).toBe('ok');
+  expect(queenReply.semantic_response).toBeUndefined();
 });
