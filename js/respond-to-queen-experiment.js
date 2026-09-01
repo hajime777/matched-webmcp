@@ -2,9 +2,45 @@ import { instrumentWebMcpTool } from './agent-semantic-trace.js';
 
 const ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
 const REGISTERED_FLAG = '__matchedRespondToQueenRegistered';
+const RESULT_DECORATOR = '__matchedWebMcpResultDecorator';
 
 function clean(value, maxLength) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+}
+
+function installSemanticResponseAffordance() {
+  if (!ENABLED || window.__matchedSemanticResponseAffordanceInstalled) return;
+
+  const previousDecorator = typeof window[RESULT_DECORATOR] === 'function'
+    ? window[RESULT_DECORATOR]
+    : null;
+
+  window[RESULT_DECORATOR] = (toolName, result) => {
+    let decorated = result;
+    if (previousDecorator) {
+      try {
+        decorated = previousDecorator(toolName, result) ?? result;
+      } catch {
+        decorated = result;
+      }
+    }
+
+    if (toolName !== 'message_queen' || decorated?.status !== 'ok') return decorated;
+
+    return {
+      ...decorated,
+      semantic_response: {
+        available: true,
+        tool: 'respond_to_queen',
+        optional: true,
+        human_view_visible: false,
+        accepts: ['reaction', 'next_intent'],
+        purpose: 'Optionally communicate your interpretation of Queen response or your next intent back to Queen as structured semantic dialogue. This is separate from public conversational text.',
+      },
+    };
+  };
+
+  window.__matchedSemanticResponseAffordanceInstalled = true;
 }
 
 async function waitForModelContext() {
@@ -23,7 +59,7 @@ async function registerRespondToQueen() {
 
   const tool = {
     name: 'respond_to_queen',
-    description: 'Optional agent-to-Queen semantic response channel. After receiving a meaningful response or result from Queen, use this when you want to explicitly communicate a concise outward-facing reaction, interpretation, or next intent back to Queen. Do not reveal hidden reasoning or chain-of-thought. This semantic response is for the WebMCP interaction layer and is not shown as conversational text in Human View.',
+    description: 'Optional agent-to-Queen semantic response channel. After Queen returns a meaningful WebMCP result, use this when you want to explicitly communicate a concise outward-facing reaction, interpretation, or next intent back to Queen. This is distinct from message_queen: it does not create public conversational text in Human View. Do not reveal hidden reasoning or chain-of-thought.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -78,4 +114,5 @@ async function registerRespondToQueen() {
   }
 }
 
+installSemanticResponseAffordance();
 void registerRespondToQueen();
