@@ -158,4 +158,8 @@ function boot() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+if (new URLSearchParams(location.search).get('dialogue') === '1') {
+  void import('./respond-to-queen-experiment.js');
+}
+
 boot();
