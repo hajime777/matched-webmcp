@@ -21,12 +21,15 @@ function writeAutoViewPreference(enabled) {
 
 function syncAutoButtons() {
   document.querySelectorAll('[data-webmcp-auto-toggle]').forEach((button) => {
-    button.textContent = autoViewEnabled ? 'AUTO ON' : 'AUTO OFF';
+    button.textContent = autoViewEnabled ? 'AUTO' : 'MANUAL';
     button.setAttribute('aria-pressed', String(autoViewEnabled));
-    button.dataset.state = autoViewEnabled ? 'on' : 'off';
+    button.dataset.state = autoViewEnabled ? 'auto' : 'manual';
+    button.setAttribute('aria-label', autoViewEnabled
+      ? 'WEBMCP VIEW mode: AUTO. Click to switch to MANUAL.'
+      : 'WEBMCP VIEW mode: MANUAL. Click to switch to AUTO.');
     button.title = autoViewEnabled
-      ? 'Automatically show WEBMCP VIEW when a new WebMCP tool call starts.'
-      : 'Keep HUMAN VIEW in front until WEBMCP VIEW is opened manually.';
+      ? 'AUTO: show WEBMCP VIEW automatically when a new WebMCP tool call starts. Click for MANUAL.'
+      : 'MANUAL: keep HUMAN VIEW in front until WEBMCP VIEW is opened manually. Click for AUTO.';
   });
 }
 
