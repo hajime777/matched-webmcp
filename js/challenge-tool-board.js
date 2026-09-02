@@ -190,6 +190,22 @@ function recordTrace(event) {
   scheduleRender();
 }
 
+function observeSelectedBishop() {
+  const target = document.querySelector('#webmcp-bishop-id');
+  if (!target) return;
+
+  // Local WEBMCP VIEW intentionally consumes the relayed event stream, while
+  // this board records the immediate browser trace. The relay can select the
+  // Bishop a few hundred milliseconds later, so re-render exactly when that
+  // displayed selection changes instead of observing the whole DOM.
+  const observer = new MutationObserver(() => scheduleRender());
+  observer.observe(target, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
+}
+
 function startStartupSync() {
   let attempts = 0;
   const timer = window.setInterval(() => {
@@ -205,6 +221,7 @@ if (enabled) {
   document.addEventListener('click', (event) => {
     if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
   });
+  observeSelectedBishop();
   startStartupSync();
   scheduleRender();
 }
