@@ -18,6 +18,10 @@ async function waitForSpectatorSurface(page) {
   await expect(page.locator('#webmcp-tool-count')).toHaveText(`${FIXED_TOOL_COUNT} TOOLS`, { timeout: 10000 });
 }
 
+function currentOrigin(page) {
+  return new URL(page.url()).origin;
+}
+
 async function executeTool(page, name, args = {}) {
   return page.evaluate(async ({ toolName, toolArgs }) => {
     const tools = await document.modelContext.getTools();
@@ -38,7 +42,8 @@ test('WEBMCP VIEW turns a real separate-context exchange into Bishop-to-Queen se
   await waitForWebMCP(page);
   await waitForSpectatorSurface(page);
 
-  const agentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const baseURL = currentOrigin(page);
+  const agentContext = await browser.newContext({ baseURL });
   const agentPage = await agentContext.newPage();
   await waitForWebMCP(agentPage);
 
@@ -89,8 +94,9 @@ test('WEBMCP VIEW keeps simultaneous Bishops separated and lets the spectator ch
   await waitForSpectatorSurface(page);
   await page.locator('#agent-view-toggle').click();
 
-  const contextA = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
-  const contextB = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const baseURL = currentOrigin(page);
+  const contextA = await browser.newContext({ baseURL });
+  const contextB = await browser.newContext({ baseURL });
   const agentA = await contextA.newPage();
   const agentB = await contextB.newPage();
   await Promise.all([
