@@ -1,71 +1,103 @@
 .challenge-tool-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin: -1px 0 8px;
+  gap: 6px;
+  margin: -1px 0 10px;
   color: #708394;
   font: 800 8px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   letter-spacing: .08em;
 }
 
 .challenge-tool-legend span {
-  padding: 3px 6px;
+  padding: 4px 7px;
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 999px;
   background: rgba(255,255,255,.025);
 }
 
-.challenge-tool-legend .is-called {
+.challenge-tool-legend .is-called,
+.challenge-tool-legend .is-live {
   color: #72e7ff;
   border-color: rgba(91,225,255,.34);
 }
 
-.challenge-tool-legend .is-locked {
-  color: #ffd27c;
-  border-color: rgba(255,205,106,.34);
-}
-
-.challenge-tool-legend .is-refused {
-  color: #ff9cab;
+.challenge-tool-legend .is-blocked {
+  color: #ffb3be;
   border-color: rgba(255,106,130,.34);
 }
 
+/* The tool board is now the single primary lower panel in WEBMCP VIEW. */
+.agent-view-overlay .webmcp-lower-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.agent-view-overlay .observed-state-panel,
+.agent-view-overlay .wire-history-panel {
+  display: none;
+}
+
+.agent-view-overlay .semantic-surface-panel {
+  padding: 10px 12px 12px;
+}
+
+.agent-view-overlay .semantic-surface-panel .panel-title-row {
+  margin-bottom: 7px;
+}
+
+.agent-view-overlay .semantic-surface-panel .panel-title-row h3 {
+  font-size: 10px;
+}
+
+/* The earlier waiting preview is intentionally suppressed now that the same
+   real WebMCP surface is always visible in the lower tool board. */
 .challenge-waiting-tools {
-  width: min(100%, 680px);
+  display: none !important;
+}
+
+/* Flatten the semantic groups into one scan-friendly list while keeping the
+   original grouping and DOM structure intact for internal logic/tests. */
+.agent-view-overlay .semantic-tool-groups {
   display: grid;
-  gap: 6px;
-  margin-top: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 8px;
 }
 
-.challenge-waiting-tools-label {
-  color: #7fe7ff;
-  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: .12em;
+.agent-view-overlay .semantic-tool-group,
+.agent-view-overlay .semantic-tool-list {
+  display: contents;
 }
 
-.challenge-waiting-tool-list {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px 6px;
-}
-
-.challenge-waiting-tool {
-  min-width: 0;
-  padding: 4px 6px;
-  overflow: hidden;
-  border: 1px solid rgba(91,225,255,.16);
-  border-radius: 6px;
-  background: rgba(22,84,104,.12);
-  color: #a8d7e7;
-  font: 700 7.5px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.agent-view-overlay .semantic-tool-group h4 {
+  display: none;
 }
 
 .semantic-tool-chip {
   position: relative;
+}
+
+.agent-view-overlay .semantic-tool-chip {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font: 800 9.5px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: left;
+}
+
+.agent-view-overlay .semantic-tool-chip::before {
+  content: '○';
+  flex: 0 0 auto;
+  width: 12px;
+  color: #60788a;
+  font-size: 11px;
+  text-align: center;
+}
+
+.agent-view-overlay .semantic-tool-chip[data-call-count]:not([data-call-count="0"])::before {
+  content: '✓';
+  color: #72e7ff;
 }
 
 .semantic-tool-chip.is-called,
@@ -89,18 +121,36 @@
   background: rgba(133,24,45,.18);
 }
 
+.agent-view-overlay .semantic-tool-chip.is-locked::before,
+.agent-view-overlay .semantic-tool-chip.is-refused::before,
+.agent-view-overlay .semantic-tool-chip.is-error::before {
+  content: '!';
+  color: currentColor;
+}
+
 .semantic-tool-chip.is-live {
   outline: 2px solid rgba(255,255,255,.88);
   outline-offset: 2px;
 }
 
+.agent-view-overlay .semantic-tool-chip.is-live::before {
+  content: '▶';
+  color: #fff;
+  font-size: 9px;
+}
+
+/* Keep detailed status text in the DOM for accessibility and automated tests,
+   but do not clutter the spectator-facing board. */
 .challenge-tool-state {
-  display: block;
-  margin-top: 3px;
-  color: currentColor;
-  opacity: .72;
-  font: 800 7px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: .04em;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .semantic-tool-group.is-dialogue {
@@ -112,8 +162,18 @@
   color: #cdb1ff;
 }
 
-@media (max-width: 720px) {
-  .challenge-waiting-tool-list {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  .agent-view-overlay .semantic-tool-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .agent-view-overlay .semantic-tool-chip {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 620px) {
+  .agent-view-overlay .semantic-tool-groups {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
