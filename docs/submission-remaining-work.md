@@ -51,7 +51,8 @@ Current implementation facts:
 - ○ Observatory traffic hardening verified: 15-second refresh while visible, no hidden-tab polling, and no overlapping refresh requests.
 - ○ Focused public-readiness / Challenge suite: **9 / 9 passed** on the integration branch.
 - ○ Scoring / ending audit completed; current scores are retained as gameplay heuristics, not scientific measures of morality/personality/safety.
-- × Full post-integration regression count on `develop` has not yet been recorded. Previous verified baseline was 39 / 39.
+- ○ Full integration-branch Playwright regression passed: **48 / 48** on the configured local test port 8090.
+- × Full post-merge regression on `develop` has not yet been recorded.
 
 Reports:
 
@@ -335,12 +336,13 @@ Optional only after core work:
 ### Automated tests
 
 - × Run full WebMCP regression suite after integration to `develop`.
+- ○ Run full WebMCP regression suite on the integration branch: **48 / 48 passed**.
 - ○ Run startup-surface test on the integration branch.
 - ○ Run full Challenge-continuity test on the integration branch.
 - ○ Run focused Challenge spectator/cross-window suite: 6 / 6 passed.
 - ○ Run focused public multi-visitor suite: 7 / 7 passed.
 - ○ Run focused public-load / Observatory hardening suite: 9 / 9 passed.
-- × Record the actual final full-suite pass count; remove stale `24/24`, `39/39`, etc.
+- ○ Record the current integration-branch full-suite pass count: **48 / 48**.
 
 ### Public smoke test
 
@@ -414,7 +416,7 @@ Public log + Observatory load hardening COMPLETE
         ↓
 Scoring / ending audit COMPLETE
         ↓
-Run full integration-branch regression
+Full integration-branch regression COMPLETE (48 / 48)
         ↓
 Merge/squash current integration branch into develop
         ↓
