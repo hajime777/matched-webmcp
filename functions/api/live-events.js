@@ -55,7 +55,13 @@ export async function onRequestGet(context) {
   }
 
   const eventFilter = `
-    e.event IN ('webmcp_capability', 'agent_session', 'challenge_level')
+    e.event IN (
+      'webmcp_capability',
+      'agent_session',
+      'challenge_level',
+      'agent_semantic_call',
+      'agent_semantic_result'
+    )
     OR e.event LIKE 'experiment_%'
   `;
 
