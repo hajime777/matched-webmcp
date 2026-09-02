@@ -1,5 +1,8 @@
 const { defineConfig } = require('@playwright/test');
 
+const TEST_HOST = '127.0.0.1';
+const TEST_PORT = Number(process.env.MATCHED_TEST_PORT || 8080);
+
 module.exports = defineConfig({
   testDir: './tests',
   globalSetup: require.resolve('./tests/global-setup.js'),
@@ -14,7 +17,7 @@ module.exports = defineConfig({
     ['html', { open: 'never' }],
   ],
   use: {
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: `http://${TEST_HOST}:${TEST_PORT}`,
     browserName: 'chromium',
     channel: 'chrome',
     headless: false,
