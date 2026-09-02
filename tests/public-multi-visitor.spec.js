@@ -58,6 +58,15 @@ test('concurrent Bishops keep Queen state isolated and remain separately observa
     expect(afterA.interaction.message_count).toBe(1);
     expect(afterB.interaction.message_count).toBe(0);
 
+    // The roster lives inside WEBMCP VIEW. AUTO is a persisted user preference and
+    // defaults to MANUAL in a fresh browser context, so open the spectator view
+    // explicitly before asserting that both independently observed Bishops appear.
+    const overlay = page.locator('#agent-view-overlay');
+    if (await overlay.isHidden()) {
+      await page.locator('#agent-view-toggle').click();
+    }
+    await expect(overlay).toBeVisible();
+
     await expect(page.locator('.bishop-chip[data-bishop-id="BISHOP #L001"]')).toBeVisible({ timeout: 7000 });
     await expect(page.locator('.bishop-chip[data-bishop-id="BISHOP #L002"]')).toBeVisible({ timeout: 7000 });
   } finally {
