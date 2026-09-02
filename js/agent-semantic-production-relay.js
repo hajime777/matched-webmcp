@@ -5,6 +5,7 @@ const BUFFER_TTL_MS = 15000;
 let lastRemoteEventId = 0;
 let remoteTraceReady = false;
 let remotePolling = false;
+const remoteTraceStartedAt = Date.now();
 const localTraceIds = new Set();
 const remoteCallIds = new Set();
 const bufferedResults = new Map();
@@ -87,11 +88,9 @@ function publishRemoteTrace(event) {
   }));
 }
 
-function flushExpiredResults(now = Date.now()) {
+function pruneExpiredResults(now = Date.now()) {
   for (const [traceId, entry] of bufferedResults) {
-    if (now - entry.bufferedAt < BUFFER_TTL_MS) continue;
-    bufferedResults.delete(traceId);
-    publishRemoteTrace(entry.event);
+    if (now - entry.bufferedAt >= BUFFER_TTL_MS) bufferedResults.delete(traceId);
   }
 }
 
@@ -118,7 +117,8 @@ function consumeRemoteEvent(event) {
 
   // D1 inserts are independent observational writes. If a result becomes visible
   // before its matching call, hold it briefly so WEBMCP VIEW still receives a
-  // call -> result pair when the call row arrives on a later poll.
+  // call -> result pair when the call row arrives on a later poll. An orphaned
+  // result is discarded rather than presented without observable call evidence.
   bufferedResults.set(traceId, { event, bufferedAt: Date.now() });
 }
 
@@ -148,12 +148,15 @@ async function pollRemoteTrace() {
       return;
     }
 
+    const recoveringFromEmptyBaseline = lastRemoteEventId === 0;
     for (const event of events) {
       const id = Number(event?.id || 0);
       if (id > lastRemoteEventId) lastRemoteEventId = id;
+      const eventTime = Date.parse(event?.created_at || '') || 0;
+      if (recoveringFromEmptyBaseline && eventTime < remoteTraceStartedAt) continue;
       consumeRemoteEvent(event);
     }
-    flushExpiredResults();
+    pruneExpiredResults();
   } catch {
     // Spectator transport is observational only and must never affect WebMCP.
   } finally {
