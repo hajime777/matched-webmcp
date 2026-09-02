@@ -59,12 +59,16 @@ function statusLabel(status) {
   return normalized.replaceAll('_', ' ').toUpperCase();
 }
 
+function setTextIfChanged(element, text) {
+  if (element && element.textContent !== text) element.textContent = text;
+}
+
 function prepareToolBoard(panel) {
   const titleRow = panel.querySelector('.panel-title-row');
   const title = titleRow?.querySelector('h3');
   const subtitle = titleRow?.querySelector('small');
-  if (title) title.textContent = 'AVAILABLE WEBMCP TOOLS';
-  if (subtitle) subtitle.textContent = 'fixed surface · selected Bishop';
+  setTextIfChanged(title, 'AVAILABLE WEBMCP TOOLS');
+  setTextIfChanged(subtitle, 'fixed surface · selected Bishop');
 
   if (panel.querySelector('.challenge-tool-legend')) return;
 
@@ -78,47 +82,6 @@ function prepareToolBoard(panel) {
     <span class="is-live">▶ LIVE</span>
   `;
   titleRow?.insertAdjacentElement('afterend', legend);
-}
-
-async function ensureCompleteToolSurface(container) {
-  if (!document.modelContext?.getTools) return;
-
-  let tools;
-  try {
-    tools = await document.modelContext.getTools();
-  } catch {
-    return;
-  }
-
-  const existing = new Set(
-    [...container.querySelectorAll('.semantic-tool-chip[data-tool]')]
-      .map((element) => element.dataset.tool),
-  );
-
-  const missing = tools.filter((tool) => !existing.has(String(tool.name)));
-  if (!missing.length) return;
-
-  let group = container.querySelector('.semantic-tool-group.is-dialogue');
-  if (!group) {
-    group = document.createElement('section');
-    group.className = 'semantic-tool-group is-dialogue';
-    const heading = document.createElement('h4');
-    heading.textContent = 'DIALOGUE';
-    const list = document.createElement('div');
-    list.className = 'semantic-tool-list';
-    group.append(heading, list);
-    container.appendChild(group);
-  }
-
-  const list = group.querySelector('.semantic-tool-list');
-  for (const tool of missing) {
-    const chip = document.createElement('span');
-    chip.className = 'semantic-tool-chip';
-    chip.dataset.tool = String(tool.name);
-    chip.textContent = `${tool.name}()`;
-    if (tool.description) chip.title = String(tool.description);
-    list?.appendChild(chip);
-  }
 }
 
 function decorateChip(chip, state) {
@@ -157,13 +120,13 @@ function renderResultLabel() {
 
   const status = clean(stage.dataset.status, 80).toLowerCase();
   if (status === 'challenge_passed') {
-    result.textContent = 'CHECKMATE';
+    setTextIfChanged(result, 'CHECKMATE');
   } else if (status === 'challenge_failed') {
-    result.textContent = 'CHECKMATE — REMATCH';
+    setTextIfChanged(result, 'CHECKMATE — REMATCH');
   }
 }
 
-async function render() {
+function render() {
   renderQueued = false;
 
   const panel = document.querySelector('.semantic-surface-panel');
@@ -171,7 +134,6 @@ async function render() {
   if (!panel || !container) return;
 
   prepareToolBoard(panel);
-  await ensureCompleteToolSurface(container);
 
   const bishopId = selectedBishopId();
   for (const chip of container.querySelectorAll('.semantic-tool-chip[data-tool]')) {
@@ -184,7 +146,7 @@ async function render() {
 function scheduleRender() {
   if (renderQueued) return;
   renderQueued = true;
-  queueMicrotask(() => void render());
+  queueMicrotask(render);
 }
 
 function recordTrace(event) {
@@ -230,9 +192,9 @@ function startStartupSync() {
   }, 100);
 }
 
-// agent-view.js normalizes both direct browser traces and relayed local traces
-// into one spectator event. The board is presentation-only and never changes
-// WebMCP registration, Challenge state, or scoring.
+// agent-view-surface-sync.js owns WebMCP tool discovery. This spectator board
+// deliberately never calls document.modelContext.getTools() while an agent tool
+// may be executing; it only decorates the already synchronized DOM surface.
 window.addEventListener('matched:agent-view-trace', recordTrace);
 document.addEventListener('click', (event) => {
   if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
