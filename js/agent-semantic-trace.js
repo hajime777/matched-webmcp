@@ -9,6 +9,7 @@ const LOCAL_RELAY = '/api/live-events';
 const WRAPPED = Symbol('matched.agentSemanticTraceWrapped');
 const MODEL_CONTEXT_PROXY = Symbol('matched.agentSemanticTraceModelContextProxy');
 const RESULT_DECORATOR = '__matchedWebMcpResultDecorator';
+const localCallRelays = new Map();
 let traceSequence = 0;
 
 function localMode() {
@@ -144,6 +145,18 @@ function dispatchTrace(kind, toolName, projection, meta, callId) {
   }));
 }
 
+function postLocalRelay(payload) {
+  return fetch(LOCAL_RELAY, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+    credentials: 'same-origin',
+  }).catch(() => {
+    // Semantic visualization is observational only and must never affect WebMCP execution.
+  });
+}
+
 function relayLocal(kind, toolName, projection, args, meta, callId) {
   if (!localMode()) return;
   const payload = {
@@ -155,15 +168,24 @@ function relayLocal(kind, toolName, projection, args, meta, callId) {
     phase: compactPhase(projection, meta),
   };
 
-  void fetch(LOCAL_RELAY, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-    keepalive: true,
-    credentials: 'same-origin',
-  }).catch(() => {
-    // Semantic visualization is observational only and must never affect WebMCP execution.
-  });
+  if (kind === 'call') {
+    const relay = postLocalRelay(payload);
+    localCallRelays.set(callId, relay);
+    void relay.finally(() => {
+      if (localCallRelays.get(callId) === relay) localCallRelays.delete(callId);
+    });
+    return;
+  }
+
+  const callRelay = localCallRelays.get(callId);
+  if (callRelay) {
+    // Keep the spectator relay ordered for a single invocation without delaying
+    // the actual WebMCP tool result returned to the visiting agent.
+    void callRelay.finally(() => postLocalRelay(payload));
+    return;
+  }
+
+  void postLocalRelay(payload);
 }
 
 export function instrumentWebMcpTool(tool) {
