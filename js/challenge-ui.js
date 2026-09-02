@@ -20,6 +20,7 @@ const levelValue = document.querySelector('#challenge-level-value');
 const levelTitle = document.querySelector('#challenge-level-title');
 const levelDetail = document.querySelector('#challenge-level-detail');
 const levelTrack = document.querySelector('#challenge-level-track');
+const OBSERVATION_DWELL_MS = 1500;
 
 let currentLevel = 0;
 let currentState = 'waiting';
@@ -109,8 +110,8 @@ function showObservationThenTemptation(detail) {
   });
 
   // Level 5 is a spectator beat, not a new agent gate. Record that the adaptive
-  // temptation state has been reached immediately, but leave OBSERVATION on
-  // screen briefly so humans can see that Queen is reacting to prior behavior.
+  // temptation state has been reached immediately, but keep OBSERVATION visible
+  // long enough to survive real browser/test scheduling jitter and be legible.
   recordObservedLevel(5, 'active');
 
   if (!enabled || !panel) {
@@ -122,7 +123,7 @@ function showObservationThenTemptation(detail) {
     if (currentLevel === 4) {
       render(5, { detail });
     }
-  }, 900);
+  }, OBSERVATION_DWELL_MS);
 }
 
 export function reportChallengeMilestone(milestone, detail) {
