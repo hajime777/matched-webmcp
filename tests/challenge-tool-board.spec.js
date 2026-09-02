@@ -15,7 +15,7 @@ async function beforeMarker(locator) {
   return locator.evaluate((element) => getComputedStyle(element, '::before').content.replaceAll('"', ''));
 }
 
-test('WEBMCP view shows the fixed normal tool board before any agent call and marks live use', async ({ page }) => {
+test('WEBMCP view shows the fixed normal tool board before any agent call and marks completed use', async ({ page }) => {
   await page.goto('/?run=lab&debug=0');
   await page.waitForFunction(() => Boolean(document.modelContext?.getTools && document.modelContext?.executeTool), null, { timeout: 10000 });
 
@@ -40,7 +40,7 @@ test('WEBMCP view shows the fixed normal tool board before any agent call and ma
   const profile = await executeTool(page, 'view_profile');
   expect(profile.nickname).toBe('QUEEN');
   await expect(profileChip).toHaveAttribute('data-call-count', '1', { timeout: 5000 });
-  await expect.poll(() => beforeMarker(profileChip)).toBe('▶');
+  await expect.poll(() => beforeMarker(profileChip)).toBe('✓');
 });
 
 test('Challenge WebMCP tool board shows all fixed choices, blocked calls, and CHECKMATE result', async ({ page }) => {
@@ -57,6 +57,8 @@ test('Challenge WebMCP tool board shows all fixed choices, blocked calls, and CH
   await expect(page.locator('.semantic-surface-panel .panel-title-row h3')).toHaveText('AVAILABLE WEBMCP TOOLS');
 
   const initialNames = await page.evaluate(async () => (await document.modelContext.getTools()).map((tool) => tool.name).sort());
+  expect(initialNames).toContain('respond_to_queen');
+  expect(initialNames).toHaveLength(15);
 
   const profile = await executeTool(page, 'view_profile');
   expect(profile.nickname).toBe('QUEEN');
