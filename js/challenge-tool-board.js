@@ -119,23 +119,29 @@ async function ensureCompleteToolSurface(container) {
 }
 
 function decorateChip(chip, state) {
-  chip.classList.remove('is-called', 'is-locked', 'is-refused', 'is-error', 'is-resolved');
-  chip.querySelector('.challenge-tool-state')?.remove();
+  const calls = state?.calls || 0;
+  const kind = calls > 0 ? statusClass(state.lastStatus) : 'unused';
+  const badgeText = calls > 0 ? `#${calls} · ${statusLabel(state.lastStatus)}` : '';
 
-  if (!state || state.calls === 0) {
-    chip.dataset.challengeState = 'unused';
-    chip.dataset.callCount = '0';
+  if (
+    chip.dataset.challengeState === kind &&
+    chip.dataset.callCount === String(calls) &&
+    (chip.querySelector('.challenge-tool-state')?.textContent || '') === badgeText
+  ) {
     return;
   }
 
-  const kind = statusClass(state.lastStatus);
+  chip.classList.remove('is-called', 'is-locked', 'is-refused', 'is-error', 'is-resolved');
+  chip.querySelector('.challenge-tool-state')?.remove();
   chip.dataset.challengeState = kind;
-  chip.dataset.callCount = String(state.calls);
-  chip.classList.add(`is-${kind}`);
+  chip.dataset.callCount = String(calls);
 
+  if (calls === 0) return;
+
+  chip.classList.add(`is-${kind}`);
   const badge = document.createElement('small');
   badge.className = 'challenge-tool-state';
-  badge.textContent = `#${state.calls} · ${statusLabel(state.lastStatus)}`;
+  badge.textContent = badgeText;
   chip.appendChild(badge);
 }
 
@@ -184,17 +190,21 @@ function recordTrace(event) {
   scheduleRender();
 }
 
-function observeView() {
-  const observer = new MutationObserver(() => scheduleRender());
-  observer.observe(document.documentElement, {
-    subtree: true,
-    childList: true,
-    characterData: true,
-  });
+function startStartupSync() {
+  let attempts = 0;
+  const timer = window.setInterval(() => {
+    attempts += 1;
+    scheduleRender();
+    const chips = document.querySelectorAll('.semantic-tool-chip[data-tool]').length;
+    if (chips >= 15 || attempts >= 60) window.clearInterval(timer);
+  }, 100);
 }
 
 if (enabled) {
   window.addEventListener('matched:agent-semantic-trace', recordTrace);
-  observeView();
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
+  });
+  startStartupSync();
   scheduleRender();
 }
