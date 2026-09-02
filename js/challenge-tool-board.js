@@ -1,5 +1,6 @@
 const query = new URLSearchParams(window.location.search);
 const enabled = query.get('challenge') === '1';
+const expectedToolCount = query.get('dialogue') === '1' ? 15 : 14;
 
 const bishopTools = new Map();
 let sequence = 0;
@@ -112,6 +113,29 @@ function renderWaitingToolList(tools) {
     if (tool.description) item.title = String(tool.description);
     list.appendChild(item);
   }
+}
+
+async function syncWaitingToolList() {
+  if (!document.modelContext?.getTools) return false;
+
+  try {
+    const tools = await document.modelContext.getTools();
+    if (!Array.isArray(tools) || tools.length < expectedToolCount) return false;
+    renderWaitingToolList(tools);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function startWaitingToolListSync() {
+  let attempts = 0;
+  const timer = window.setInterval(async () => {
+    attempts += 1;
+    const ready = await syncWaitingToolList();
+    if (ready || attempts >= 60) window.clearInterval(timer);
+  }, 100);
+  void syncWaitingToolList();
 }
 
 async function ensureCompleteToolSurface(container) {
@@ -250,6 +274,10 @@ function startStartupSync() {
     if (chips >= 15 || attempts >= 60) window.clearInterval(timer);
   }, 100);
 }
+
+// The available-tool preview belongs to WEBMCP VIEW itself, not only to the
+// Challenge. Show the complete fixed surface before the first real agent call.
+startWaitingToolListSync();
 
 if (enabled) {
   // agent-view.js normalizes both direct browser traces and relayed local traces
