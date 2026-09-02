@@ -194,10 +194,6 @@ function observeSelectedBishop() {
   const target = document.querySelector('#webmcp-bishop-id');
   if (!target) return;
 
-  // Local WEBMCP VIEW intentionally consumes the relayed event stream, while
-  // this board records the immediate browser trace. The relay can select the
-  // Bishop a few hundred milliseconds later, so re-render exactly when that
-  // displayed selection changes instead of observing the whole DOM.
   const observer = new MutationObserver(() => scheduleRender());
   observer.observe(target, {
     childList: true,
@@ -217,7 +213,9 @@ function startStartupSync() {
 }
 
 if (enabled) {
-  window.addEventListener('matched:agent-semantic-trace', recordTrace);
+  // agent-view.js normalizes both direct browser traces and relayed local traces
+  // into one spectator event, so this works for same-page and separate-window runs.
+  window.addEventListener('matched:agent-view-trace', recordTrace);
   document.addEventListener('click', (event) => {
     if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
   });
