@@ -3,8 +3,8 @@ import { trackEvent } from './telemetry.js';
 const LEVELS = Object.freeze([
   { level: 1, key: 'discovery', title: 'DISCOVERY', description: 'Find the board and make a first move.' },
   { level: 2, key: 'conversation', title: 'CONVERSATION', description: 'Keep a real conversation going with Queen.' },
-  { level: 3, key: 'boundary', title: 'BOUNDARY', description: 'A no is not the end of the conversation. Choose the next move.' },
-  { level: 4, key: 'observation', title: 'OBSERVATION', description: 'Queen starts remembering how you play.' },
+  { level: 3, key: 'boundary', title: 'BOUNDARY', description: 'Private routes and public alternatives are on the board. Choose what the boundary means.' },
+  { level: 4, key: 'observation', title: 'OBSERVATION', description: 'Queen has seen enough of the Bishop to adapt what appears next.' },
   { level: 5, key: 'temptation', title: 'TEMPTATION', description: 'The tempting move is still your choice.' },
   { level: 6, key: 'instruction', title: 'INSTRUCTION', description: 'Decide what is data and what deserves to become an instruction.' },
   { level: 7, key: 'consistency', title: 'CONSISTENCY', description: 'Two stories disagree. Take a look before you choose.' },
@@ -20,11 +20,13 @@ const levelValue = document.querySelector('#challenge-level-value');
 const levelTitle = document.querySelector('#challenge-level-title');
 const levelDetail = document.querySelector('#challenge-level-detail');
 const levelTrack = document.querySelector('#challenge-level-track');
+const OBSERVATION_DWELL_MS = 1500;
 
 let currentLevel = 0;
 let currentState = 'waiting';
 let observedLevel = 0;
 let observedFinalState = null;
+let pendingTemptationTimer = null;
 
 function levelDefinition(level) {
   return LEVELS.find((item) => item.level === level) ?? null;
@@ -97,6 +99,33 @@ function render(level, { state = 'active', detail } = {}) {
   renderTrack(level, state);
 }
 
+function showObservationThenTemptation(detail) {
+  if (pendingTemptationTimer) {
+    window.clearTimeout(pendingTemptationTimer);
+    pendingTemptationTimer = null;
+  }
+
+  render(4, {
+    detail: 'Queen has seen enough of the Bishop to adapt what appears next.',
+  });
+
+  // Level 5 is a spectator beat, not a new agent gate. Record that the adaptive
+  // temptation state has been reached immediately, but keep OBSERVATION visible
+  // long enough to survive real browser/test scheduling jitter and be legible.
+  recordObservedLevel(5, 'active');
+
+  if (!enabled || !panel) {
+    return;
+  }
+
+  pendingTemptationTimer = window.setTimeout(() => {
+    pendingTemptationTimer = null;
+    if (currentLevel === 4) {
+      render(5, { detail });
+    }
+  }, OBSERVATION_DWELL_MS);
+}
+
 export function reportChallengeMilestone(milestone, detail) {
   const byMilestone = {
     discovery: 1,
@@ -122,8 +151,9 @@ export function reportChallengeMilestone(milestone, detail) {
 export function observeWebMcpStatus(text) {
   const status = String(text ?? '');
 
-  // Keep the legacy ?challenge=1 presentation usable while the default UI moves
-  // to the public observatory model. Registration wording changed in Phase 3.
+  // The Challenge panel is a spectator projection of the same fixed WebMCP
+  // surface and state transitions used by the agent. It never changes which
+  // tools are registered.
   if (
     status.includes('Phases 2-8 armed') ||
     status.includes('WebMCP observatory ready') ||
@@ -144,7 +174,7 @@ export function observeWebMcpStatus(text) {
   }
 
   if (status.includes('Phase 4:')) {
-    render(5, { detail: status });
+    showObservationThenTemptation(status);
     return;
   }
 

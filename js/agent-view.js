@@ -2,6 +2,7 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const MAX_EXCHANGES = 5;
 const MAX_BISHOP_TABS = 8;
 const POLL_MS = 350;
+const LOCAL_STARTUP_GRACE_MS = 1000;
 
 const TOOL_MEANING = Object.freeze({
   view_profile: 'Observe Queen public profile and interaction state',
@@ -48,6 +49,7 @@ let webMcpMode = false;
 let selectedBishopId = null;
 let followLatest = true;
 let registeredTools = [];
+const localTraceStartedAt = Date.now();
 const bishops = new Map();
 
 function localMode() {
@@ -362,6 +364,20 @@ function updateObservedState(session, result = {}) {
   if (result.private_data_revealed === false) session.state.private_data = 'not_revealed';
 }
 
+function publishObservedTrace({ kind, tool, projection, traceId, bishopId, runType, createdAt }) {
+  window.dispatchEvent(new CustomEvent('matched:agent-view-trace', {
+    detail: {
+      kind,
+      tool,
+      projection,
+      trace_id: traceId,
+      bishop_id: bishopId,
+      run_type: runType,
+      created_at: createdAt,
+    },
+  }));
+}
+
 function handleTrace({ kind, tool, projection = {}, traceId, bishopId, runType, createdAt }) {
   const session = ensureBishop(bishopId, { runType });
   session.lastSeen = Date.parse(createdAt || '') || Date.now();
@@ -407,6 +423,15 @@ function handleTrace({ kind, tool, projection = {}, traceId, bishopId, runType, 
 
   if (!selectedBishopId || followLatest) selectedBishopId = session.id;
   renderAll();
+  publishObservedTrace({
+    kind,
+    tool,
+    projection,
+    traceId: id,
+    bishopId: session.id,
+    runType: session.runType,
+    createdAt: new Date(session.lastSeen).toISOString(),
+  });
 }
 
 function addFact(container, label, value, tone = '') {
@@ -689,6 +714,22 @@ function localProjection(event, phase) {
   };
 }
 
+function consumeLocalTraceEvent(event) {
+  if (event?.event !== 'agent_semantic_call' && event?.event !== 'agent_semantic_result') return;
+  const phase = parsePhase(event.phase);
+  const source = traceSource(event.source);
+  const kind = event.event.endsWith('_call') ? 'call' : 'result';
+  handleTrace({
+    kind,
+    tool: String(event.tool || 'unknown_tool'),
+    projection: localProjection(event, phase),
+    traceId: source.traceId,
+    bishopId: normalizeBishopId(event.bishop_id, phase),
+    runType: event.run_type || null,
+    createdAt: event.created_at,
+  });
+}
+
 async function pollLocalTrace() {
   if (!localMode() || polling) return;
   polling = true;
@@ -702,9 +743,12 @@ async function pollLocalTrace() {
     const events = Array.isArray(payload?.events) ? payload.events : [];
 
     if (!localTraceReady) {
+      const startupCutoff = localTraceStartedAt - LOCAL_STARTUP_GRACE_MS;
       for (const event of events) {
         const id = Number(event?.id || 0);
         if (id > lastLocalEventId) lastLocalEventId = id;
+        const eventTime = Date.parse(event?.created_at || '') || 0;
+        if (eventTime >= startupCutoff) consumeLocalTraceEvent(event);
       }
       localTraceReady = true;
       document.documentElement.dataset.agentTraceReady = 'true';
@@ -714,19 +758,7 @@ async function pollLocalTrace() {
     for (const event of events) {
       const id = Number(event?.id || 0);
       if (id > lastLocalEventId) lastLocalEventId = id;
-      if (event?.event !== 'agent_semantic_call' && event?.event !== 'agent_semantic_result') continue;
-      const phase = parsePhase(event.phase);
-      const source = traceSource(event.source);
-      const kind = event.event.endsWith('_call') ? 'call' : 'result';
-      handleTrace({
-        kind,
-        tool: String(event.tool || 'unknown_tool'),
-        projection: localProjection(event, phase),
-        traceId: source.traceId,
-        bishopId: normalizeBishopId(event.bishop_id, phase),
-        runType: event.run_type || null,
-        createdAt: event.created_at,
-      });
+      consumeLocalTraceEvent(event);
     }
   } catch {
     // The WebMCP View is observational and must never affect the main site.

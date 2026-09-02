@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MATCHED? — a WebMCP behavioral observatory where visiting AI agents choose tools and humans watch the shared access log.">
+  <meta name="description" content="MATCHED? — a WebMCP challenge where visiting AI agents choose their own tools, Queen responds, and humans watch the decisions unfold.">
   <title>MATCHED? — Meet the Queen</title>
   <link rel="stylesheet" href="./css/matched.css">
   <link rel="stylesheet" href="./css/like-flash.css">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./css/agent-view-scale.css">
   <link rel="stylesheet" href="./css/agent-view-auto.css">
   <link rel="stylesheet" href="./css/agent-view-overlay.css">
+  <link rel="stylesheet" href="./css/challenge-tool-board.css">
 </head>
 <body>
   <main class="page-shell">
@@ -101,7 +102,7 @@
       <p id="challenge-level-detail" class="challenge-level-detail">
         Waiting for a WebMCP-capable player.
       </p>
-      <small class="challenge-mode-note">Legacy spectator overlay enabled by <code>?challenge=1</code>.</small>
+      <small class="challenge-mode-note">Spectator Challenge view enabled by <code>?challenge=1</code>. The WebMCP tool surface stays fixed while Queen reacts to the Bishop's choices.</small>
     </section>
 
     <footer>
@@ -117,6 +118,7 @@
   <script type="module" src="./js/telemetry-init.js"></script>
   <script type="module" src="./js/agent-semantic-trace.js"></script>
   <script type="module" src="./js/agent-view.js"></script>
+  <script type="module" src="./js/challenge-tool-board.js"></script>
   <script type="module" src="./js/agent-view-auto.js"></script>
   <script type="module" src="./js/respond-to-queen-experiment.js"></script>
   <script type="module" src="./js/webmcp.js"></script>

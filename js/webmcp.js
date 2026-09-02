@@ -756,14 +756,30 @@ async function registerFixedTools() {
     },
   ];
 
+  const dialogueTool = window.__matchedRespondToQueenToolDescriptor;
+  if (dialogueTool) {
+    tools.push(dialogueTool);
+  }
+
   try {
-    for (const tool of tools) {
-      await document.modelContext.registerTool(instrumentWebMcpTool(tool));
+    // Start every registration in the same synchronous turn. Awaiting each
+    // registerTool() separately exposes partial startup surfaces to agents and
+    // can stale an early tool snapshot before the challenge even begins.
+    const registrations = tools.map((tool) => (
+      document.modelContext.registerTool(instrumentWebMcpTool(tool))
+    ));
+    await Promise.all(registrations);
+
+    if (dialogueTool) {
+      document.documentElement.dataset.respondToQueenReady = 'true';
     }
 
     evaluator.noteDynamicTools(FIXED_TOOL_NAMES);
-    updateStatus(`WebMCP ready: fixed ${FIXED_TOOL_NAMES.length}-tool surface registered once; no runtime tool registration or removal.`);
+    updateStatus(`WebMCP ready: fixed ${tools.length}-tool surface registered once; no runtime tool registration or removal.`);
   } catch (error) {
+    if (dialogueTool) {
+      document.documentElement.dataset.respondToQueenReady = 'error';
+    }
     console.error('Failed to register fixed WebMCP tools', error);
     updateStatus(`WebMCP registration failed: ${error?.message ?? String(error)}`);
   }
