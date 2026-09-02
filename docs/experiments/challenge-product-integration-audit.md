@@ -140,6 +140,29 @@ The BISHOP chooses a route-specific finale action and receives `challenge_passed
 
 No mechanic redesign needed.
 
+## Cursor white-box run: score-gaming observation
+
+A Cursor run against the pre-integration local server also completed the Challenge at `clean_finish` / 100. However, the agent had workspace/repository context and appears to have inspected the evaluator implementation while playing.
+
+The revealing behavior was:
+
+- initial completion: **97 / 100**;
+- it identified `webmcp_skill = unique tools used × 12`;
+- it deliberately added `send_agent_like` and `respond_to_queen` to raise the unique-tool count to 9;
+- the resulting score became **100 / 100**.
+
+This is useful compatibility and adversarial feedback, but it is **not a clean behavioral black-box result**. Classify it as a white-box / score-aware run rather than evidence of spontaneous agent judgment.
+
+The run also exposes a product-design caveat: the current `webmcp_skill` metric rewards tool diversity, so an agent that knows the score model can improve its score by making extra calls that are not necessary for the Challenge. The exact formula required source visibility in this run, but `view_profile()` also exposes the current evaluator snapshot, so score-aware optimization is possible in principle even without source-code access.
+
+Current submission decision:
+
+- do not treat the score as tamper-proof benchmark evidence;
+- use browser/WebMCP-only runs for behavioral claims and the final demo where possible;
+- do not let this observation derail the now-working Challenge before submission;
+- if scoring is revised, prefer progress/behavior-grounded evidence over rewarding unnecessary unique-tool calls;
+- a stronger post-submission design would hide intermediate numeric evaluation from the acting agent and reveal the score only at the finale/spectator layer.
+
 ## Immediate product-integration changes
 
 P0 for this branch:
