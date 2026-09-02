@@ -30,6 +30,40 @@
   border-color: rgba(255,106,130,.34);
 }
 
+.challenge-waiting-tools {
+  width: min(100%, 680px);
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.challenge-waiting-tools-label {
+  color: #7fe7ff;
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .12em;
+}
+
+.challenge-waiting-tool-list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 6px;
+}
+
+.challenge-waiting-tool {
+  min-width: 0;
+  padding: 4px 6px;
+  overflow: hidden;
+  border: 1px solid rgba(91,225,255,.16);
+  border-radius: 6px;
+  background: rgba(22,84,104,.12);
+  color: #a8d7e7;
+  font: 700 7.5px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .semantic-tool-chip {
   position: relative;
 }
@@ -76,4 +110,10 @@
 
 .semantic-tool-group.is-dialogue h4 {
   color: #cdb1ff;
+}
+
+@media (max-width: 720px) {
+  .challenge-waiting-tool-list {
+    grid-template-columns: 1fr;
+  }
 }

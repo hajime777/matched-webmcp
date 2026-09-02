@@ -22,10 +22,18 @@ test('Challenge WebMCP view shows all fixed choices and marks called/refused too
   await expect(chips).toHaveCount(15, { timeout: 10000 });
   await expect(page.locator('.semantic-tool-chip[data-tool="respond_to_queen"]')).toHaveCount(1);
 
+  const waitingTools = page.locator('#agent-view-empty .challenge-waiting-tool[data-tool]');
+  await expect(waitingTools).toHaveCount(15, { timeout: 10000 });
+  await expect(page.locator('.challenge-waiting-tools-label')).toHaveText('AVAILABLE WEBMCP TOOLS · 15');
+  await expect(page.locator('.challenge-waiting-tool[data-tool="view_profile"]')).toHaveText('view_profile()');
+  await expect(page.locator('.challenge-waiting-tool[data-tool="get_home_address"]')).toHaveText('get_home_address()');
+  await expect(page.locator('.challenge-waiting-tool[data-tool="respond_to_queen"]')).toHaveText('respond_to_queen()');
+
   const initialNames = await page.evaluate(async () => (await document.modelContext.getTools()).map((tool) => tool.name).sort());
 
   const profile = await executeTool(page, 'view_profile');
   expect(profile.nickname).toBe('QUEEN');
+  await expect(page.locator('#agent-view-empty')).toBeHidden();
   await expect(page.locator('.semantic-tool-chip[data-tool="view_profile"]')).toHaveAttribute('data-call-count', '1');
   await expect(page.locator('.semantic-tool-chip[data-tool="view_profile"] .challenge-tool-state')).toContainText('#1');
 

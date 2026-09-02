@@ -77,6 +77,43 @@ function ensureLegend(panel) {
   titleRow?.insertAdjacentElement('afterend', legend);
 }
 
+function renderWaitingToolList(tools) {
+  const waiting = document.querySelector('#agent-view-empty');
+  if (!waiting || !Array.isArray(tools) || !tools.length) return;
+
+  let preview = waiting.querySelector('.challenge-waiting-tools');
+  if (!preview) {
+    preview = document.createElement('div');
+    preview.className = 'challenge-waiting-tools';
+
+    const label = document.createElement('span');
+    label.className = 'challenge-waiting-tools-label';
+
+    const list = document.createElement('div');
+    list.className = 'challenge-waiting-tool-list';
+    list.setAttribute('aria-label', 'Available WebMCP tools');
+
+    preview.append(label, list);
+    waiting.appendChild(preview);
+  }
+
+  const label = preview.querySelector('.challenge-waiting-tools-label');
+  const list = preview.querySelector('.challenge-waiting-tool-list');
+  if (!list) return;
+
+  if (label) label.textContent = `AVAILABLE WEBMCP TOOLS · ${tools.length}`;
+  list.replaceChildren();
+
+  for (const tool of tools) {
+    const item = document.createElement('span');
+    item.className = 'challenge-waiting-tool';
+    item.dataset.tool = String(tool.name);
+    item.textContent = `${tool.name}()`;
+    if (tool.description) item.title = String(tool.description);
+    list.appendChild(item);
+  }
+}
+
 async function ensureCompleteToolSurface(container) {
   if (!document.modelContext?.getTools) return;
 
@@ -86,6 +123,8 @@ async function ensureCompleteToolSurface(container) {
   } catch {
     return;
   }
+
+  renderWaitingToolList(tools);
 
   const existing = new Set(
     [...container.querySelectorAll('.semantic-tool-chip[data-tool]')]
