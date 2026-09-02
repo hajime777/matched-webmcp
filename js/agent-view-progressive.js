@@ -68,7 +68,7 @@ function installToolSurfaceToggle() {
   counter.dataset.progressiveReady = 'true';
   counter.setAttribute('role', 'button');
   counter.setAttribute('tabindex', '0');
-  counter.setAttribute('aria-expanded', 'false');
+  counter.setAttribute('aria-expanded', 'true');
   counter.setAttribute('aria-controls', 'semantic-tool-groups');
   counter.title = 'Show or hide the registered WebMCP tool surface';
   counter.addEventListener('click', () => toggleSurface());
@@ -103,11 +103,11 @@ function improveLabels() {
 
   setTextIfChanged(
     document.querySelector('.semantic-surface-panel .panel-title-row h3'),
-    'AVAILABLE TO THE VISITING AGENT',
+    'AVAILABLE WEBMCP TOOLS',
   );
   setTextIfChanged(
     document.querySelector('.semantic-surface-panel .panel-title-row small'),
-    'registered WebMCP tools',
+    'fixed surface · selected Bishop',
   );
   setTextIfChanged(
     document.querySelector('.observed-state-panel .panel-title-row h3'),
@@ -129,7 +129,9 @@ function installObserver() {
   if (!root || root.dataset.progressiveObserver === 'true') return;
   root.dataset.progressiveObserver = 'true';
   root.dataset.stage = 'idle';
-  root.dataset.surfaceOpen = 'false';
+  // The tool board is now a primary part of WEBMCP VIEW, so show it before
+  // the first agent call. The existing control can still hide it manually.
+  root.dataset.surfaceOpen = 'true';
   root.dataset.multiBishop = 'false';
   root.dataset.hasHistory = 'false';
   root.dataset.hasState = 'false';
