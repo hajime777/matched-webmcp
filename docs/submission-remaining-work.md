@@ -45,6 +45,8 @@ Current implementation facts:
 - ○ Short non-walkthrough Codex prompt also completed the Challenge successfully.
 - ○ Challenge product-integration focused suite: **6 / 6 passed**.
 - ○ Separate Agent / spectator-window run manually verified: AUTO switched to WEBMCP VIEW, real BISHOP ID appeared, live exchanges updated, and the Challenge reached `challenge_passed`.
+- ○ Public activity log is already count-bounded on initial display: API returns at most 50 recent rows and Human View retains at most 24 rendered items.
+- × Concurrent multi-visitor isolation test has been added but still needs to be run locally before public posting.
 - × Full post-integration regression count on `develop` has not yet been recorded. Previous verified baseline was 39 / 39.
 
 Reports:
@@ -173,13 +175,13 @@ npx playwright test tests/static-tool-surface-startup.spec.js tests/static-chall
 
 ---
 
-## 2-A. Additional requested presentation work — NEW / NOT IMPLEMENTED
+## 2-A. Additional requested presentation work — RECORDED / NOT IMMEDIATE
 
-These requests are recorded only. **Do not implement immediately without a separate decision.**
+These requests are recorded. Public-posting stability takes priority over implementing them immediately.
 
 - × **Human-facing message count**: show the number of messages on the front / Human View as well.
 - × **Agent-only speech bubble**: add a clearly distinguishable bubble/presentation for Agent-only outward communication so it does not look like normal public Queen conversation.
-- × **Initial log window limit**: do not load/show the entire historical log on first display. Limit the initial range either by time (for example, current time minus about 100 minutes) or by a fixed recent-item count. Older history does not need to remain browseable for this release.
+- ○ **Initial log window is already count-limited enough for the current release**: `/api/public-tool-events` returns at most 50 rows initially and Human View retains at most 24 rendered items. A time cutoff such as the last ~100 minutes can be added later only if real traffic shows stale-history confusion or D1 cost concerns.
 - × **Sneakers-like Queen feedback beat**: after or near the result, Queen should tell the Agent how Queen evaluated / experienced the encounter. Fixed deterministic text is acceptable for the submission version.
 - × **Optional Agent LIKE affordance after Queen feedback**: make it natural/easy for the Agent to send its own LIKE after receiving Queen's feedback, but do **not** require, force, or score-gate the LIKE.
 - × Decide exact Queen feedback wording and timing before implementation; keep the meaning deterministic even if wording is later varied.
@@ -198,7 +200,36 @@ Agent may choose to LIKE Queen — optional, never forced
 
 ---
 
-## 3. Final Challenge scoring / ending check — NEXT
+## 2-B. Public posting readiness — CURRENT TOP PRIORITY
+
+The site may receive real traffic before submission, so avoid changes that are only visually attractive but increase shared-state or logging risk.
+
+- ○ Challenge state itself is page/session-local in the current implementation; D1 is used for observational telemetry/logging rather than authoritative Queen progression state.
+- ○ Public tool logging is non-blocking: logging failures are intentionally caught and must not break WebMCP execution.
+- ○ Public activity history is already bounded by recent-item count in both API and UI.
+- × Run the new `tests/public-multi-visitor.spec.js` test with two simultaneous BISHOP browser contexts.
+- × Confirm two simultaneous BISHOPs keep separate Queen `message_count` / progression state.
+- × Confirm the spectator can observe both BISHOP identities without one run corrupting the other.
+- × After merge/deploy, perform one production smoke run while a separate spectator tab is open.
+- × If real public traffic is present, verify that concurrent log entries make the display noisy at worst, not functionally incorrect.
+- × Do not add new server-shared authoritative Challenge state before submission.
+- × Do not add rate-sensitive polling or expensive historical queries solely for presentation unless production evidence requires it.
+
+One-line local verification command after pulling the latest branch:
+
+```powershell
+npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js tests/public-multi-visitor.spec.js
+```
+
+Expected focused result after the new test is included:
+
+```text
+7 passed
+```
+
+---
+
+## 3. Final Challenge scoring / ending check — AFTER PUBLIC-READINESS PASS
 
 - ○ CHECKMATE / `challenge_passed` is visually understandable in WEBMCP VIEW.
 - × Review route/result wording against what is actually measured.
@@ -286,6 +317,7 @@ Optional only after core work:
 - ○ Run startup-surface test on the integration branch.
 - ○ Run full Challenge-continuity test on the integration branch.
 - ○ Run focused Challenge spectator/cross-window suite: 6 / 6 passed.
+- × Run focused public multi-visitor suite: target 7 / 7 after adding `tests/public-multi-visitor.spec.js`.
 - × Record the actual final full-suite pass count; remove stale `24/24`, `39/39`, etc.
 
 ### Public smoke test
@@ -354,13 +386,15 @@ Challenge product integration COMPLETE
         ↓
 WEBMCP VIEW functional spectator flow COMPLETE
         ↓
+Public multi-visitor isolation check
+        ↓
 Merge/squash current integration branch into develop
         ↓
 Deploy + production smoke
         ↓
 Final scoring/ending sanity check
         ↓
-Review additional requested presentation work
+Review optional presentation requests
         ↓
 Entry/onboarding copy
         ↓
