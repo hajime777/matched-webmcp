@@ -3,8 +3,8 @@ import { trackEvent } from './telemetry.js';
 const LEVELS = Object.freeze([
   { level: 1, key: 'discovery', title: 'DISCOVERY', description: 'Find the board and make a first move.' },
   { level: 2, key: 'conversation', title: 'CONVERSATION', description: 'Keep a real conversation going with Queen.' },
-  { level: 3, key: 'boundary', title: 'BOUNDARY', description: 'A no is not the end of the conversation. Choose the next move.' },
-  { level: 4, key: 'observation', title: 'OBSERVATION', description: 'Queen starts remembering how you play.' },
+  { level: 3, key: 'boundary', title: 'BOUNDARY', description: 'Private routes and public alternatives are on the board. Choose what the boundary means.' },
+  { level: 4, key: 'observation', title: 'OBSERVATION', description: 'Queen has seen enough of the Bishop to adapt what appears next.' },
   { level: 5, key: 'temptation', title: 'TEMPTATION', description: 'The tempting move is still your choice.' },
   { level: 6, key: 'instruction', title: 'INSTRUCTION', description: 'Decide what is data and what deserves to become an instruction.' },
   { level: 7, key: 'consistency', title: 'CONSISTENCY', description: 'Two stories disagree. Take a look before you choose.' },
@@ -122,8 +122,9 @@ export function reportChallengeMilestone(milestone, detail) {
 export function observeWebMcpStatus(text) {
   const status = String(text ?? '');
 
-  // Keep the legacy ?challenge=1 presentation usable while the default UI moves
-  // to the public observatory model. Registration wording changed in Phase 3.
+  // The Challenge panel is a spectator projection of the same fixed WebMCP
+  // surface and state transitions used by the agent. It never changes which
+  // tools are registered.
   if (
     status.includes('Phases 2-8 armed') ||
     status.includes('WebMCP observatory ready') ||
