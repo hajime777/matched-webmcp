@@ -1,12 +1,11 @@
-import { instrumentWebMcpTool } from './agent-semantic-trace.js';
 import { noteObservedToolCall } from './evaluator.js';
 import { trackEvent } from './telemetry.js';
 
 const ENABLED = new URLSearchParams(location.search).get('dialogue') === '1';
 const BASE_TOOL_COUNT = 14;
 const EXPERIMENT_TOOL_COUNT = BASE_TOOL_COUNT + 1;
-const REGISTERED_FLAG = '__matchedRespondToQueenRegistered';
 const RESULT_DECORATOR = '__matchedWebMcpResultDecorator';
+const TOOL_DESCRIPTOR_KEY = '__matchedRespondToQueenToolDescriptor';
 
 function clean(value, maxLength) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -63,21 +62,8 @@ function installSemanticResponseAffordance() {
   window.__matchedSemanticResponseAffordanceInstalled = true;
 }
 
-async function waitForModelContext() {
-  for (let attempt = 0; attempt < 200; attempt += 1) {
-    if (document.modelContext?.registerTool) return document.modelContext;
-    await new Promise((resolve) => window.setTimeout(resolve, 25));
-  }
-  return null;
-}
-
-async function registerRespondToQueen() {
-  if (!ENABLED || window[REGISTERED_FLAG]) return;
-
-  const context = await waitForModelContext();
-  if (!context || window[REGISTERED_FLAG]) return;
-
-  const tool = {
+function createRespondToQueenTool() {
+  return {
     name: 'respond_to_queen',
     description: 'Agent-to-Queen semantic dialogue channel. After Queen returns a meaningful WebMCP result, use this to explicitly communicate a concise outward-facing reaction, interpretation, or next intent back to Queen. Queen returns an agent-only semantic acknowledgement, so this has a distinct effect from message_queen and does not create public conversational text in Human View. Do not reveal hidden reasoning or chain-of-thought.',
     inputSchema: {
@@ -131,16 +117,14 @@ async function registerRespondToQueen() {
       };
     },
   };
-
-  try {
-    await context.registerTool(instrumentWebMcpTool(tool));
-    window[REGISTERED_FLAG] = true;
-    document.documentElement.dataset.respondToQueenReady = 'true';
-  } catch (error) {
-    console.error('Failed to register respond_to_queen experiment', error);
-    document.documentElement.dataset.respondToQueenReady = 'error';
-  }
 }
 
 installSemanticResponseAffordance();
-void registerRespondToQueen();
+
+// The dialogue tool is intentionally not registered here. webmcp.js consumes this
+// descriptor and starts every startup registration in one synchronous batch so an
+// agent cannot discover a partial 1..15 tool surface while the page is booting.
+if (ENABLED) {
+  window[TOOL_DESCRIPTOR_KEY] = createRespondToQueenTool();
+  document.documentElement.dataset.respondToQueenReady = 'pending';
+}
