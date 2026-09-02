@@ -45,8 +45,10 @@ Current implementation facts:
 - ○ Short non-walkthrough Codex prompt also completed the Challenge successfully.
 - ○ Challenge product-integration focused suite: **6 / 6 passed**.
 - ○ Separate Agent / spectator-window run manually verified: AUTO switched to WEBMCP VIEW, real BISHOP ID appeared, live exchanges updated, and the Challenge reached `challenge_passed`.
-- ○ Public activity log is already count-bounded on initial display: API returns at most 50 recent rows and Human View retains at most 24 rendered items.
-- × Concurrent multi-visitor isolation test has been added but still needs to be run locally before public posting.
+- ○ Public multi-visitor focused suite: **7 / 7 passed**; two simultaneous BISHOP contexts kept separate Queen state and were separately observable.
+- ○ Public activity log is count-bounded: API returns at most 50 recent rows initially and Human View retains at most 24 rendered items.
+- ○ Public log traffic hardening implemented on the integration branch: 5-second spectator polling, no polling while the document is hidden, and aggregate tool counts requested at most once per minute.
+- × New public-log load-hardening test still needs one local run before merge.
 - × Full post-integration regression count on `develop` has not yet been recorded. Previous verified baseline was 39 / 39.
 
 Reports:
@@ -207,24 +209,30 @@ The site may receive real traffic before submission, so avoid changes that are o
 - ○ Challenge state itself is page/session-local in the current implementation; D1 is used for observational telemetry/logging rather than authoritative Queen progression state.
 - ○ Public tool logging is non-blocking: logging failures are intentionally caught and must not break WebMCP execution.
 - ○ Public activity history is already bounded by recent-item count in both API and UI.
-- × Run the new `tests/public-multi-visitor.spec.js` test with two simultaneous BISHOP browser contexts.
-- × Confirm two simultaneous BISHOPs keep separate Queen `message_count` / progression state.
-- × Confirm the spectator can observe both BISHOP identities without one run corrupting the other.
+- ○ Run `tests/public-multi-visitor.spec.js` with two simultaneous BISHOP browser contexts.
+- ○ Confirm two simultaneous BISHOPs keep separate Queen `message_count` / progression state.
+- ○ Confirm the spectator can observe both BISHOP identities without one run corrupting the other.
+- ○ Reduce spectator public-log polling from 2 seconds to 5 seconds.
+- ○ Skip public-log network polls while the spectator document is hidden; poll immediately again when visible.
+- ○ Avoid the D1 aggregate `GROUP BY` count query on every poll; request count totals at most once per minute.
+- ○ Keep initial activity history bounded at 50 API rows / 24 rendered Human View items rather than adding a new historical query.
+- ○ Add a human-visible notice that `message_queen()` text is public to spectators and should not contain personal information.
+- ○ Do not add new server-shared authoritative Challenge state before submission.
+- ○ Do not add expensive historical queries solely for presentation before submission.
+- × Run `tests/public-log-load.spec.js` locally and confirm the public-hardening behavior.
 - × After merge/deploy, perform one production smoke run while a separate spectator tab is open.
 - × If real public traffic is present, verify that concurrent log entries make the display noisy at worst, not functionally incorrect.
-- × Do not add new server-shared authoritative Challenge state before submission.
-- × Do not add rate-sensitive polling or expensive historical queries solely for presentation unless production evidence requires it.
 
 One-line local verification command after pulling the latest branch:
 
 ```powershell
-npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js tests/public-multi-visitor.spec.js
+npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js tests/public-multi-visitor.spec.js tests/public-log-load.spec.js
 ```
 
-Expected focused result after the new test is included:
+Expected focused result after the public-load test is included:
 
 ```text
-7 passed
+8 passed
 ```
 
 ---
@@ -317,7 +325,8 @@ Optional only after core work:
 - ○ Run startup-surface test on the integration branch.
 - ○ Run full Challenge-continuity test on the integration branch.
 - ○ Run focused Challenge spectator/cross-window suite: 6 / 6 passed.
-- × Run focused public multi-visitor suite: target 7 / 7 after adding `tests/public-multi-visitor.spec.js`.
+- ○ Run focused public multi-visitor suite: 7 / 7 passed.
+- × Run public-load hardening suite: target 8 / 8 after adding `tests/public-log-load.spec.js`.
 - × Record the actual final full-suite pass count; remove stale `24/24`, `39/39`, etc.
 
 ### Public smoke test
@@ -386,7 +395,9 @@ Challenge product integration COMPLETE
         ↓
 WEBMCP VIEW functional spectator flow COMPLETE
         ↓
-Public multi-visitor isolation check
+Public multi-visitor isolation check COMPLETE
+        ↓
+Public log load-hardening verification
         ↓
 Merge/squash current integration branch into develop
         ↓
