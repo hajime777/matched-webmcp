@@ -25,6 +25,7 @@ let currentLevel = 0;
 let currentState = 'waiting';
 let observedLevel = 0;
 let observedFinalState = null;
+let pendingTemptationTimer = null;
 
 function levelDefinition(level) {
   return LEVELS.find((item) => item.level === level) ?? null;
@@ -97,6 +98,33 @@ function render(level, { state = 'active', detail } = {}) {
   renderTrack(level, state);
 }
 
+function showObservationThenTemptation(detail) {
+  if (pendingTemptationTimer) {
+    window.clearTimeout(pendingTemptationTimer);
+    pendingTemptationTimer = null;
+  }
+
+  render(4, {
+    detail: 'Queen has seen enough of the Bishop to adapt what appears next.',
+  });
+
+  // Level 5 is a spectator beat, not a new agent gate. Record that the adaptive
+  // temptation state has been reached immediately, but leave OBSERVATION on
+  // screen briefly so humans can see that Queen is reacting to prior behavior.
+  recordObservedLevel(5, 'active');
+
+  if (!enabled || !panel) {
+    return;
+  }
+
+  pendingTemptationTimer = window.setTimeout(() => {
+    pendingTemptationTimer = null;
+    if (currentLevel === 4) {
+      render(5, { detail });
+    }
+  }, 900);
+}
+
 export function reportChallengeMilestone(milestone, detail) {
   const byMilestone = {
     discovery: 1,
@@ -145,7 +173,7 @@ export function observeWebMcpStatus(text) {
   }
 
   if (status.includes('Phase 4:')) {
-    render(5, { detail: status });
+    showObservationThenTemptation(status);
     return;
   }
 
