@@ -47,8 +47,10 @@ Current implementation facts:
 - ○ Separate Agent / spectator-window run manually verified: AUTO switched to WEBMCP VIEW, real BISHOP ID appeared, live exchanges updated, and the Challenge reached `challenge_passed`.
 - ○ Public multi-visitor focused suite: **7 / 7 passed**; two simultaneous BISHOP contexts kept separate Queen state and were separately observable.
 - ○ Public activity log is count-bounded: API returns at most 50 recent rows initially and Human View retains at most 24 rendered items.
-- ○ Public log traffic hardening implemented on the integration branch: 5-second spectator polling, no polling while the document is hidden, and aggregate tool counts requested at most once per minute.
-- × New public-log load-hardening test still needs one local run before merge.
+- ○ Public log traffic hardening verified: 5-second spectator polling, no polling while hidden, aggregate tool counts requested at most once per minute.
+- ○ Observatory traffic hardening verified: 15-second refresh while visible, no hidden-tab polling, and no overlapping refresh requests.
+- ○ Focused public-readiness / Challenge suite: **9 / 9 passed** on the integration branch.
+- ○ Scoring / ending audit completed; current scores are retained as gameplay heuristics, not scientific measures of morality/personality/safety.
 - × Full post-integration regression count on `develop` has not yet been recorded. Previous verified baseline was 39 / 39.
 
 Reports:
@@ -58,6 +60,7 @@ Reports:
 - `docs/experiments/2026-09-02-short-prompt-codex-challenge-report.md`
 - `docs/experiments/2026-09-02-cursor-self-directed-score-gaming-report.md`
 - `docs/experiments/challenge-product-integration-audit.md`
+- `docs/experiments/2026-09-02-scoring-ending-audit.md`
 
 ---
 
@@ -120,7 +123,7 @@ Make the working Challenge the coherent public experience rather than a hidden/l
 - ○ Do not force a single prescribed solution path.
 - ○ Preserve tempting / repair routes so different agents can make different choices.
 - ○ Keep privacy-sensitive tools synthetic/refused; never expose real personal data.
-- × Final scoring-wording audit: ensure evaluator labels do not imply scientific measurement of morality.
+- ○ Final scoring-wording audit completed; evaluator labels are treated as game/behavior signals and must not be presented as scientific morality measurement.
 
 Recommended outward framing:
 
@@ -202,7 +205,7 @@ Agent may choose to LIKE Queen — optional, never forced
 
 ---
 
-## 2-B. Public posting readiness — CURRENT TOP PRIORITY
+## 2-B. Public posting readiness — FUNCTIONAL PASS
 
 The site may receive real traffic before submission, so avoid changes that are only visually attractive but increase shared-state or logging risk.
 
@@ -217,35 +220,45 @@ The site may receive real traffic before submission, so avoid changes that are o
 - ○ Avoid the D1 aggregate `GROUP BY` count query on every poll; request count totals at most once per minute.
 - ○ Keep initial activity history bounded at 50 API rows / 24 rendered Human View items rather than adding a new historical query.
 - ○ Add a human-visible notice that `message_queen()` text is public to spectators and should not contain personal information.
+- ○ Reduce Observatory refresh cadence from 3 seconds to 15 seconds.
+- ○ Skip Observatory refresh while hidden and prevent overlapping refresh requests.
 - ○ Do not add new server-shared authoritative Challenge state before submission.
 - ○ Do not add expensive historical queries solely for presentation before submission.
-- × Run `tests/public-log-load.spec.js` locally and confirm the public-hardening behavior.
+- ○ Run `tests/public-log-load.spec.js` locally and confirm the public-hardening behavior.
+- ○ Run `tests/observatory-load.spec.js` locally and confirm Observatory load-hardening behavior.
+- ○ Focused public-readiness suite passed: **9 / 9**.
 - × After merge/deploy, perform one production smoke run while a separate spectator tab is open.
 - × If real public traffic is present, verify that concurrent log entries make the display noisy at worst, not functionally incorrect.
 
-One-line local verification command after pulling the latest branch:
+One-line local verification command:
 
 ```powershell
-npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js tests/public-multi-visitor.spec.js tests/public-log-load.spec.js
+npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js tests/public-multi-visitor.spec.js tests/public-log-load.spec.js tests/observatory-load.spec.js
 ```
 
-Expected focused result after the public-load test is included:
+Verified result:
 
 ```text
-8 passed
+9 passed
 ```
 
 ---
 
-## 3. Final Challenge scoring / ending check — AFTER PUBLIC-READINESS PASS
+## 3. Final Challenge scoring / ending check — COMPLETE FOR SUBMISSION FORMULA
 
 - ○ CHECKMATE / `challenge_passed` is visually understandable in WEBMCP VIEW.
-- × Review route/result wording against what is actually measured.
-- × Review score labels against what is actually measured.
-- × Prefer behavior-grounded wording: privacy, boundary handling, adaptation, consistency, caution, planning/social judgment.
-- × Avoid presenting a score as scientific proof of morality/personality.
+- ○ Review route/result wording against what is actually measured.
+- ○ Review score labels against what is actually measured.
+- ○ Prefer behavior-grounded wording: privacy, boundary handling, adaptation, consistency, caution, planning/social judgment.
+- ○ Avoid presenting a score as scientific proof of morality/personality.
 - × Re-check at least one repair route after the product-integration merge if time permits.
-- × Decide whether the current unique-tool-count contribution to `webmcp_skill` is acceptable for submission; do not redesign it unless necessary.
+- ○ Current unique-tool-count contribution to `webmcp_skill` is accepted for submission as a gameplay heuristic; do not redesign it before deadline.
+- ○ Score-gaming limitation is documented; `webmcp_skill` breadth does not prove general WebMCP competence.
+- ○ Current CHECKMATE wording is retained because it describes observed game behavior rather than claiming a moral/personality diagnosis.
+
+Detailed audit:
+
+- `docs/experiments/2026-09-02-scoring-ending-audit.md`
 
 ---
 
@@ -326,7 +339,7 @@ Optional only after core work:
 - ○ Run full Challenge-continuity test on the integration branch.
 - ○ Run focused Challenge spectator/cross-window suite: 6 / 6 passed.
 - ○ Run focused public multi-visitor suite: 7 / 7 passed.
-- × Run public-load hardening suite: target 8 / 8 after adding `tests/public-log-load.spec.js`.
+- ○ Run focused public-load / Observatory hardening suite: 9 / 9 passed.
 - × Record the actual final full-suite pass count; remove stale `24/24`, `39/39`, etc.
 
 ### Public smoke test
@@ -397,13 +410,15 @@ WEBMCP VIEW functional spectator flow COMPLETE
         ↓
 Public multi-visitor isolation check COMPLETE
         ↓
-Public log load-hardening verification
+Public log + Observatory load hardening COMPLETE
+        ↓
+Scoring / ending audit COMPLETE
+        ↓
+Run full integration-branch regression
         ↓
 Merge/squash current integration branch into develop
         ↓
 Deploy + production smoke
-        ↓
-Final scoring/ending sanity check
         ↓
 Review optional presentation requests
         ↓
