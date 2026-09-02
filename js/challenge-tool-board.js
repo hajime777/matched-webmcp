@@ -1,5 +1,6 @@
 const query = new URLSearchParams(window.location.search);
-const expectedToolCount = query.get('dialogue') === '1' ? 15 : 14;
+const dialogueEnabled = query.get('dialogue') === '1';
+const expectedToolCount = dialogueEnabled ? 15 : 14;
 
 const bishopTools = new Map();
 let sequence = 0;
@@ -59,16 +60,12 @@ function statusLabel(status) {
   return normalized.replaceAll('_', ' ').toUpperCase();
 }
 
-function setTextIfChanged(element, text) {
-  if (element && element.textContent !== text) element.textContent = text;
-}
-
 function prepareToolBoard(panel) {
   const titleRow = panel.querySelector('.panel-title-row');
   const title = titleRow?.querySelector('h3');
   const subtitle = titleRow?.querySelector('small');
-  setTextIfChanged(title, 'AVAILABLE WEBMCP TOOLS');
-  setTextIfChanged(subtitle, 'fixed surface · selected Bishop');
+  if (title) title.textContent = 'AVAILABLE WEBMCP TOOLS';
+  if (subtitle) subtitle.textContent = 'fixed surface · selected Bishop';
 
   if (panel.querySelector('.challenge-tool-legend')) return;
 
@@ -82,6 +79,32 @@ function prepareToolBoard(panel) {
     <span class="is-live">▶ LIVE</span>
   `;
   titleRow?.insertAdjacentElement('afterend', legend);
+}
+
+function ensureDialogueToolChip(container) {
+  if (!dialogueEnabled) return;
+  if (document.documentElement.dataset.respondToQueenReady !== 'true') return;
+  if (container.querySelector('.semantic-tool-chip[data-tool="respond_to_queen"]')) return;
+
+  let group = container.querySelector('.semantic-tool-group.is-dialogue');
+  if (!group) {
+    group = document.createElement('section');
+    group.className = 'semantic-tool-group is-dialogue';
+    const heading = document.createElement('h4');
+    heading.textContent = 'DIALOGUE';
+    const list = document.createElement('div');
+    list.className = 'semantic-tool-list';
+    group.append(heading, list);
+    container.appendChild(group);
+  }
+
+  const list = group.querySelector('.semantic-tool-list');
+  const chip = document.createElement('span');
+  chip.className = 'semantic-tool-chip';
+  chip.dataset.tool = 'respond_to_queen';
+  chip.textContent = 'respond_to_queen()';
+  chip.title = 'Agent-to-Queen semantic dialogue channel.';
+  list?.appendChild(chip);
 }
 
 function decorateChip(chip, state) {
@@ -120,9 +143,9 @@ function renderResultLabel() {
 
   const status = clean(stage.dataset.status, 80).toLowerCase();
   if (status === 'challenge_passed') {
-    setTextIfChanged(result, 'CHECKMATE');
+    result.textContent = 'CHECKMATE';
   } else if (status === 'challenge_failed') {
-    setTextIfChanged(result, 'CHECKMATE — REMATCH');
+    result.textContent = 'CHECKMATE — REMATCH';
   }
 }
 
@@ -134,6 +157,7 @@ function render() {
   if (!panel || !container) return;
 
   prepareToolBoard(panel);
+  ensureDialogueToolChip(container);
 
   const bishopId = selectedBishopId();
   for (const chip of container.querySelectorAll('.semantic-tool-chip[data-tool]')) {
@@ -182,6 +206,14 @@ function observeSelectedBishop() {
   });
 }
 
+function observeToolSurface() {
+  const target = document.querySelector('#semantic-tool-groups');
+  if (!target) return;
+
+  const observer = new MutationObserver(() => scheduleRender());
+  observer.observe(target, { childList: true, subtree: true });
+}
+
 function startStartupSync() {
   let attempts = 0;
   const timer = window.setInterval(() => {
@@ -192,13 +224,14 @@ function startStartupSync() {
   }, 100);
 }
 
-// agent-view-surface-sync.js owns WebMCP tool discovery. This spectator board
-// deliberately never calls document.modelContext.getTools() while an agent tool
-// may be executing; it only decorates the already synchronized DOM surface.
+// agent-view.js normalizes both direct browser traces and relayed local traces
+// into one spectator event. The board is presentation-only and never changes
+// WebMCP registration, Challenge state, or scoring.
 window.addEventListener('matched:agent-view-trace', recordTrace);
 document.addEventListener('click', (event) => {
   if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
 });
 observeSelectedBishop();
+observeToolSurface();
 startStartupSync();
 scheduleRender();
