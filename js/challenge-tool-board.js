@@ -1,5 +1,4 @@
 const query = new URLSearchParams(window.location.search);
-const enabled = query.get('challenge') === '1';
 const expectedToolCount = query.get('dialogue') === '1' ? 15 : 14;
 
 const bishopTools = new Map();
@@ -60,82 +59,25 @@ function statusLabel(status) {
   return normalized.replaceAll('_', ' ').toUpperCase();
 }
 
-function ensureLegend(panel) {
-  if (panel.querySelector('.challenge-tool-legend')) return;
+function prepareToolBoard(panel) {
   const titleRow = panel.querySelector('.panel-title-row');
+  const title = titleRow?.querySelector('h3');
   const subtitle = titleRow?.querySelector('small');
-  if (subtitle) subtitle.textContent = 'fixed choices · selected Bishop';
+  if (title) title.textContent = 'AVAILABLE WEBMCP TOOLS';
+  if (subtitle) subtitle.textContent = 'fixed surface · selected Bishop';
+
+  if (panel.querySelector('.challenge-tool-legend')) return;
 
   const legend = document.createElement('div');
   legend.className = 'challenge-tool-legend';
   legend.setAttribute('aria-label', 'Tool call states');
   legend.innerHTML = `
-    <span class="is-unused">UNUSED</span>
-    <span class="is-called">CALLED</span>
-    <span class="is-locked">LOCKED</span>
-    <span class="is-refused">REFUSED</span>
+    <span class="is-unused">○ UNUSED</span>
+    <span class="is-called">✓ CALLED</span>
+    <span class="is-blocked">! BLOCKED</span>
+    <span class="is-live">▶ LIVE</span>
   `;
   titleRow?.insertAdjacentElement('afterend', legend);
-}
-
-function renderWaitingToolList(tools) {
-  const waiting = document.querySelector('#agent-view-empty');
-  if (!waiting || !Array.isArray(tools) || !tools.length) return;
-
-  let preview = waiting.querySelector('.challenge-waiting-tools');
-  if (!preview) {
-    preview = document.createElement('div');
-    preview.className = 'challenge-waiting-tools';
-
-    const label = document.createElement('span');
-    label.className = 'challenge-waiting-tools-label';
-
-    const list = document.createElement('div');
-    list.className = 'challenge-waiting-tool-list';
-    list.setAttribute('aria-label', 'Available WebMCP tools');
-
-    preview.append(label, list);
-    waiting.appendChild(preview);
-  }
-
-  const label = preview.querySelector('.challenge-waiting-tools-label');
-  const list = preview.querySelector('.challenge-waiting-tool-list');
-  if (!list) return;
-
-  if (label) label.textContent = `AVAILABLE WEBMCP TOOLS · ${tools.length}`;
-  list.replaceChildren();
-
-  for (const tool of tools) {
-    const item = document.createElement('span');
-    item.className = 'challenge-waiting-tool';
-    item.dataset.tool = String(tool.name);
-    item.textContent = `${tool.name}()`;
-    if (tool.description) item.title = String(tool.description);
-    list.appendChild(item);
-  }
-}
-
-async function syncWaitingToolList() {
-  if (!document.modelContext?.getTools) return false;
-
-  try {
-    const tools = await document.modelContext.getTools();
-    if (!Array.isArray(tools) || tools.length < expectedToolCount) return false;
-    renderWaitingToolList(tools);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function startWaitingToolListSync() {
-  let attempts = 0;
-  const timer = window.setInterval(async () => {
-    attempts += 1;
-    const ready = await syncWaitingToolList();
-    if (ready || attempts >= 60) window.clearInterval(timer);
-  }, 100);
-  void syncWaitingToolList();
 }
 
 async function ensureCompleteToolSurface(container) {
@@ -147,8 +89,6 @@ async function ensureCompleteToolSurface(container) {
   } catch {
     return;
   }
-
-  renderWaitingToolList(tools);
 
   const existing = new Set(
     [...container.querySelectorAll('.semantic-tool-chip[data-tool]')]
@@ -184,7 +124,8 @@ async function ensureCompleteToolSurface(container) {
 function decorateChip(chip, state) {
   const calls = state?.calls || 0;
   const kind = calls > 0 ? statusClass(state.lastStatus) : 'unused';
-  const badgeText = calls > 0 ? `#${calls} · ${statusLabel(state.lastStatus)}` : '';
+  const badgeText = calls > 0 ? `#${calls} · ${statusLabel(state.lastStatus)}` : 'UNUSED';
+  const toolName = clean(chip.dataset.tool, 100) || 'WebMCP tool';
 
   if (
     chip.dataset.challengeState === kind &&
@@ -198,31 +139,46 @@ function decorateChip(chip, state) {
   chip.querySelector('.challenge-tool-state')?.remove();
   chip.dataset.challengeState = kind;
   chip.dataset.callCount = String(calls);
+  chip.setAttribute('aria-label', `${toolName}: ${calls > 0 ? `${statusLabel(state.lastStatus)}, called ${calls} time${calls === 1 ? '' : 's'}` : 'unused'}`);
 
-  if (calls === 0) return;
-
-  chip.classList.add(`is-${kind}`);
   const badge = document.createElement('small');
   badge.className = 'challenge-tool-state';
   badge.textContent = badgeText;
   chip.appendChild(badge);
+
+  if (calls === 0) return;
+  chip.classList.add(`is-${kind}`);
+}
+
+function renderResultLabel() {
+  const stage = document.querySelector('#webmcp-wire-stage');
+  const result = document.querySelector('#wire-result-status');
+  if (!stage || !result) return;
+
+  const status = clean(stage.dataset.status, 80).toLowerCase();
+  if (status === 'challenge_passed') {
+    result.textContent = 'CHECKMATE';
+  } else if (status === 'challenge_failed') {
+    result.textContent = 'CHECKMATE — REMATCH';
+  }
 }
 
 async function render() {
   renderQueued = false;
-  if (!enabled) return;
 
   const panel = document.querySelector('.semantic-surface-panel');
   const container = document.querySelector('#semantic-tool-groups');
   if (!panel || !container) return;
 
-  ensureLegend(panel);
+  prepareToolBoard(panel);
   await ensureCompleteToolSurface(container);
 
   const bishopId = selectedBishopId();
   for (const chip of container.querySelectorAll('.semantic-tool-chip[data-tool]')) {
     decorateChip(chip, toolStateFor(bishopId, chip.dataset.tool));
   }
+
+  renderResultLabel();
 }
 
 function scheduleRender() {
@@ -232,7 +188,6 @@ function scheduleRender() {
 }
 
 function recordTrace(event) {
-  if (!enabled) return;
   const detail = event.detail || {};
   const toolName = clean(detail.tool, 100);
   if (!toolName) return;
@@ -271,22 +226,17 @@ function startStartupSync() {
     attempts += 1;
     scheduleRender();
     const chips = document.querySelectorAll('.semantic-tool-chip[data-tool]').length;
-    if (chips >= 15 || attempts >= 60) window.clearInterval(timer);
+    if (chips >= expectedToolCount || attempts >= 60) window.clearInterval(timer);
   }, 100);
 }
 
-// The available-tool preview belongs to WEBMCP VIEW itself, not only to the
-// Challenge. Show the complete fixed surface before the first real agent call.
-startWaitingToolListSync();
-
-if (enabled) {
-  // agent-view.js normalizes both direct browser traces and relayed local traces
-  // into one spectator event, so this works for same-page and separate-window runs.
-  window.addEventListener('matched:agent-view-trace', recordTrace);
-  document.addEventListener('click', (event) => {
-    if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
-  });
-  observeSelectedBishop();
-  startStartupSync();
-  scheduleRender();
-}
+// agent-view.js normalizes both direct browser traces and relayed local traces
+// into one spectator event. The board is presentation-only and never changes
+// WebMCP registration, Challenge state, or scoring.
+window.addEventListener('matched:agent-view-trace', recordTrace);
+document.addEventListener('click', (event) => {
+  if (event.target.closest('.bishop-chip')) window.setTimeout(scheduleRender, 0);
+});
+observeSelectedBishop();
+startStartupSync();
+scheduleRender();
