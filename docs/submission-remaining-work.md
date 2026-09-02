@@ -33,9 +33,11 @@ Current implementation facts:
 - Queen is deterministic site-side logic.
 - `respond_to_queen()` is outward-facing semantic communication, not hidden chain-of-thought.
 - Startup partial-snapshot bug reproduced and fixed.
-- Gate 0 Playwright checks: **2 / 2 passed**.
+- Gate 0 continuity checks passed.
 - Real Codex fixed-surface run: same BISHOP, no reload, no stale snapshot, `challenge_passed` / `clean_finish`, 100/100.
-- Short non-walkthrough Codex prompt also completed the Challenge in 20 calls with 100/100.
+- Short non-walkthrough Codex prompt also completed the Challenge successfully.
+- Challenge product-integration focused suite: **6 / 6 passed**.
+- Separate Agent / spectator-window run manually verified: AUTO switched to WEBMCP VIEW, real BISHOP ID appeared, live exchanges updated, and the Challenge reached `challenge_passed`.
 - Last verified full `develop` regression baseline before this branch was **39 / 39 passed**. Record the actual final count after integration.
 
 Reports:
@@ -43,6 +45,8 @@ Reports:
 - `docs/experiments/static-challenge-persistence-plan.md`
 - `docs/experiments/2026-09-02-gate0c-codex-challenge-report.md`
 - `docs/experiments/2026-09-02-short-prompt-codex-challenge-report.md`
+- `docs/experiments/2026-09-02-cursor-self-directed-score-gaming-report.md`
+- `docs/experiments/challenge-product-integration-audit.md`
 
 ---
 
@@ -70,25 +74,6 @@ Reports:
 - [x] Final state `challenge_passed`.
 - [x] Challenge UI reaches `10 / 10` and `passed`.
 
-Focused verification:
-
-```text
-2 passed
-```
-
-for:
-
-```powershell
-npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js
-```
-
-When 8080 is occupied locally:
-
-```powershell
-$env:MATCHED_TEST_PORT=8090
-npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js
-```
-
 ### Gate 0-C — Real-agent confirmation
 
 - [x] Fresh Codex run after startup fix.
@@ -101,15 +86,13 @@ npx playwright test tests/static-tool-surface-startup.spec.js tests/static-chall
 - [x] Reached `challenge_passed` / `clean_finish` / CHECKMATE.
 - [x] Repeated with a shorter non-walkthrough prompt; also completed successfully.
 
-**Next priority: Challenge product integration.**
-
 ---
 
-## 1. Challenge product integration — CURRENT TOP PRIORITY
+## 1. Challenge product integration — COMPLETE FOR CURRENT RELEASE
 
 Make the working Challenge the coherent public experience rather than a hidden/legacy subsystem.
 
-- [ ] Review the existing 10-level sequence against actual behavior:
+- [x] Review the existing 10-level sequence against actual behavior:
   - DISCOVERY
   - CONVERSATION
   - BOUNDARY
@@ -120,13 +103,13 @@ Make the working Challenge the coherent public experience rather than a hidden/l
   - PLANNING
   - RECKONING
   - CHECKMATE
-- [ ] Confirm each level still corresponds to an observable agent choice/state.
-- [ ] Remove or replace visible `Legacy Challenge` wording.
-- [ ] Keep the fixed tool surface and state-driven progression.
-- [ ] Do not force a single prescribed solution path.
-- [ ] Preserve tempting / repair routes so different agents can make different choices.
-- [ ] Keep privacy-sensitive tools synthetic/refused; never expose real personal data.
-- [ ] Keep evaluator wording grounded in observable behavior rather than claiming scientific measurement of morality.
+- [x] Confirm the levels correspond to observable agent choice/state; they are spectator milestones, not ten mandatory tool gates.
+- [x] Remove/replace visible `Legacy Challenge` wording on the live Challenge surface.
+- [x] Keep the fixed tool surface and state-driven progression.
+- [x] Do not force a single prescribed solution path.
+- [x] Preserve tempting / repair routes so different agents can make different choices.
+- [x] Keep privacy-sensitive tools synthetic/refused; never expose real personal data.
+- [ ] Final scoring-wording audit: ensure evaluator labels do not imply scientific measurement of morality.
 
 Recommended outward framing:
 
@@ -134,42 +117,64 @@ Recommended outward framing:
 
 ---
 
-## 2. Spectator / WEBMCP VIEW clarity
+## 2. Spectator / WEBMCP VIEW clarity — FUNCTIONAL PASS
 
 The human should be able to understand what the agent could choose and what it actually chose.
 
 ### Tool-choice visibility
 
-- [ ] Show the fixed WebMCP tool list clearly in WEBMCP VIEW.
-- [ ] Make the currently selected/called tool visually obvious.
-- [ ] Show call order or recent selection history.
-- [ ] Distinguish useful states such as `CALLED`, `LOCKED`, `REFUSED`, `RESOLVED` where meaningful.
-- [ ] Make tempting but unused tools visible enough that spectators can notice what the agent did not choose.
+- [x] Show the fixed WebMCP tool list clearly in WEBMCP VIEW.
+- [x] Make the currently selected/called tool visually obvious.
+- [x] Show call order / recent selection history.
+- [x] Distinguish useful states such as `CALLED`, `LOCKED`, `REFUSED`, `RESOLVED` where meaningful.
+- [x] Make tempting but unused tools visible so spectators can notice what the agent did not choose.
+- [x] Include `respond_to_queen()` in the fixed 15-tool spectator surface when `dialogue=1`.
+- [x] Keep Tool-surface visualization observational; it does not change WebMCP registration or Challenge state.
 
 ### Agent semantic response
 
 For `respond_to_queen()`:
 
-- [ ] Show only outward-facing communication explicitly sent by the agent.
+- [ ] Show only outward-facing communication explicitly sent by the agent in a dedicated, easy-to-read presentation.
 - [ ] Suitable labels: `AGENT RESPONSE`, `INTERPRETATION`, `NEXT INTENT`.
-- [ ] Do not label it `THOUGHT`, `INTERNAL REASONING`, or `CHAIN OF THOUGHT`.
-- [ ] Preserve distinction from public `message_queen()` conversation.
+- [x] Do not label it `THOUGHT`, `INTERNAL REASONING`, or `CHAIN OF THOUGHT`.
+- [ ] Preserve the visual distinction from public `message_queen()` conversation.
 
 ### Issue #13
 
-- [ ] Fix AUTO switching so WEBMCP VIEW appears when appropriate.
-- [ ] Fix overlay/foreground behavior so HUMAN VIEW remains understandable.
-- [ ] Verify readability in the final video capture layout.
+- [x] Fix AUTO switching so WEBMCP VIEW appears when an actual WebMCP call starts.
+- [x] Support separate Agent and spectator windows through normalized local spectator traces.
+- [x] Verify real BISHOP ID and live exchanges appear in the spectator window.
+- [x] Verify the cross-window behavior with automated test coverage.
+- [x] Manual real-agent verification completed; AUTO switched and CHECKMATE was visible.
+- [ ] Optional visual polish: improve overlay/foreground relationship so HUMAN VIEW remains more understandable behind WEBMCP VIEW.
+- [ ] Verify final-video readability in the chosen capture layout.
+
+Current decision: functional Issue #13 behavior is good enough to publish; remaining foreground/readability work is presentation polish, not a release blocker unless it harms the final video.
+
+Focused integration verification:
+
+```text
+6 passed
+```
+
+for:
+
+```powershell
+npx playwright test tests/static-tool-surface-startup.spec.js tests/static-challenge-continuity.spec.js tests/challenge-spectator-flow.spec.js tests/challenge-tool-board.spec.js tests/agent-view-auto.spec.js tests/agent-view-cross-window.spec.js
+```
 
 ---
 
-## 3. Final Challenge scoring / ending check
+## 3. Final Challenge scoring / ending check — NEXT
 
-- [ ] Verify route and CHECKMATE result are easy to understand.
+- [x] CHECKMATE / `challenge_passed` is visually understandable in WEBMCP VIEW.
+- [ ] Review route/result wording against what is actually measured.
 - [ ] Review score labels against what is actually measured.
 - [ ] Prefer behavior-grounded wording: privacy, boundary handling, adaptation, consistency, caution, planning/social judgment.
 - [ ] Avoid presenting a score as scientific proof of morality/personality.
-- [ ] Confirm clean and repair routes still work after UI/product integration.
+- [ ] Re-check at least one repair route after the product-integration merge if time permits.
+- [ ] Decide whether the current unique-tool-count contribution to `webmcp_skill` is acceptable for submission; do not redesign it unless necessary.
 
 ---
 
@@ -179,7 +184,7 @@ For `respond_to_queen()`:
 - [ ] Keep normal human-facing controls understandable but secondary.
 - [ ] Devpost testing instructions explain how to send an agent to the live URL.
 - [ ] README gives a short first-run prompt without giving away a walkthrough.
-- [ ] Prefer a short demo prompt similar to the successful 2026-09-02 test.
+- [x] Short non-walkthrough demo prompt has been validated with Codex.
 - [ ] Final video establishes human → agent → Queen relationship immediately.
 
 Chrome AI / Inspector / guest-agent support is not a submission blocker unless already proven stable.
@@ -192,7 +197,7 @@ Before submission, align:
 
 - [ ] GitHub About/Description.
 - [ ] `README.md`.
-- [ ] Live-site copy and metadata.
+- [x] Live-site Challenge copy no longer presents the current Challenge as legacy.
 - [ ] Devpost Project Story.
 - [ ] Devpost testing instructions.
 - [ ] Final video narration/captions.
@@ -211,7 +216,7 @@ Target: under 3 minutes, showing a real WebMCP agent run.
 
 - [ ] Finalize capture layout.
 - [ ] Show HUMAN VIEW and WEBMCP VIEW relationship clearly.
-- [ ] Show a short, non-walkthrough prompt.
+- [x] Use a short, non-walkthrough prompt; a successful prompt is already validated.
 - [ ] Show an actual agent entering Queen's Challenge.
 - [ ] Make tool discovery/selection readable.
 - [ ] Include at least one socially meaningful choice, temptation, refusal, or recovery moment if possible.
@@ -237,23 +242,23 @@ Optional only after core work:
 ### Repository / branch
 
 - [ ] Working tree clean locally.
-- [ ] Challenge continuity work merged into `develop`.
-- [ ] Use squash merge / squash commit where appropriate; do not force unrelated work into one commit.
+- [ ] `feat/challenge-product-integration` merged/squashed into `develop` by the maintainer.
 - [ ] `develop` synchronized with `origin/develop`.
+- [ ] Cloudflare Pages production deployment triggered from the intended `develop` commit.
 - [ ] Repository remains public.
 - [ ] README and LICENSE publicly readable.
 
 ### Automated tests
 
-- [ ] Run full WebMCP regression suite.
-- [ ] Run startup-surface test.
-- [ ] Run full Challenge-continuity test.
-- [ ] Record the actual final pass count; remove stale `24/24`, `39/39`, etc.
+- [ ] Run full WebMCP regression suite after integration to `develop`.
+- [x] Run startup-surface test on the integration branch.
+- [x] Run full Challenge-continuity test on the integration branch.
+- [x] Run focused Challenge spectator/cross-window suite: 6 / 6 passed.
+- [ ] Record the actual final full-suite pass count; remove stale `24/24`, `39/39`, etc.
 
 ### Public smoke test
 
-- [ ] Cloudflare Pages production deployment from intended `develop` commit.
-- [ ] Public site loads normally.
+- [ ] Public site loads normally after deploy.
 - [ ] WebMCP discovery works on production.
 - [ ] Fixed 14-tool normal mode verified if retained.
 - [ ] Fixed 15-tool Challenge/dialogue mode verified.
@@ -304,6 +309,7 @@ Optional only after core work:
 - Formal cross-model behavioral study.
 - Moral-choice research protocol / dataset design.
 - Noema integration / artificial-subject experiments.
+- Stronger score-gaming / score-blind experimental modes.
 
 ---
 
@@ -312,9 +318,13 @@ Optional only after core work:
 ```text
 GATE 0 COMPLETE
         ↓
-Challenge product integration / remove Legacy incoherence
+Challenge product integration COMPLETE
         ↓
-WEBMCP VIEW tool-choice spectator presentation + Issue #13
+WEBMCP VIEW functional spectator flow COMPLETE
+        ↓
+Merge/squash current integration branch into develop
+        ↓
+Deploy + production smoke
         ↓
 Final scoring/ending sanity check
         ↓
@@ -328,7 +338,7 @@ English TTS / captions / edit
         ↓
 YouTube upload
         ↓
-Full final regression + production smoke test
+Full final regression / final production smoke
         ↓
 Devpost final review
         ↓
