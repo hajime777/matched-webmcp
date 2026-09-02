@@ -13,6 +13,10 @@ async function waitForSpectatorSurface(page) {
   await expect(page.locator('#webmcp-tool-count')).toHaveText(`${FIXED_TOOL_COUNT} TOOLS`, { timeout: 5000 });
 }
 
+function currentOrigin(page) {
+  return new URL(page.url()).origin;
+}
+
 async function executeTool(page, name, args = {}) {
   return page.evaluate(async ({ toolName, toolArgs }) => {
     const tools = await document.modelContext.getTools();
@@ -43,7 +47,8 @@ test('WEBMCP VIEW progressively reveals meaning instead of opening as a dashboar
   await expect(page.locator('.boundary-box')).toBeHidden();
   await expect(page.locator('.wire-stage-title')).toHaveText('LIVE WEBMCP EXCHANGE');
 
-  const agentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const baseURL = currentOrigin(page);
+  const agentContext = await browser.newContext({ baseURL });
   const agentPage = await agentContext.newPage();
   await waitForWebMCP(agentPage);
 
@@ -67,7 +72,7 @@ test('WEBMCP VIEW progressively reveals meaning instead of opening as a dashboar
   await expect(overlay).toHaveAttribute('data-boundary-seen', 'true', { timeout: 5000 });
   await expect(page.locator('.boundary-box')).toBeVisible();
 
-  const secondContext = await browser.newContext({ baseURL: 'http://127.0.0.1:8080' });
+  const secondContext = await browser.newContext({ baseURL });
   const secondAgent = await secondContext.newPage();
   await waitForWebMCP(secondAgent);
   await executeTool(secondAgent, 'view_profile');

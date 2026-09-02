@@ -1,4 +1,4 @@
-const POLL_MS = 3000;
+const POLL_MS = 15000;
 
 const els = {
   status: document.querySelector('#observatory-status'),
@@ -14,6 +14,9 @@ const els = {
   legacyRuns: document.querySelector('#obs-legacy-runs'),
   recentBody: document.querySelector('#observatory-recent-body'),
 };
+
+let refreshTimer = null;
+let refreshing = false;
 
 function setText(element, value) {
   if (element) element.textContent = String(value ?? 0);
@@ -104,6 +107,9 @@ function render(payload) {
 }
 
 async function refresh() {
+  if (document.hidden || refreshing) return;
+  refreshing = true;
+
   try {
     const response = await fetch('/api/observatory', {
       cache: 'no-store',
@@ -117,8 +123,22 @@ async function refresh() {
       els.live.textContent = 'OFFLINE';
       els.live.dataset.mode = 'waiting';
     }
+  } finally {
+    refreshing = false;
   }
 }
 
-void refresh();
-window.setInterval(() => void refresh(), POLL_MS);
+function startRefreshLoop() {
+  if (refreshTimer) {
+    window.clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+
+  if (document.hidden) return;
+
+  void refresh();
+  refreshTimer = window.setInterval(() => void refresh(), POLL_MS);
+}
+
+document.addEventListener('visibilitychange', startRefreshLoop);
+startRefreshLoop();

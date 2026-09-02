@@ -11,8 +11,10 @@ const countToggle = document.querySelector('#tool-request-toggle');
 
 const MAX_ITEMS = 24;
 const COUNT_PREVIEW = 5;
-const POLL_MS = 2000;
+const POLL_MS = 5000;
+const COUNTS_REFRESH_MS = 60000;
 let lastEventId = 0;
+let lastCountsAt = 0;
 let polling = false;
 let countRows = [];
 let countsExpanded = false;
@@ -226,12 +228,25 @@ function renderLocalCounts() {
   renderCounts(rows);
 }
 
+function pollRequest() {
+  const now = Date.now();
+  const includeCounts = lastCountsAt === 0 || now - lastCountsAt >= COUNTS_REFRESH_MS;
+  const params = new URLSearchParams({ after: String(lastEventId) });
+  if (includeCounts) params.set('counts', '1');
+  return {
+    url: `/api/public-tool-events?${params.toString()}`,
+    includeCounts,
+    requestedAt: now,
+  };
+}
+
 async function poll() {
-  if (polling) return;
+  if (polling || document.hidden) return;
   polling = true;
+  const requestInfo = pollRequest();
 
   try {
-    const response = await fetch(`/api/public-tool-events?after=${lastEventId}`, {
+    const response = await fetch(requestInfo.url, {
       cache: 'no-store',
       credentials: 'same-origin',
     });
@@ -246,7 +261,10 @@ async function poll() {
       renderEvent(event);
     }
 
-    renderCounts(payload?.counts);
+    if (Array.isArray(payload?.counts)) {
+      renderCounts(payload.counts);
+      if (requestInfo.includeCounts) lastCountsAt = requestInfo.requestedAt;
+    }
     panel?.setAttribute('data-feed-ready', 'true');
   } catch {
     // Public logging is optional. Failure must not affect the main experience.
@@ -268,6 +286,9 @@ list?.addEventListener('scroll', () => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') hideDetail({ force: true });
 });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) void poll();
+});
 
 // Local development has no D1. Same-page events are still shown immediately so
 // the debug panel can exercise the exact presentation without a database.
@@ -283,4 +304,6 @@ window.addEventListener('matched:public-tool-event', (event) => {
 
 setState('READY', 'ready');
 void poll();
-window.setInterval(() => void poll(), POLL_MS);
+window.setInterval(() => {
+  if (!document.hidden) void poll();
+}, POLL_MS);

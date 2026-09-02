@@ -77,6 +77,7 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const after = Math.max(0, Number(url.searchParams.get('after') || 0) || 0);
+  const includeCounts = url.searchParams.get('counts') === '1';
 
   try {
     let result;
@@ -100,10 +101,13 @@ export async function onRequestGet(context) {
     const events = (result.results || []).map(normalizeEvent);
     if (after === 0) events.reverse();
 
-    return json({ events, counts: await readCounts(env) });
+    return json({
+      events,
+      counts: includeCounts ? await readCounts(env) : null,
+    });
   } catch (error) {
     console.error('MATCHED public tool log query failed', error);
-    return json({ events: [], counts: [] });
+    return json({ events: [], counts: null });
   }
 }
 
