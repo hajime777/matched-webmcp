@@ -2,6 +2,7 @@ const AUTO_VIEW_STORAGE_KEY = 'matched:webmcp-auto-view';
 
 let autoViewEnabled = readAutoViewPreference();
 let wireObserver = null;
+let semanticCallObserverInstalled = false;
 
 function readAutoViewPreference() {
   try {
@@ -78,6 +79,16 @@ function showWebMcpView() {
   document.querySelector('#agent-view-toggle')?.click();
 }
 
+function observeSemanticCallStart() {
+  if (semanticCallObserverInstalled) return true;
+
+  window.addEventListener('matched:agent-semantic-trace', (event) => {
+    if (event.detail?.kind === 'call') showWebMcpView();
+  });
+  semanticCallObserverInstalled = true;
+  return true;
+}
+
 function observeWireCallStart() {
   const status = document.querySelector('#wire-result-status');
   if (!status || wireObserver) return Boolean(status);
@@ -98,6 +109,8 @@ function observeWireCallStart() {
 }
 
 function bootAutoView() {
+  observeSemanticCallStart();
+
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
