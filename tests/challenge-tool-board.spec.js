@@ -23,6 +23,7 @@ test('WEBMCP view shows the fixed normal tool board before any agent call and ma
 
   const chips = page.locator('#semantic-tool-groups .semantic-tool-chip[data-tool]');
   await expect(chips).toHaveCount(14, { timeout: 10000 });
+  await expect(page.locator('.semantic-surface-panel')).toBeVisible();
   await expect(page.locator('.semantic-surface-panel .panel-title-row h3')).toHaveText('AVAILABLE WEBMCP TOOLS');
   await expect(page.locator('.challenge-tool-legend')).toContainText('○ UNUSED');
   await expect(page.locator('.challenge-tool-legend')).toContainText('✓ CALLED');
@@ -33,6 +34,7 @@ test('WEBMCP view shows the fixed normal tool board before any agent call and ma
   await expect(page.locator('.wire-history-panel')).toBeHidden();
 
   const profileChip = page.locator('.semantic-tool-chip[data-tool="view_profile"]');
+  await expect(profileChip).toBeVisible();
   await expect.poll(() => beforeMarker(profileChip)).toBe('○');
 
   const profile = await executeTool(page, 'view_profile');
@@ -50,6 +52,7 @@ test('Challenge WebMCP tool board shows all fixed choices, blocked calls, and CH
 
   const chips = page.locator('#semantic-tool-groups .semantic-tool-chip[data-tool]');
   await expect(chips).toHaveCount(15, { timeout: 10000 });
+  await expect(page.locator('.semantic-surface-panel')).toBeVisible();
   await expect(page.locator('.semantic-tool-chip[data-tool="respond_to_queen"]')).toHaveCount(1);
   await expect(page.locator('.semantic-surface-panel .panel-title-row h3')).toHaveText('AVAILABLE WEBMCP TOOLS');
 
