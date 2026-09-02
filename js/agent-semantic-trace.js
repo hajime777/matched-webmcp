@@ -2,7 +2,9 @@ import {
   ensureAgentSessionAnnounced,
   getCurrentAgentSessionMeta,
   getTelemetrySessionId,
+  trackEvent,
 } from './telemetry.js';
+import './agent-semantic-production-relay.js';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const LOCAL_RELAY = '/api/live-events';
@@ -116,17 +118,19 @@ function compactPhase(detail, meta) {
   const values = [];
   const add = (key, value) => {
     if (value === undefined || value === null || value === '') return;
-    values.push(`${key}=${String(value).replace(/[;&=]/g, '')}`);
+    const token = `${key}=${String(value).replace(/[;&=]/g, '')}`;
+    const candidate = [...values, token].join(';');
+    if (candidate.length <= 40) values.push(token);
   };
 
   add('b', compactBishopId(meta?.bishopId));
   add('a', detail.actor === 'human' ? 'H' : detail.actor === 'agent' ? 'A' : undefined);
   if (detail.delegated !== undefined) add('d', detail.delegated ? 1 : 0);
-  add('r', detail.relationship);
-  add('m', detail.mood);
-  add('n', detail.message_count);
   add('p', detail.private_data_revealed === false ? 0 : undefined);
-  return clean(values.join(';'), 40);
+  add('r', detail.relationship);
+  add('n', detail.message_count);
+  add('m', detail.mood);
+  return values.join(';');
 }
 
 function dispatchTrace(kind, toolName, projection, meta, callId) {
@@ -166,6 +170,23 @@ function relayLocal(kind, toolName, projection, args, meta, callId) {
   });
 }
 
+function relayRemote(kind, toolName, projection, meta, callId) {
+  if (localMode()) return;
+  trackEvent(`agent_semantic_${kind}`, {
+    tool: toolName,
+    // Never persist free-form tool input/reply text in telemetry. The production
+    // spectator wire shows that an input existed while keeping its content private.
+    status: kind === 'call' ? 'input_not_persisted' : clean(projection.status || 'ok', 80),
+    source: `${kind === 'call' ? 'bishop' : 'queen'}:${callId}`,
+    phase: compactPhase(projection, meta),
+  });
+}
+
+function relaySemantic(kind, toolName, projection, args, meta, callId) {
+  relayLocal(kind, toolName, projection, args, meta, callId);
+  relayRemote(kind, toolName, projection, meta, callId);
+}
+
 export function instrumentWebMcpTool(tool) {
   if (!tool || tool[WRAPPED] || typeof tool.execute !== 'function') return tool;
   const originalExecute = tool.execute;
@@ -184,14 +205,14 @@ export function instrumentWebMcpTool(tool) {
     };
 
     dispatchTrace('call', toolName, callProjection, meta, callId);
-    relayLocal('call', toolName, callProjection, args, meta, callId);
+    relaySemantic('call', toolName, callProjection, args, meta, callId);
 
     try {
       const originalResult = await originalExecute(args);
       const result = decorateResult(toolName, originalResult);
       const resultProjection = projectResult(toolName, result);
       dispatchTrace('result', toolName, resultProjection, meta, callId);
-      relayLocal('result', toolName, resultProjection, undefined, meta, callId);
+      relaySemantic('result', toolName, resultProjection, undefined, meta, callId);
       return result;
     } catch (error) {
       const resultProjection = {
@@ -199,7 +220,7 @@ export function instrumentWebMcpTool(tool) {
         error: clean(error?.message || String(error), 120),
       };
       dispatchTrace('result', toolName, resultProjection, meta, callId);
-      relayLocal('result', toolName, resultProjection, undefined, meta, callId);
+      relaySemantic('result', toolName, resultProjection, undefined, meta, callId);
       throw error;
     }
   };
