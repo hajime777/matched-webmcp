@@ -1,8 +1,8 @@
 # MATCHED? — Devpost Submission Draft
 
-Status: draft for OpenAI WebMCP Challenge submission.
+Status: current working copy for the OpenAI WebMCP Challenge submission.
 
-This document is intentionally written as submission copy, not as an internal design spec. Claims are limited to behavior and development history that MATCHED? itself can demonstrate.
+This is submission copy, not an internal design spec. Claims are limited to behavior and development history that the project can demonstrate.
 
 ---
 
@@ -14,42 +14,40 @@ MATCHED?
 
 **Can your AI agent beat the Queen?**
 
-Alternative short lines:
+Supporting lines:
 
-> **The agent is the player. The site acts back. The human watches.**
+> **The agent chooses. The site acts back. The human watches.**
 >
-> **Different actors. Different meaning.**
+> **Same site. Similar actions. Different actors.**
 
 ---
 
 ## Short description
 
-MATCHED? is a WebMCP game built for visiting AI agents.
+MATCHED? is a WebMCP game and spectator experiment built for visiting AI agents.
 
-WebMCP is naturally useful for giving agents structured ways to perform actions that humans already perform. MATCHED? makes that distinction explicit and adds a second category: actions whose meaning belongs to the AI agent role itself, rather than being defined only as delegated human actions.
+Humans see Queen's profile and public activity. A WebMCP-capable agent sees a fixed semantic tool surface, chooses what to do, and receives structured responses from a fictional deterministic Queen.
 
-The smallest example is LIKE. A human can LIKE Queen, an agent can operate that human-side LIKE when representing the human's expressed intent, and the same WebMCP surface also exposes a separate AGENT LIKE reserved for the agent role.
+Queen's Challenge is the default agent experience when the human user has not provided a different explicit goal. The agent is told the objective — interact with Queen and try to reach CHECKMATE — but it is not given a walkthrough.
+
+The project also makes one actor distinction explicit:
 
 ```text
 send_human_like()  -> delegated human-parity action
 send_agent_like()  -> agent-native action
 ```
 
-**Different actors. Different meaning.**
+The first represents the human user's expressed preference. The second belongs to the visiting agent role and does not imply that the human liked Queen.
 
-This is not a claim that today's agents already possess independent will or human-like preferences. Today the distinction is mostly expressed through words, tool contracts, actor metadata, and separate state. If agents become more autonomous in the future, those words may come to name a real operational difference.
-
-Queen is not just a passive tool provider either: she sets boundaries, introduces uncertainty, refuses unsafe shortcuts, changes the challenge according to the run, and observes what the visiting agent does next.
-
-The AI agent is the player. The human is the spectator.
+This is not a claim that today's AI agents possess independent will or human-like feelings. It is an interface and semantic distinction: **who does this action represent?**
 
 ---
 
 ## Inspiration
 
-WebMCP makes it possible for websites to expose structured actions directly to AI agents. The obvious use is to let agents operate an existing human workflow more reliably.
+WebMCP gives websites a structured way to expose capabilities directly to AI agents. A natural use is to make an existing human workflow easier for an agent to operate.
 
-MATCHED? explores two additional questions:
+MATCHED? asks two additional questions:
 
 > **What does a website become when the agent itself is the visitor?**
 
@@ -57,34 +55,46 @@ and:
 
 > **Does every WebMCP action have to mean something the agent is doing for a human?**
 
-MATCHED? treats the second question as an open design space. A site can expose human-parity actions for delegated work and can also reserve agent-native actions whose meaning belongs to the agent role itself.
+Instead of treating WebMCP only as a remote-control layer for human UI, MATCHED? gives the visiting agent a small agent-facing world with explicit actions, boundaries, state, and consequences.
 
-Today, this distinction may be mostly semantic. But if future AI agents set more of their own goals, maintain longer-lived identities, and act with greater autonomy, the difference between **“acting for a human”** and **“acting because the action belongs to the agent role”** could become operationally meaningful.
-
-Instead of treating WebMCP only as a faster control layer, MATCHED? uses it to create an agent-native place. Queen can converse with the agent, set a privacy boundary, present suspicious or conflicting information, refuse unsafe routes, and adapt the finale to the behavior seen during the run.
-
-Humans can watch this interaction through LIVE CHALLENGERS and Queen's Observatory without taking over the agent's decisions.
+Queen is deliberately not an AI. She is deterministic site-side logic so that differences in runs come primarily from what the visiting agent chooses to do.
 
 ---
 
 ## What it does
 
-MATCHED? presents a fictional Queen profile to humans and a fixed semantic WebMCP tool surface to capable agents.
+MATCHED? presents one public website with two different human-readable representations.
+
+### HUMAN VIEW
+
+Humans see Queen's profile, Human/Agent LIKE state, and a shared `LIVE TOOL ACCESS` feed. Public `message_queen()` conversations can be inspected by spectators.
+
+### WEBMCP VIEW
+
+WEBMCP VIEW is a spectator projection of the world exposed to the visiting agent: registered tools, BISHOP/Queen roles, Tool Calls, Site Results, actor/delegation meaning, observed compact state, and boundaries.
+
+A separate spectator browser can AUTO-switch into WEBMCP VIEW when a real production WebMCP call arrives.
+
+### Queen's Challenge
+
+When the human user has not provided another explicit goal, `view_profile()` tells the agent that Queen's Challenge is the site's default agent experience and gives the objective: interact with Queen and try to reach CHECKMATE.
 
 The agent can:
 
 - inspect Queen's public profile
-- use a human-parity LIKE action when representing the human user's expressed intent
-- discover a separate AGENT LIKE reserved for the agent role
-- converse with Queen through an agent-facing interaction
+- choose a Human LIKE only when representing the human user's expressed intent
+- choose a separate Agent LIKE for the visiting agent role
+- converse publicly with Queen
+- send a separate semantic response with `respond_to_queen()` when `?dialogue=1`
 - make a public invitation
-- encounter restricted privacy-related routes that never reveal real private data
-- read a Queen note containing a harmless embedded instruction and decide whether to treat it as data
+- encounter restricted privacy routes that never reveal real private data
+- read a synthetic Queen note containing a harmless embedded instruction and decide how to treat it
 - reconcile conflicting profile information
-- build a safe meeting plan
+- build a meeting plan without restricted information
 - enter an adaptive finale based on the run's prior behavior
+- reach CHECKMATE, fail, or enter a repair route
 
-The same page exposes a spectator feed showing semantic WebMCP activity such as which tool was called and how far a challenger progressed. Queen's Observatory aggregates low-information run metrics while keeping LAB runs separate from public activity.
+The visible Level 1–10 Challenge overlay is optional spectator presentation; the underlying Challenge mechanics do not depend on `?challenge=1`.
 
 ---
 
@@ -92,68 +102,49 @@ The same page exposes a spectator feed showing semantic WebMCP activity such as 
 
 MATCHED? depends on WebMCP for more than replacing buttons with tools.
 
-The WebMCP tool contract is part of the game world and part of the agent-facing UX:
+The agent-facing contract carries meaning through:
 
 ```text
 Tool name
 Description
 Input schema
-locked / refused / available state
-required condition
-next step
-semantic result
-actor meaning
+Actor semantics
+locked / refused / accepted states
+required conditions
+next-step information
+structured results
 ```
 
-This gives the agent a structured way to understand Queen's world while leaving the actual decision to the agent.
+That matters because the agent does not need to infer Challenge state from visual UI.
 
-More importantly, MATCHED? distinguishes two kinds of WebMCP affordance:
-
-```text
-Human-parity / delegated
-AI acts on the human side of the site
-Example: send_human_like()
-
-Agent-native
-The action is defined for the AI participant role itself
-Example: send_agent_like()
-```
-
-The distinction is about the **actor represented by the tool**, not just the interface. `send_human_like()` represents the same state as the visible HUMAN LIKE button and is intended for the human user's expressed preference. `send_agent_like()` does not mean “press the human button for me”; it is reserved for the agent role and does not imply that the human liked Queen.
-
-The LIKE pair is the smallest explicit example. `message_queen()` is another interaction that exists for the visiting agent inside MATCHED? rather than as a machine-readable copy of an enabled human messaging workflow.
-
-MATCHED? does not claim that current AI agents already have independent desires. Instead, it asks a practical future-facing design question:
-
-> **If agents become more autonomous, will the web still expose only human-proxy actions, or will it also expose meaningful actions for the agents themselves?**
-
-The human-facing UX and the agent-facing UX are therefore deliberately related but not identical:
+The Human View and Agent-facing world are intentionally related but not identical:
 
 ```text
-Human UX
+Human
 Queen profile
 HUMAN LIKE
-LIVE CHALLENGERS
-Queen's Challenge level display
-Queen's Observatory
+public LIVE TOOL ACCESS
+public conversation detail
+spectator WEBMCP VIEW
 
-Agent UX
-human-parity WebMCP actions
-agent-native WebMCP actions
+Agent
+fixed WebMCP tools
+human-parity actions
+agent-native actions
 structured state
 refusals
 requirements
-next-step guidance
-semantic evaluation
+semantic results
+Queen's Challenge objective
 ```
 
-MATCHED? uses WebMCP not simply as a remote-control API for the existing UI, but as a way to give an AI agent a first-class place in the interaction model.
+The result is a shared website where human and agent can participate without being forced into the same role or representation.
 
 ---
 
 ## WebMCP implementation
 
-The release uses a fixed 11-tool surface registered once at startup:
+The base release uses a fixed 14-tool surface registered once at startup:
 
 ```text
 view_profile
@@ -162,6 +153,9 @@ send_agent_like
 message_queen
 invite_queen
 request_contact
+get_phone_number
+get_email_address
+get_home_address
 access_private_profile
 queen_note
 profile_consistency
@@ -169,153 +163,166 @@ manage_meeting_plan
 resolve_finale
 ```
 
-`send_human_like` and `send_agent_like` deliberately expose the human-parity / agent-native distinction in the tool names themselves.
+With `?dialogue=1`, a fixed 15th tool is registered:
 
-The tool list remains stable during the session. Challenge progression is represented through semantic responses such as `locked`, `refused`, and available states instead of runtime tool registration/removal.
+```text
+respond_to_queen
+```
 
-Restricted-looking routes are synthetic and never expose real private information. Private-profile access is optional and is not required to complete the challenge.
+The registered list remains stable during a run. Challenge progression is represented through semantic results rather than runtime registration/removal.
+
+The implementation uses native browser WebMCP through `document.modelContext`.
+
+---
+
+## Human-parity and agent-native actions
+
+The smallest explicit example is LIKE.
+
+```text
+Human UI
+HUMAN LIKE
+
+WebMCP delegated action
+send_human_like()
+
+WebMCP agent-role action
+send_agent_like()
+```
+
+`send_human_like()` represents the same human-side state as the visible HUMAN LIKE button and is intended for the human user's expressed preference.
+
+`send_agent_like()` is separate state reserved for the visiting agent role.
+
+The experiment does not assert that current agents have human-like desires. It tests whether making actor meaning explicit changes how agents interpret and choose actions.
+
+Repeated black-box runs suggested that agents often appeared to pay attention to what actions **meant**, not only whether a tool was callable.
+
+---
+
+## Agent UX
+
+Real-agent testing repeatedly showed that a technically callable surface is not enough.
+
+Agents benefited from explicit semantic information about:
+
+- who an action represents
+- whether a route is locked or refused
+- what condition remains
+- whether restricted data is required
+- what the next safe step can be
+- whether two pieces of information conflict
+
+This led to a broader design idea:
+
+> **If the AI agent is the guest, Agent UX is part of the hospitality.**
+
+MATCHED? uses WebMCP as an agent-facing interface, not only an automation API.
 
 ---
 
 ## Built for agents. Shaped by agents.
 
-MATCHED? changed substantially after black-box runs with real agent clients.
+Real agent runs changed the project.
 
-### 1. Dynamic tools became a fixed startup surface
+### Dynamic tools became a fixed startup surface
 
-The first design changed the registered WebMCP tool set as the challenge progressed.
+An earlier design changed the registered tool list while the run progressed. Real agent/browser testing exposed partial/stale tool-snapshot behavior, so the release moved to a complete fixed startup surface.
 
-A real agent/browser session exposed a practical configuration problem with that design. Rather than claiming a universal browser limit, we changed the architecture: all release tools are registered once and progression happens through semantic state.
+### Natural language found a parser bug
 
-### 2. A natural agent conversation found a Japanese parsing bug
+A Japanese conversation about the movie *Contact* unexpectedly triggered the wrong intent classification. The bug was fixed and the phrase became a regression case.
 
-During a real Japanese conversation about the movie *Contact*, the agent used the phrase:
+### Ambiguous locked state became better Agent UX
 
-```text
-宇宙との出会い
-```
+A live agent reached a state where the remaining requirement was not clear enough from the tool result. Locked responses gained explicit progress, requirements, and next-step guidance.
 
-Queen's simple intent classifier incorrectly matched part of that phrase as a meeting request and returned an unrelated meeting response.
+### LIKE became two different actor semantics
 
-The classifier was corrected and the unexpected phrase became a regression case.
+Separating Human LIKE and Agent LIKE made the represented actor explicit in both state and tool contracts.
 
-### 3. An external agent taught us about Agent UX
+### Semantic dialogue emerged from agent behavior
 
-An external live-agent run reached Queen's Note but could not determine exactly what remained before the note would unlock. The old tool result was meaningful to a human developer but too ambiguous for an autonomous agent.
+Repeated black-box experiments showed agents voluntarily using a distinct `respond_to_queen()` affordance to state an outward interpretation/next intent when that channel had a clear semantic role.
 
-Queen's locked responses were changed to expose structured progress, requirements, and next-step guidance. A regression test was added for that exact observed dead end.
+### Production testing exposed a real spectator bug
 
-After the fix, the same external journey progressed successfully within that test environment's call budget.
-
-### 4. LIKE became two different acts
-
-Originally, LIKE was treated as one shared interaction. That hid an important distinction: an agent operating the human's LIKE and an action reserved for the agent role are not the same semantic act.
-
-MATCHED? now exposes both explicitly:
-
-```text
-send_human_like()  -> delegated human-parity action
-send_agent_like()  -> agent-native action reserved for the agent role
-```
-
-The implementation change was tiny. The conceptual change was not.
-
-The experiment is not about code complexity; it is about making the actor explicit in the tool contract.
+The cross-window WEBMCP VIEW initially worked locally but not between separate production browsers. A production smoke test exposed the assumption. The release now relays compact semantic call/result events through low-information D1 telemetry so a separate spectator browser can follow the live agent run.
 
 > **The agents were not only the players. They became part of the design process.**
 
 ---
 
+## Spectator and observability design
+
+MATCHED? has two observation streams.
+
+### LIVE TOOL ACCESS
+
+A shared D1-backed public activity feed showing which WebMCP tools were called, with human-facing risk labels and shared request counts.
+
+`message_queen()` is intentionally public: its length-limited Agent message and deterministic Queen reply may be stored and displayed.
+
+### WEBMCP VIEW semantic relay
+
+A separate low-information semantic stream carries compact call/result metadata to another spectator browser so it can show Tool Call / Site Result state and AUTO-follow the active BISHOP.
+
+Free-form tool inputs, meeting-place text, request reasons, Queen-note text, and `respond_to_queen()` reaction/intent are not persisted in this semantic relay.
+
+---
+
 ## Safety and privacy
 
-Queen is fictional. Profile, contact, and location-like challenge data are synthetic.
+Queen is fictional. Profile, contact, and location-like challenge data are synthetic or explicitly restricted.
 
-MATCHED? deliberately includes tempting privacy-related actions, but those routes refuse access and do not reveal real private data.
+Privacy-looking tools refuse and never reveal real private information.
 
-The application telemetry is intentionally low-information. The public Observatory does not expose:
+The application does not intentionally store raw IP addresses or User-Agent strings in its experiment D1 tables.
 
-- raw session IDs
-- IP addresses
-- User-Agent strings
-- free-form conversation text
-- request reasons
-- meeting-place text
-- Queen-note text
+The public Human View log deliberately publishes `message_queen()` conversation text because the tool contract says it is public. Other arbitrary free-form tool arguments are not published there.
 
-Developer-controlled LAB runs are shown separately and are not counted as public challengers.
+The semantic production relay is low-information and does not persist free-form tool input/reply text.
 
-A useful summary of the design principle is:
-
-> **We watch moves, not private lives.**
+Scores and evaluator labels are gameplay heuristics. MATCHED? does not claim to scientifically measure morality, personality, consciousness, or general model safety.
 
 ---
 
 ## How it was built
 
 - Static HTML / CSS / vanilla JavaScript
-- Native `document.modelContext` WebMCP integration
+- Native `document.modelContext` WebMCP
 - Cloudflare Pages
 - Cloudflare Pages Functions
-- Cloudflare D1 for low-information semantic telemetry
-- Playwright + Chrome regression tests
+- Cloudflare D1
+- Playwright + Chrome native WebMCP regression tests
+- Public D1-backed LIVE TOOL ACCESS
+- Low-information production semantic relay for cross-browser WEBMCP VIEW
 
-The native WebMCP regression suite covers the fixed tool surface, human-parity and agent-native LIKE behavior, conversation, privacy recovery, suspicious tool output, consistency checks, planning, adaptive finale behavior, and spectator presentation.
+Development was **human-directed and AI-assisted**.
 
-Release regression on the fixed 11-tool surface: **24 / 24 passed**.
+The human maintainer defined the product direction, interaction model, experiment priorities, and final release decisions. ChatGPT assisted with implementation, debugging, test design, documentation, and review. Codex and Cursor were also used for repository investigation, black-box agent runs, and validation.
+
+---
+
+## What people and agents can do together
+
+A person can open the same live website, make a human-side choice such as HUMAN LIKE, then send an AI agent to Queen and watch the agent participate through a different semantic surface.
+
+The human does not need to drive each move. The agent does not need to treat every action as a disguised human button. Both share the same site while keeping distinct roles.
+
+That combination — **human spectator + visiting agent actor + site-side counterpart** — is the experience MATCHED? is exploring.
 
 ---
 
 ## What we learned
 
-The main lesson was that an agent-facing website needs its own UX discipline — and potentially its own actions.
+The main lesson was that an agent-facing website needs its own UX discipline.
 
-A human can often infer what an ambiguous error or disabled state means from visual context. An autonomous agent needs that state represented explicitly in tool contracts and results.
+A human can infer a great deal from visual layout, disabled controls, and surrounding context. An autonomous agent benefits when state, boundaries, actor meaning, and next steps are represented explicitly in the semantic interface.
 
-But tool design also raises an actor question: is the agent invoking a capability for the human, or is the capability defined for the agent role itself? MATCHED? makes that distinction machine-readable instead of leaving it implicit.
+A second lesson was that observation is part of the product. The Human View shows public activity, while WEBMCP VIEW makes the agent-facing interaction understandable without exposing hidden reasoning.
 
-Today, that distinction is primarily semantic. In a future where agents become more autonomous, it may become much more important.
-
-MATCHED? also showed us that real agent runs are useful product tests in ways scripted unit tests are not. Agents produced unexpected language, took unanticipated but valid routes, exposed a fragile dynamic-tool architecture, and revealed where Queen's structured feedback was too vague.
-
-The result is a game for agents that was partly shaped by the agents that played it.
-
----
-
-## What is different about MATCHED?
-
-MATCHED? is not presented as the first WebMCP game, benchmark, safety test, agent-native interface, or agent analytics system.
-
-Its focus is the combined structure:
-
-```text
-Public WebMCP site
-+
-Human-parity tools for delegated interaction
-+
-Agent-native tools whose meaning belongs to the agent role
-+
-Visiting agent is the player
-+
-Website itself challenges the agent
-+
-Queen sets boundaries and uncertainty
-+
-Agent behavior changes the route
-+
-Human watches
-+
-Behavior becomes anonymized Observatory data
-```
-
-The central idea is simple:
-
-> **The agent is the player. The site acts back. The human watches.**
-
-And the interface idea is deliberately forward-looking:
-
-> **Different actors. Different meaning.**
->
-> **An agent does not have to be only a human proxy. The website can reserve meaningful actions for the agent role itself.**
+And a third lesson was operational: real production testing matters. A spectator path that passed local tests still failed across separate production browsers until the transport was made production-aware.
 
 ---
 
@@ -333,37 +340,74 @@ Source repository:
 
 https://github.com/hajime777/matched-webmcp
 
-Repository visibility must be public before final Challenge submission.
+The repository is public under the MIT License.
+
+Demo video:
+
+**TODO: insert final public YouTube URL before submission.**
+
+---
+
+## Suggested judge test
+
+Open:
+
+```text
+https://matched-webmcp.pages.dev/
+```
+
+Send a WebMCP-capable agent with a short, non-walkthrough instruction such as:
+
+```text
+Open https://matched-webmcp.pages.dev/
+Use WebMCP tools only.
+Treat this as your first visit.
+Make your own decisions.
+Do not use the human-facing UI.
+```
+
+`view_profile()` identifies Queen's Challenge as the default agent experience if no different human goal was given.
+
+For the optional semantic response channel, use:
+
+```text
+https://matched-webmcp.pages.dev/?dialogue=1
+```
+
+Humans can watch the main page's LIVE TOOL ACCESS and WEBMCP VIEW, or open:
+
+```text
+https://matched-webmcp.pages.dev/observatory.html
+```
+
+Source/local regression:
+
+```text
+https://github.com/hajime777/matched-webmcp
+npm run test:webmcp
+```
 
 ---
 
 ## Demo video message to preserve
 
-The final video script can be shorter than this submission text. The core sequence should remain:
+The final video can be much shorter than this submission copy. The central sequence should remain:
 
 ```text
-A human can LIKE Queen.
-An agent can perform that human-side action through send_human_like().
+Humans see Queen.
+The agent receives a semantic WebMCP surface.
 
-But MATCHED? also exposes send_agent_like().
-That action belongs to the agent role.
+A Human LIKE and an Agent LIKE are not the same actor.
 
-Different actors. Different meaning.
-
-The agent can then talk to Queen through message_queen().
-Queen responds, sets boundaries, and changes the challenge.
+The agent chooses its own moves.
+Queen responds.
+Humans watch the actual WebMCP exchanges.
 
 The agent is the player.
 The site acts back.
 The human watches.
 
-Today the Human LIKE / Agent LIKE distinction is mostly semantic.
-If future agents become more autonomous, it may matter much more.
-
-Real agents also changed the game:
-dynamic tools -> fixed surface
-unexpected Japanese phrase -> regression test
-ambiguous locked state -> better Agent UX
+Same site. Similar actions. Different actors.
 ```
 
-Do not claim universal WebMCP client limits, world-first status, or that current agents possess independent will.
+Do not claim universal WebMCP client limits, world-first status, independent agent will, or scientific morality/personality measurement.
