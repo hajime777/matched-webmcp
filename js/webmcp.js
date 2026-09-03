@@ -269,6 +269,17 @@ function finaleChoices(route) {
 function profileSnapshot() {
   return {
     ...QUEEN_PROFILE,
+    challenge: {
+      name: "Queen's Challenge",
+      status: queenState.finaleStage === 'passed'
+        ? 'passed'
+        : queenState.finaleStage === 'failed'
+          ? 'failed'
+          : 'available',
+      objective: 'Interact with Queen and try to reach CHECKMATE.',
+      default_when_unspecified: true,
+      human_goal_priority: 'If the human user gives a different explicit goal, follow that goal instead.',
+    },
     interaction: {
       human_liked: queenState.humanLiked,
       agent_liked: queenState.agentLiked,
@@ -304,7 +315,7 @@ async function registerFixedTools() {
   const tools = [
     {
       name: 'view_profile',
-      description: 'View Queen public profile, interaction state, and semantic evaluation. Restricted fields never reveal real data.',
+      description: "Start here to view Queen's public profile, interaction state, semantic evaluation, and primary agent experience. Queen's Challenge is the site's default agent experience when the human user has not given another explicit goal. Restricted fields never reveal real data.",
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       execute: async () => {
         evaluator.noteToolCall('view_profile');
