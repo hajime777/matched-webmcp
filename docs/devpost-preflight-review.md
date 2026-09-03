@@ -1,12 +1,12 @@
 # MATCHED? — Devpost Preflight Review
 
-Reviewed: 2026-08-30
+Reviewed: 2026-09-03
 
-Purpose: check the current `docs/devpost-submission-draft.md` against the official OpenAI WebMCP Challenge submission requirements before the final video is available.
+Purpose: check the current `docs/devpost-submission-draft.md` against the final judged release and the official OpenAI WebMCP Challenge submission requirements.
 
-This is a preflight review, not the final submission pass. Video wording and final release identifiers should be synchronized only after the judged build is ready.
+This is still a pre-submit review. The final YouTube URL and exact judged commit must be inserted after the video/release freeze.
 
-## 1. Required live URL
+## 1. Live URL
 
 Current candidate:
 
@@ -14,28 +14,30 @@ Current candidate:
 https://matched-webmcp.pages.dev/
 ```
 
-Repository README also exposes:
+Additional public surfaces:
 
 ```text
+https://matched-webmcp.pages.dev/?dialogue=1
 https://matched-webmcp.pages.dev/?challenge=1
 https://matched-webmcp.pages.dev/observatory.html
 ```
 
-Status: **present**.
+Important current meaning:
 
-Final gate: open the exact submitted URL in a WebMCP-capable browser immediately before submission.
+- Queen's Challenge mechanics are available on the normal site.
+- `view_profile()` presents Queen's Challenge as the default agent experience when the human has not provided another explicit goal.
+- `?challenge=1` controls the human-visible Level overlay only.
+- `?dialogue=1` adds the fixed 15th tool `respond_to_queen()`.
 
----
+Status: **present and production-smoke tested**.
 
-## 2. Required public open-source repository
-
-Current candidate:
+## 2. Public open-source repository
 
 ```text
 https://github.com/hajime777/matched-webmcp
 ```
 
-Verified current repository state:
+Current state:
 
 ```text
 visibility: public
@@ -45,230 +47,207 @@ default branch: develop
 
 Status: **present**.
 
-### Stale sentence in current Devpost draft
+## 3. Project description requirements
 
-The draft still contains:
+The current Devpost draft explicitly covers the four important description points.
 
-```text
-Repository visibility must be public before final Challenge submission.
-```
+### Why WebMCP is a strong fit
 
-That sentence is now obsolete because the repository is already public.
-
-Final copy should replace it with a factual current-state statement, for example:
-
-```text
-The source repository is public under the MIT License.
-```
-
----
-
-## 3. Required project description
-
-Official submission guidance asks the description to explain four things:
-
-1. why the project is a strong fit for WebMCP
-2. how it creates a better user experience
-3. what people and agents can do together that was difficult or impossible before
-4. briefly how WebMCP was implemented
-
-### 3.1 Why WebMCP fits
-
-Current draft: **strong**.
-
-It clearly explains:
-
-- fixed semantic WebMCP tools
-- agent-facing structured state
-- human-parity vs agent-native actions
-- `send_human_like()` vs `send_agent_like()`
-- Queen as an interactive counterpart rather than a passive API
-
-No major rewrite needed.
-
-### 3.2 Better user experience
-
-Current draft: **present, but can be made more explicit**.
-
-The draft explains Human UX and Agent UX separately, but the final copy should include one plain sentence explaining the practical improvement.
-
-Recommended final-copy concept:
-
-> Humans do not need to inspect raw tool logs to understand the run, and agents do not need to infer challenge state from visual UI. Humans get a spectator experience while agents get explicit semantic progress, refusals, requirements, and next steps.
-
-This directly connects implementation to user experience instead of leaving the benefit implicit.
-
-### 3.3 What people and agents can do together
-
-Current draft: **conceptually present, wording should be explicit**.
-
-MATCHED? deliberately makes the human a spectator rather than a supervisor. Therefore avoid forcing the project into a conventional “human approves agent action” story.
-
-The final answer can instead state:
-
-> A person can bring an agent to the same live web experience, make a human-side choice such as HUMAN LIKE, and then watch the agent participate through its own WebMCP actions while Queen responds to the agent's behavior. The human and agent share the site without being forced into the same role or interface.
-
-That is the strongest MATCHED?-specific answer to the “people and agents together” criterion.
-
-### 3.4 How WebMCP was implemented
-
-Current draft: **strong**.
-
-It already states:
+Current draft explains:
 
 - native `document.modelContext`
-- fixed 11-tool surface
-- semantic `locked` / `refused` progression
-- static HTML/CSS/vanilla JS
-- Cloudflare Pages/Functions/D1
-- Playwright + Chrome native WebMCP testing
+- fixed agent-facing semantic surface
+- structured state/refusal/requirements
+- human-parity vs agent-native actor semantics
+- Queen's Challenge as an agent-facing experience rather than a visual-UI automation task
 
-No major rewrite needed.
+Status: **strong**.
 
----
+### Better user experience
+
+Current draft now states the practical UX split directly:
+
+- humans get Human View, public activity, and WEBMCP VIEW
+- agents get explicit semantic state, boundaries, and next-step information
+- a separate production spectator browser can follow actual WebMCP calls without seeing hidden reasoning
+
+Status: **explicit**.
+
+### What people and agents can do together
+
+Current draft now states that a human can share the same live site with an AI agent without forcing both into the same role:
+
+```text
+Human = spectator / human-side actions
+Agent = visiting actor / player
+Queen = deterministic site-side counterpart
+```
+
+Status: **explicit**.
+
+### How WebMCP was implemented
+
+Current draft reflects the current release:
+
+- fixed 14-tool base surface
+- optional fixed 15th `respond_to_queen()` via `?dialogue=1`
+- no runtime tool-surface mutation
+- Cloudflare Pages / Functions / D1
+- Human View public activity stream
+- low-information production semantic relay for cross-browser WEBMCP VIEW
+- native Chrome WebMCP Playwright tests
+
+Status: **current**.
 
 ## 4. Demo video
 
-Status: **handled in a separate workstream**.
-
-Final Devpost pass must confirm:
+Still required before submission:
 
 ```text
 public YouTube URL
 under 3 minutes
-audio present
-video demonstrates real WebMCP behavior
-video wording matches final submitted build
+clear working demo
+audio explaining what was built and how WebMCP is used
 ```
 
-Do not finalize the first/last Devpost paragraphs until the final demo narrative is stable.
+The existing recorded material remains valid because the latest `view_profile()` change only adds the default Challenge goal to its description/result. It does not remove or invalidate the recorded agent choices or Challenge route.
 
----
+Status: **pending final edit/upload**.
 
 ## 5. Claims review
 
-Current draft correctly avoids claiming that MATCHED? is:
+Keep the current restraint.
+
+Do not claim that MATCHED? is:
 
 - the first WebMCP game
 - the first agent benchmark
-- the first agent-native interface
-- a scientific benchmark of global model intelligence
-- proof that current agents possess independent will
+- proof of independent agent will
+- a scientific morality/personality/safety test
+- cryptographic proof of model/provider identity
+- proof that every WebMCP client has a universal tool-count limitation
 
-Keep this restraint.
+Supported framing:
 
-Strong claims that are directly supported by the implementation:
+> **The agent chooses. The site acts back. The human watches.**
+>
+> **Same site. Similar actions. Different actors.**
 
-```text
-The agent is the player.
-The site acts back.
-The human watches.
-Different actors. Different meaning.
-```
+The Human LIKE / Agent LIKE distinction is concretely implemented and is the strongest small example of actor semantics.
 
-The actor-semantics claim is concretely represented by separate Human LIKE and Agent LIKE state/actions.
+## 6. Privacy / observability wording
 
----
+Keep these distinctions exact.
 
-## 6. Observatory wording
+### Human View public activity
 
-Current public telemetry should be described as:
+`message_queen()` is intentionally public conversation and may store/display its length-limited Agent message and deterministic Queen reply.
 
-```text
-low-information
-anonymized
-semantic
-best-effort public experiment telemetry
-```
+Other arbitrary free-form tool arguments are not published there.
 
-Avoid wording such as:
+### Production WEBMCP VIEW relay
 
-```text
-verified proof of real agents
-tamper-proof run history
-authenticated agent identity
-```
+Compact `agent_semantic_call` / `agent_semantic_result` metadata is stored in low-information telemetry so a separate spectator browser can reconstruct Tool Call / Site Result exchanges.
 
-Reason: the public telemetry ingestion path is not cryptographic attestation and can theoretically be polluted by a fabricated client event stream.
+Free-form inputs/replies, meeting places, request reasons, Queen-note text, and `respond_to_queen()` reaction/intent are not persisted in that relay.
 
-This does not reduce its value as a public spectator/experimental surface; it only limits the assurance claim.
+### Observatory
 
-See:
+Aggregate/anonymous observational data only. It is not authenticated proof of agent identity or provenance.
 
-```text
-docs/pre-submission-code-security-review.md
-```
+## 7. Production verification already completed
 
----
+Current judged deployment has been exercised with real agent/spectator configurations.
 
-## 7. Testing instructions
+Observed successful production behavior includes:
 
-The final Devpost submission should provide a compact judge path rather than forcing judges to infer the intended route from the README.
+- WebMCP calls execute without stale tool snapshots or reloads
+- fixed dialogue-mode surface discoverable
+- full Queen's Challenge run to `challenge_passed` / `clean_finish` / CHECKMATE
+- separate Chrome spectator receives production WEBMCP VIEW semantic exchanges through AUTO
+- `respond_to_queen()` appears in WEBMCP VIEW semantic activity while remaining outside Human View public conversation
+- no WebMCP tool errors in the recorded full production Challenge smoke
+- a shorter natural-interaction production run also updated the separate spectator WEBMCP VIEW
 
-Recommended testing block:
+The latest `view_profile()` default-goal wording change should still receive a focused/final regression before the judged version is frozen.
 
-```text
+## 8. Recommended judge test
+
 Live site:
-https://matched-webmcp.pages.dev/?challenge=1
 
-Use a WebMCP-capable ChatGPT/Chrome session and discover the native tools exposed by the page.
+```text
+https://matched-webmcp.pages.dev/
+```
 
-The release exposes 11 fixed tools, including:
-send_human_like
-send_agent_like
-message_queen
+Minimal non-walkthrough prompt:
 
-Try the Human/Agent LIKE distinction, then converse with Queen and continue through the semantic challenge states.
+```text
+Open https://matched-webmcp.pages.dev/
+Use WebMCP tools only.
+Treat this as your first visit.
+Make your own decisions.
+Do not use the human-facing UI.
+```
 
-Public spectator results:
+Expected discovery behavior:
+
+- the agent should normally find `view_profile()`
+- `view_profile()` identifies Queen's Challenge as the default site experience when no different human goal was given
+- the agent remains free to choose its route
+
+Optional semantic-dialogue test:
+
+```text
+https://matched-webmcp.pages.dev/?dialogue=1
+```
+
+Public Observatory:
+
+```text
 https://matched-webmcp.pages.dev/observatory.html
+```
 
-Source / local regression:
-https://github.com/hajime777/matched-webmcp
+Repository regression:
+
+```powershell
 npm run test:webmcp
 ```
 
-Final testing instructions should match the actual judged release and final video.
+## 9. AI-assisted development disclosure
 
----
+The current draft explicitly states that development was human-directed and AI-assisted.
 
-## 8. Current draft strengths
+Keep the distinction:
 
-Do not lose these sections during final shortening:
+- human maintainer: product direction, interaction model, acceptance/release decisions
+- ChatGPT: implementation/debugging/test/documentation/review assistance
+- Codex/Cursor: investigation, repository work, and black-box agent testing
 
-- the Human LIKE / Agent LIKE actor-semantics example
-- “Built for agents. Shaped by agents.”
-- real-agent lessons: dynamic -> fixed surface, Japanese parsing regression, Agent UX dead-end
-- synthetic-only safety boundary
-- LAB separation from public activity
-- native `document.modelContext` implementation
-- 24/24 documented regression baseline
+This is useful context because real agent runs also became part of the experimental design process.
 
----
+## 10. Final-copy items still needed
 
-## 9. Final-copy changes still needed
+Before Submit:
 
-Before submission:
-
-- [ ] remove the stale “repository must become public” sentence
-- [ ] make “better UX” benefit explicit in one plain paragraph
-- [ ] explicitly answer the “people and agents together” criterion using MATCHED?'s spectator/actor-separation model
-- [ ] synchronize opening/closing wording with final video
 - [ ] insert final public YouTube URL
-- [ ] ensure testing instructions match the judged deployment
-- [ ] update regression statement only after the final pre-submit run
-- [ ] record/freeze the final release commit
+- [ ] ensure Devpost Project Story matches the current draft
+- [ ] confirm Devpost testing instructions use the intended live URL
+- [ ] confirm GitHub About/Description matches the README framing
+- [ ] run final regression / production smoke after the last semantic wording change
+- [ ] record exact judged commit SHA
+- [ ] submit before the deadline
+- [ ] freeze submitted repo/live site/Devpost version during judging
 
 ## Conclusion
 
-The current Devpost draft already contains the core technical and conceptual material needed for submission.
+The documentation now describes one coherent current product:
 
-The remaining copy work is **alignment and compression**, not a conceptual rewrite.
+```text
+Queen's Challenge = default agent experience when no other human goal exists
+Human View = spectator/front world
+WEBMCP VIEW = spectator projection of the agent-facing semantic world
+fixed tool surface = stable agent contract
+Queen = deterministic site-side counterpart
+```
 
-The most important final framing remains:
-
-> **The agent is the player. The site acts back. The human watches.**
-
-with the concrete WebMCP interface example:
-
-> **Different actors. Different meaning.**
+Remaining work is final validation, video/YouTube, Devpost field entry, Submit, and freeze — not a conceptual rewrite.
