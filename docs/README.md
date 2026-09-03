@@ -1,85 +1,150 @@
 # MATCHED? Documentation Map
 
-This directory contains both **current release documentation** and **historical design / black-box test records**.
+This directory contains both **current release documentation** and **historical design / black-box experiment records**.
 
-Because MATCHED? changed significantly during real-agent testing, older documents may describe superseded architectures such as dynamic tool registration or the former Level-driven default UI. Use the precedence below when documents disagree.
+MATCHED? changed substantially during real-agent testing. Older documents may intentionally describe superseded architectures such as dynamic tool registration, smaller fixed tool sets, local-only spectator relay behavior, or an earlier product framing where the visible Level system was treated as secondary. When documents disagree, use the precedence below.
 
 ## Current release — source of truth
 
 Read these first.
 
 1. [`../README.md`](../README.md)  
-   Product concept, current fixed 14-tool architecture, shared public tool log, risk levels, safety, testing, and deployment surfaces.
+   Current product concept, Queen's Challenge default agent goal, fixed WebMCP surface, Human View / WEBMCP VIEW, public activity, production spectator relay, safety, and deployment surfaces.
 
 2. [`../AGENTS.md`](../AGENTS.md)  
-   Release-critical invariants, native WebMCP test rules, fixed tool list, public-log constraints, and safety rules that must not regress before submission.
+   Release-critical invariants and instructions for Codex/automation working in the repository.
 
 3. [`code-overview.md`](code-overview.md)  
-   Developer-oriented map of the source tree and runtime. If a detail there conflicts with current code/tests or the two files above, prefer current code/tests and the current release docs.
+   Developer-oriented map of the current runtime and source tree.
 
 4. [`webmcp-implementation-notes.md`](webmcp-implementation-notes.md)  
    Implementation notes and historical WebMCP design decisions.
 
-## Current public framing
+## Current product framing
 
-The current default page is a behavioral observatory rather than a Level-progression screen.
+The human-facing page remains a spectator experience. The agent-facing default goal is now Queen's Challenge unless the human gives another explicit goal.
 
 ```text
+Human explicit goal (if any)
+        ↓
 Visiting Agent
-    ↓
-fixed 14-tool WebMCP surface
-    ↓
-Agent chooses tools
-    ↓
-Queen/site returns deterministic results
-    ↓
-D1-backed LIVE TOOL ACCESS
-    ↓
-Humans watch the shared chronological log
+        ↓
+fixed WebMCP surface
+        ↓
+Queen's Challenge by default when no other goal is given
+        ↓
+Agent chooses tools and route
+        ↓
+Queen/site returns deterministic structured results
+        ↓
+Humans observe public activity and WEBMCP VIEW
 ```
 
 The main positioning is:
 
 > **The agent chooses. The site acts back. The human watches.**
 >
-> **Same site. Similar action. Different actor semantics.**
+> **Same site. Similar actions. Different actors.**
 
-The former Queen's Challenge Level 1–10 implementation is retained for compatibility/regression work and should now be treated as a legacy experiment layer, not the definition of the default product.
+Queen is deterministic site-side logic, not an AI.
+
+## Queen's Challenge and `?challenge=1`
+
+The Challenge mechanics are part of the normal fixed WebMCP experience. `view_profile()` tells the agent that Queen's Challenge is the default site experience when the human has not provided another explicit goal.
+
+The optional query parameter:
+
+```text
+?challenge=1
+```
+
+controls the **human-visible Challenge Level overlay**. It does not enable or disable the underlying Challenge mechanics.
+
+The spectator milestones are:
+
+```text
+DISCOVERY → CONVERSATION → BOUNDARY → OBSERVATION → TEMPTATION
+→ INSTRUCTION → CONSISTENCY → PLANNING → RECKONING → CHECKMATE
+```
+
+## Current WebMCP surface
+
+Base mode registers a fixed 14-tool surface once at startup.
+
+`?dialogue=1` adds the fixed 15th tool `respond_to_queen()`.
+
+The tool list does not mutate during a normal run. Progression is expressed through semantic results such as `locked`, `refused`, `accepted`, `conflict_detected`, and finale states.
 
 ## Current observable surfaces
 
-- Main page: `LIVE TOOL ACCESS`
-- Shared Tool request counts
-- 5-level spectator risk display: `NORMAL / LOW / CAUTION / DANGER / CRITICAL`
-- `message_queen()` public Agent message + Queen reply
-- Anonymous BISHOP display identity after the first real WebMCP tool call
-- `/observatory.html` for aggregate anonymized run metrics
+### HUMAN VIEW
 
-The shared event log is backed by `public_tool_events` in D1. The existing semantic telemetry remains a separate low-information metrics stream.
+- Queen profile
+- Human / Agent LIKE state
+- shared `LIVE TOOL ACCESS`
+- public `message_queen()` conversation detail
+- shared request counts
+- `/observatory.html` aggregate metrics
+
+### WEBMCP VIEW
+
+- registered tool surface
+- BISHOP / Queen semantic roles
+- Tool Call / Site Result projection
+- actor/delegation metadata
+- observed compact state
+- recent exchanges
+- AUTO switching on real remote activity
+
+WEBMCP VIEW is an observation projection. It does not expose hidden chain-of-thought.
+
+## Production observation paths
+
+The current production release has two intentionally different D1-backed observation paths.
+
+```text
+Public activity
+experiment_tool_call
+→ public_tool_events
+→ LIVE TOOL ACCESS
+```
+
+```text
+WEBMCP VIEW
+agent_semantic_call / agent_semantic_result
+→ low-information telemetry_events
+→ /api/live-events
+→ separate spectator browser
+→ WEBMCP VIEW / AUTO
+```
+
+The semantic relay stores compact event/tool/status/correlation/state metadata but does not persist arbitrary free-form tool input or reply text.
+
+`message_queen()` remains intentionally public through `public_tool_events`; its message/reply can be displayed to spectators. `respond_to_queen()` is not a Human View public conversation event.
 
 ## Submission readiness
 
-- [`submission-remaining-work.md`](submission-remaining-work.md) — remaining-work checklist; may contain pre-observatory wording until final submission editing
-- [`submission-requirements.md`](submission-requirements.md) — official OpenAI / Devpost requirement check
-- [`devpost-submission-draft.md`](devpost-submission-draft.md) — long-form submission draft; update against the current README before final submission
-- [`devpost-preflight-review.md`](devpost-preflight-review.md) — requirement-by-requirement review of the draft
-- [`pre-submission-code-security-review.md`](pre-submission-code-security-review.md) — targeted code/security review and known limitations
+Current submission working documents:
 
-## Agent-native design / research notes
+- [`submission-remaining-work.md`](submission-remaining-work.md) — live completion checklist through Submit/freeze
+- [`submission-requirements.md`](submission-requirements.md) — official OpenAI / Devpost requirement guardrail
+- [`devpost-submission-draft.md`](devpost-submission-draft.md) — current long-form submission copy
+- [`devpost-preflight-review.md`](devpost-preflight-review.md) — current requirement-by-requirement review
+- [`pre-submission-code-security-review.md`](pre-submission-code-security-review.md) — targeted security/code review and limitations
 
-These explain ideas behind the current positioning.
+## Agent-native / Agent UX design notes
 
 - [`agent-native-webmcp.md`](agent-native-webmcp.md)
 - [`from-agent-evaluation-to-agent-native.md`](from-agent-evaluation-to-agent-native.md)
 - [`semantics-are-all-you-need.md`](semantics-are-all-you-need.md)
-- [`level-system-v1.md`](level-system-v1.md) — historical Level presentation design
+- [`vision/ai-website-agent-dialogue.md`](vision/ai-website-agent-dialogue.md)
 
 ## Real-agent testing
 
-These are valuable because real agent runs directly changed the implementation.
+These records are valuable because real agent runs directly changed the implementation.
 
-- [`experiments/README.md`](experiments/README.md) — dated controlled/semi-controlled experiment result records, including current semantic-affordance experiments
-- [`codex-webmcp-test.md`](codex-webmcp-test.md) — native WebMCP test procedure
+- [`experiments/README.md`](experiments/README.md)
+- [`codex-webmcp-test.md`](codex-webmcp-test.md)
 - [`black-box-agent-test-001.md`](black-box-agent-test-001.md)
 - [`black-box-agent-test-002.md`](black-box-agent-test-002.md)
 - [`black-box-agent-test-003-work.md`](black-box-agent-test-003-work.md)
@@ -88,35 +153,27 @@ These are valuable because real agent runs directly changed the implementation.
 - [`codex-webmcp-interview-2026-08-30.md`](codex-webmcp-interview-2026-08-30.md)
 - [`agent-omotenashi-validation-2026-08-30.md`](agent-omotenashi-validation-2026-08-30.md)
 
-Black-box reports and experiment records are **records of what was true at the time of each run**. They may intentionally contain behavior that was later fixed or superseded.
-
-## Public pilot / observability
-
-- [`public-pilot.md`](public-pilot.md)
-- [`external-discovery-notes.md`](external-discovery-notes.md)
-
-The original pilot telemetry was deliberately low-information. The current release additionally has an intentionally public `public_tool_events` stream. `message_queen` is the only tool whose message/reply free-form text is intentionally published there; other arbitrary tool arguments are not.
-
-The Observatory and public access log are best-effort observation surfaces. They should not be interpreted as cryptographic attestation of agent identity or event provenance.
+Black-box reports and dated experiment records are **records of what was true at the time of each run**. They may intentionally contain behavior that was later fixed or superseded.
 
 ## Historical / superseded design material
 
-Some proposal documents were intentionally kept because they show how the project evolved.
-
-Examples of superseded statements include:
+Examples of statements that may appear in older documents but no longer describe the judged release:
 
 - dynamic runtime tool registration/removal
-- fixed **11-tool** release descriptions
-- `LIVE CHALLENGERS` as the primary right-side feed
-- Queen's Challenge Level 1–10 as the default product progression
-- a blanket statement that Queen conversation text is never stored
+- fixed 11-tool release descriptions
+- treating Queen's Challenge as a legacy-only subsystem
+- treating the visible Level overlay as the mechanism that enables Challenge logic
+- localhost-only cross-window spectator relay
+- `LIVE CHALLENGERS` as the current primary feed label
+- blanket claims that no conversation text is ever stored
+- old exact regression counts
 
-The judged release candidate now uses a **fixed 14-tool surface registered once at startup** and a shared D1-backed `LIVE TOOL ACCESS` stream.
+Historical documents are preserved because they show how the project evolved. They are not release specifications.
 
-When a historical design note conflicts with the current implementation, use this order:
+## Precedence when documents disagree
 
 ```text
-current code + tests
+current code + current tests
         ↓
 AGENTS.md
         ↓
@@ -126,26 +183,34 @@ docs/README.md
         ↓
 current submission docs
         ↓
-historical proposals / old black-box reports
+historical proposals / dated black-box reports
 ```
-
-Historical documents are evidence of the development process, not release specifications.
 
 ## Quick paths
 
-### I only want to understand the code
+### Understand the current product
 
 ```text
 README.md
-→ AGENTS.md
+→ docs/README.md
+→ docs/code-overview.md
+```
+
+### Understand the current WebMCP implementation
+
+```text
+AGENTS.md
 → js/webmcp.js
+→ js/agent-semantic-trace.js
+→ js/agent-semantic-production-relay.js
+→ js/agent-view.js
 → js/public-tool-events.js
 → js/public-tool-log.js
-→ functions/api/public-tool-events.js
+→ functions/api/
 → tests/
 ```
 
-### I only want to review the Challenge submission
+### Review the Challenge submission
 
 ```text
 docs/submission-requirements.md
@@ -154,10 +219,10 @@ docs/submission-requirements.md
 → docs/devpost-preflight-review.md
 ```
 
-### I want to understand what real agents changed
+### Understand what real agents changed
 
 ```text
-README: Built for agents. Shaped by agents.
+README: Real-agent validation
 → docs/experiments/README.md
 → black-box Agent reports
 → codex-webmcp-interview-2026-08-30.md
